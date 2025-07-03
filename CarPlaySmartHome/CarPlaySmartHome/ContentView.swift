@@ -368,18 +368,11 @@ struct DeviceListView: View {
     }
     
     private var loadingView: some View {
-        VStack(spacing: RingDesignSystem.Spacing.lg) {
-            ProgressView()
-                .progressViewStyle(CircularProgressViewStyle(tint: RingDesignSystem.Colors.ringBlue))
-                .scaleEffect(1.5)
-            
-            Text("Loading devices...")
-                .font(RingDesignSystem.Typography.subheadline)
-                .foregroundColor(RingDesignSystem.Colors.Foreground.secondary)
-        }
+        PremiumLoadingView(
+            title: "Loading Devices",
+            subtitle: "Connecting to your Ring smart home system..."
+        )
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .liquidGlass(cornerRadius: RingDesignSystem.CornerRadius.lg)
-        .shimmer(active: true)
     }
     
     @ViewBuilder
@@ -411,15 +404,15 @@ struct DeviceListView: View {
     
     private var deviceList: some View {
         ScrollView {
-            LazyVStack(spacing: RingDesignSystem.Spacing.sm) {
-                // Device Type Filter
-                deviceTypeFilter
+            LazyVStack(spacing: RingDesignSystem.Spacing.md) {
+                // Device Type Filter with enhanced styling
+                enhancedDeviceTypeFilter
                 
-                // Device Groups
+                // Premium Device Cards
                 ForEach(DeviceType.allCases, id: \.self) { deviceType in
                     let devices = filteredDevices.filter { $0.deviceType == deviceType }
                     if !devices.isEmpty {
-                        DeviceSection(
+                        PremiumDeviceSection(
                             deviceType: deviceType,
                             devices: devices,
                             smartHomeManager: smartHomeManager
@@ -430,26 +423,41 @@ struct DeviceListView: View {
             .padding(.horizontal, RingDesignSystem.Spacing.md)
             .padding(.bottom, RingDesignSystem.Spacing.xxxl)
         }
+        .refreshable {
+            await refreshDevices()
+        }
     }
     
-    private var deviceTypeFilter: some View {
+    private var enhancedDeviceTypeFilter: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: RingDesignSystem.Spacing.sm) {
-                // All devices filter
-                FilterChip(
-                    title: "All",
+                // All devices filter with premium styling
+                PremiumFilterChip(
+                    title: "All Devices",
+                    count: smartHomeManager.getDevices().count,
+                    icon: "house.fill",
+                    color: RingDesignSystem.Colors.Foreground.secondary,
                     isSelected: selectedDeviceType == nil,
-                    action: { selectedDeviceType = nil }
+                    action: { 
+                        selectedDeviceType = nil
+                        RingDesignSystem.Haptics.selection()
+                    }
                 )
                 
-                // Device type filters
+                // Device type filters with premium styling
                 ForEach(DeviceType.allCases, id: \.self) { deviceType in
                     let count = smartHomeManager.getDevices(ofType: deviceType).count
                     if count > 0 {
-                        FilterChip(
-                            title: "\(deviceType.rawValue)s (\(count))",
+                        PremiumFilterChip(
+                            title: deviceType.rawValue.capitalized,
+                            count: count,
+                            icon: deviceType.iconName,
+                            color: deviceType.accentColor,
                             isSelected: selectedDeviceType == deviceType,
-                            action: { selectedDeviceType = deviceType }
+                            action: { 
+                                selectedDeviceType = deviceType
+                                RingDesignSystem.Haptics.selection()
+                            }
                         )
                     }
                 }
