@@ -40,14 +40,16 @@ struct SmartDevice: Identifiable {
     let deviceType: DeviceType
     let batteryLevel: Int?
     let lastSeen: Date?
+    let location: String?
     
-    init(id: UUID, name: String, status: DeviceStatus, deviceType: DeviceType = .camera, batteryLevel: Int? = nil, lastSeen: Date? = nil) {
+    init(id: UUID, name: String, status: DeviceStatus, deviceType: DeviceType = .camera, batteryLevel: Int? = nil, lastSeen: Date? = nil, location: String? = nil) {
         self.id = id
         self.name = name
         self.status = status
         self.deviceType = deviceType
         self.batteryLevel = batteryLevel
         self.lastSeen = lastSeen
+        self.location = location
     }
 }
 

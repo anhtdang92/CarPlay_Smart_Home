@@ -3,906 +3,635 @@ import SwiftUI
 struct ContentView: View {
     @StateObject private var authManager = AuthenticationManager.shared
     @StateObject private var smartHomeManager = SmartHomeManager.shared
+    @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
-        if authManager.isAuthenticated {
-            RingDeviceHomeView(smartHomeManager: smartHomeManager)
-        } else {
-            LoginView(authManager: authManager)
+        ZStack {
+            // Dynamic background gradient
+            backgroundGradient
+                .ignoresSafeArea()
+            
+            if authManager.isAuthenticated {
+                RingDeviceHomeView(smartHomeManager: smartHomeManager)
+            } else {
+                LoginView(authManager: authManager)
+            }
         }
+        .animation(RingDesignSystem.Animations.gentle, value: authManager.isAuthenticated)
+    }
+    
+    private var backgroundGradient: some View {
+        LinearGradient(
+            colors: colorScheme == .dark ? 
+            [Color.black, Color(red: 0.05, green: 0.05, blue: 0.1)] :
+            [Color(red: 0.95, green: 0.97, blue: 1.0), Color.white],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
     }
 }
+
+// MARK: - Enhanced Login View
 
 struct LoginView: View {
     @ObservedObject var authManager: AuthenticationManager
     @State private var isSigningIn = false
     @State private var errorMessage: String?
+    @State private var logoRotation = 0.0
+    @State private var showWelcome = false
+    @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "shield.lefthalf.filled.badge.checkmark")
-                .font(.system(size: 64))
-                .foregroundColor(.blue)
-            
-            Text("Ring Smart Home")
-                .font(.largeTitle)
-                .fontWeight(.bold)
-                .padding()
-
-            Text("Connect your Ring devices to control them from your car with CarPlay")
-                .font(.body)
-                .foregroundColor(.secondary)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal)
-
-            if let errorMessage = errorMessage {
-                Text(errorMessage)
-                    .foregroundColor(.red)
-                    .font(.caption)
-                    .padding(.horizontal)
-            }
-
-            if isSigningIn {
-                ProgressView("Signing in...")
-                    .padding()
-            } else {
-                Button(action: signInWithRing) {
-                    HStack {
-                        Image(systemName: "person.crop.circle.badge.checkmark")
-                        Text("Sign In with Ring")
+        GeometryReader { geometry in
+            ScrollView {
+                VStack(spacing: RingDesignSystem.Spacing.xl) {
+                    Spacer(minLength: geometry.size.height * 0.1)
+                    
+                    // Animated Ring Logo
+                    heroSection
+                        .onAppear {
+                            withAnimation(RingDesignSystem.Animations.gentle.delay(0.5)) {
+                                showWelcome = true
+                            }
+                            withAnimation(RingDesignSystem.Animations.gentle.repeatForever(autoreverses: false)) {
+                                logoRotation = 360
+                            }
+                        }
+                    
+                    // Welcome Text
+                    welcomeSection
+                        .opacity(showWelcome ? 1 : 0)
+                        .offset(y: showWelcome ? 0 : 20)
+                        .animation(RingDesignSystem.Animations.gentle.delay(0.8), value: showWelcome)
+                    
+                    // Error Display
+                    if let errorMessage = errorMessage {
+                        errorSection(message: errorMessage)
                     }
-                    .frame(maxWidth: .infinity)
-                    .padding()
+                    
+                    // Sign In Buttons
+                    signInSection
+                        .opacity(showWelcome ? 1 : 0)
+                        .offset(y: showWelcome ? 0 : 30)
+                        .animation(RingDesignSystem.Animations.gentle.delay(1.2), value: showWelcome)
+                    
+                    Spacer(minLength: geometry.size.height * 0.1)
                 }
-                .background(Color.blue)
-                .foregroundColor(.white)
-                .cornerRadius(12)
-                .padding(.horizontal)
-
-                Button(action: demoSignIn) {
-                    HStack {
-                        Image(systemName: "person.circle")
-                        Text("Demo Sign In")
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                }
-                .background(Color.gray)
-                .foregroundColor(.white)
-                .cornerRadius(12)
-                .padding(.horizontal)
+                .padding(.horizontal, RingDesignSystem.Spacing.lg)
             }
-            
-            Spacer()
         }
-        .padding()
+    }
+    
+    private var heroSection: some View {
+        VStack(spacing: RingDesignSystem.Spacing.lg) {
+            // Ring Logo with Liquid Glass Effect
+            ZStack {
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            colors: RingDesignSystem.Colors.ringBlue.gradientColors,
+                            center: .center,
+                            startRadius: 30,
+                            endRadius: 80
+                        )
+                    )
+                    .frame(width: 160, height: 160)
+                    .liquidGlass(style: .regular, cornerRadius: 80)
+                    .rotationEffect(.degrees(logoRotation))
+                
+                Image(systemName: "shield.lefthalf.filled.badge.checkmark")
+                    .font(.system(size: 64, weight: .medium))
+                    .foregroundColor(.white)
+                    .shadow(color: .black.opacity(0.3), radius: 4, x: 0, y: 2)
+            }
+            .pulse(active: !isSigningIn)
+        }
+    }
+    
+    private var welcomeSection: some View {
+        VStack(spacing: RingDesignSystem.Spacing.md) {
+            Text("Ring Smart Home")
+                .font(RingDesignSystem.Typography.largeTitle)
+                .foregroundColor(RingDesignSystem.Colors.Foreground.primary)
+                .multilineTextAlignment(.center)
+
+            Text("Experience seamless home security control from your car with CarPlay integration")
+                .font(RingDesignSystem.Typography.body)
+                .foregroundColor(RingDesignSystem.Colors.Foreground.secondary)
+                .multilineTextAlignment(.center)
+                .lineLimit(nil)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+    
+    private func errorSection(message: String) -> some View {
+        HStack(spacing: RingDesignSystem.Spacing.sm) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundColor(RingDesignSystem.Colors.Alert.critical)
+            
+            Text(message)
+                .font(RingDesignSystem.Typography.footnote)
+                .foregroundColor(RingDesignSystem.Colors.Alert.critical)
+        }
+        .padding(RingDesignSystem.Spacing.md)
+        .liquidGlass(cornerRadius: RingDesignSystem.CornerRadius.md)
+        .overlay(
+            RoundedRectangle(cornerRadius: RingDesignSystem.CornerRadius.md)
+                .stroke(RingDesignSystem.Colors.Alert.critical.opacity(0.3), lineWidth: 1)
+        )
+        .transition(.scale.combined(with: .opacity))
+    }
+    
+    private var signInSection: some View {
+        VStack(spacing: RingDesignSystem.Spacing.md) {
+            if isSigningIn {
+                loadingView
+            } else {
+                authButtons
+            }
+        }
+    }
+    
+    private var loadingView: some View {
+        VStack(spacing: RingDesignSystem.Spacing.md) {
+            ProgressView()
+                .progressViewStyle(CircularProgressViewStyle(tint: RingDesignSystem.Colors.ringBlue))
+                .scaleEffect(1.2)
+            
+            Text("Signing in...")
+                .font(RingDesignSystem.Typography.subheadline)
+                .foregroundColor(RingDesignSystem.Colors.Foreground.secondary)
+        }
+        .padding(RingDesignSystem.Spacing.xl)
+        .liquidGlass(cornerRadius: RingDesignSystem.CornerRadius.lg)
+        .shimmer(active: true)
+    }
+    
+    private var authButtons: some View {
+        VStack(spacing: RingDesignSystem.Spacing.md) {
+            // Primary Ring Sign In Button
+            Button {
+                signInWithRing()
+            } label: {
+                HStack(spacing: RingDesignSystem.Spacing.sm) {
+                    Image(systemName: "person.crop.circle.badge.checkmark")
+                        .font(.title2)
+                    Text("Sign In with Ring")
+                        .font(RingDesignSystem.Typography.headline)
+                        .fontWeight(.semibold)
+                }
+                .foregroundColor(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, RingDesignSystem.Spacing.md)
+                .background(
+                    LinearGradient(
+                        colors: [RingDesignSystem.Colors.ringBlue, RingDesignSystem.Colors.ringBlue.opacity(0.8)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .clipShape(RoundedRectangle(cornerRadius: RingDesignSystem.CornerRadius.lg))
+                .shadow(color: RingDesignSystem.Colors.ringBlue.opacity(0.3), radius: 8, x: 0, y: 4)
+            }
+            .scaleEffect(isSigningIn ? 0.95 : 1.0)
+            .onTapWithFeedback(haptic: .medium) {
+                // Action handled in closure
+            }
+            
+            // Secondary Demo Button
+            Button {
+                demoSignIn()
+            } label: {
+                HStack(spacing: RingDesignSystem.Spacing.sm) {
+                    Image(systemName: "person.circle")
+                        .font(.title2)
+                    Text("Demo Sign In")
+                        .font(RingDesignSystem.Typography.headline)
+                }
+                .foregroundColor(RingDesignSystem.Colors.Foreground.primary)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, RingDesignSystem.Spacing.md)
+                .liquidGlass(cornerRadius: RingDesignSystem.CornerRadius.lg)
+                .overlay(
+                    RoundedRectangle(cornerRadius: RingDesignSystem.CornerRadius.lg)
+                        .stroke(RingDesignSystem.Colors.Separator.primary, lineWidth: 1)
+                )
+            }
+            .onTapWithFeedback(haptic: .light) {
+                // Action handled in closure
+            }
+        }
     }
     
     private func signInWithRing() {
-        isSigningIn = true
-        errorMessage = nil
+        withAnimation(RingDesignSystem.Animations.quick) {
+            isSigningIn = true
+            errorMessage = nil
+        }
+        
+        RingDesignSystem.Haptics.light()
         
         RingAPIManager.shared.signInWithRing { result in
             DispatchQueue.main.async {
-                isSigningIn = false
-                
-                switch result {
-                case .success:
-                    // Authentication handled by AuthenticationManager
-                    break
-                case .failure(let error):
-                    errorMessage = error.localizedDescription
+                withAnimation(RingDesignSystem.Animations.smooth) {
+                    isSigningIn = false
+                    
+                    switch result {
+                    case .success:
+                        RingDesignSystem.Haptics.success()
+                    case .failure(let error):
+                        errorMessage = error.localizedDescription
+                        RingDesignSystem.Haptics.error()
+                    }
                 }
             }
         }
     }
     
     private func demoSignIn() {
-        isSigningIn = true
-        errorMessage = nil
+        withAnimation(RingDesignSystem.Animations.quick) {
+            isSigningIn = true
+            errorMessage = nil
+        }
+        
+        RingDesignSystem.Haptics.light()
         
         authManager.signIn { success in
-            isSigningIn = false
-            if !success {
-                errorMessage = "Demo sign in failed"
+            withAnimation(RingDesignSystem.Animations.smooth) {
+                isSigningIn = false
+                if !success {
+                    errorMessage = "Demo sign in failed"
+                    RingDesignSystem.Haptics.error()
+                } else {
+                    RingDesignSystem.Haptics.success()
+                }
             }
         }
     }
 }
 
+// MARK: - Enhanced Home View
+
 struct RingDeviceHomeView: View {
     @ObservedObject var smartHomeManager: SmartHomeManager
     @State private var selectedTab = 0
+    @State private var showingSystemHealth = false
+    @Environment(\.colorScheme) var colorScheme
     
     var body: some View {
         TabView(selection: $selectedTab) {
             DeviceListView(smartHomeManager: smartHomeManager)
                 .tabItem {
-                    Image(systemName: "house.fill")
-                    Text("Devices")
+                    Label("Devices", systemImage: "house.fill")
                 }
                 .tag(0)
             
             MotionAlertsView(smartHomeManager: smartHomeManager)
                 .tabItem {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                    Text("Alerts")
+                    Label("Alerts", systemImage: "exclamationmark.triangle.fill")
                 }
                 .tag(1)
             
             SystemStatusView(smartHomeManager: smartHomeManager)
                 .tabItem {
-                    Image(systemName: "chart.line.uptrend.xyaxis")
-                    Text("Status")
+                    Label("Status", systemImage: "chart.line.uptrend.xyaxis")
                 }
                 .tag(2)
+            
+            SettingsView(smartHomeManager: smartHomeManager)
+                .tabItem {
+                    Label("Settings", systemImage: "gear")
+                }
+                .tag(3)
         }
+        .accentColor(RingDesignSystem.Colors.ringBlue)
         .onAppear {
-            // Ensure devices are loaded when view appears
+            setupTabBarAppearance()
+            
+            // Ensure devices are loaded
             if smartHomeManager.getDevices().isEmpty {
                 smartHomeManager.refreshDevices()
             }
         }
     }
+    
+    private func setupTabBarAppearance() {
+        let appearance = UITabBarAppearance()
+        appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = UIColor.systemBackground.withAlphaComponent(0.95)
+        
+        UITabBar.appearance().standardAppearance = appearance
+        UITabBar.appearance().scrollEdgeAppearance = appearance
+    }
 }
+
+// MARK: - Enhanced Device List View
 
 struct DeviceListView: View {
     @ObservedObject var smartHomeManager: SmartHomeManager
-    @State private var showingActionSheet: SmartDevice?
     @State private var showingBulkActions = false
+    @State private var searchText = ""
+    @State private var selectedDeviceType: DeviceType?
+    @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
         NavigationView {
             ZStack {
+                // Background
+                RingDesignSystem.Colors.Background.primary.ignoresSafeArea()
+                
                 if smartHomeManager.isLoading {
-                    ProgressView("Loading devices...")
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    loadingView
                 } else {
-                    deviceListContent
+                    deviceContent
                 }
             }
             .navigationTitle("Ring Smart Home")
+            .navigationBarTitleDisplayMode(.large)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     systemStatusButton
                 }
                 
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Menu {
-                        Button("Refresh Devices") {
-                            smartHomeManager.refreshDevices()
-                        }
-                        Button("Bulk Actions") {
-                            showingBulkActions = true
-                        }
-                        Button("Sign Out") {
-                            RingAPIManager.shared.signOut()
-                            AuthenticationManager.shared.signOut()
-                        }
-                    } label: {
-                        Image(systemName: "ellipsis.circle")
-                    }
+                    moreButton
                 }
+            }
+            .searchable(text: $searchText, prompt: "Search devices...")
+            .refreshable {
+                await refreshDevices()
             }
             .sheet(isPresented: $showingBulkActions) {
                 BulkActionsView(smartHomeManager: smartHomeManager)
             }
         }
-        .refreshable {
-            smartHomeManager.refreshDevices()
-        }
     }
     
-    private var systemStatusButton: some View {
-        Button(action: {
-            // This could show a status sheet or navigate to status view
-        }) {
-            HStack(spacing: 4) {
-                let lowBatteryCount = smartHomeManager.getDevicesWithLowBattery().count
-                let offlineCount = smartHomeManager.getOfflineDevices().count
-                
-                if lowBatteryCount > 0 || offlineCount > 0 {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundColor(.orange)
-                } else {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundColor(.green)
-                }
-            }
+    private var loadingView: some View {
+        VStack(spacing: RingDesignSystem.Spacing.lg) {
+            ProgressView()
+                .progressViewStyle(CircularProgressViewStyle(tint: RingDesignSystem.Colors.ringBlue))
+                .scaleEffect(1.5)
+            
+            Text("Loading devices...")
+                .font(RingDesignSystem.Typography.subheadline)
+                .foregroundColor(RingDesignSystem.Colors.Foreground.secondary)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .liquidGlass(cornerRadius: RingDesignSystem.CornerRadius.lg)
+        .shimmer(active: true)
     }
     
     @ViewBuilder
-    private var deviceListContent: some View {
-        if smartHomeManager.lastError != nil {
-            errorView
-        } else if smartHomeManager.devices.isEmpty {
+    private var deviceContent: some View {
+        if filteredDevices.isEmpty {
             emptyStateView
         } else {
             deviceList
         }
     }
     
-    private var errorView: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "exclamationmark.triangle")
-                .font(.system(size: 48))
-                .foregroundColor(.orange)
-            
-            Text("Unable to Load Devices")
-                .font(.headline)
-            
-            if let error = smartHomeManager.lastError {
-                Text(error.localizedDescription)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                    .multilineTextAlignment(.center)
+    private var filteredDevices: [SmartDevice] {
+        var devices = smartHomeManager.getDevices()
+        
+        if !searchText.isEmpty {
+            devices = devices.filter { device in
+                device.name.localizedCaseInsensitiveContains(searchText) ||
+                device.deviceType.rawValue.localizedCaseInsensitiveContains(searchText) ||
+                device.location?.localizedCaseInsensitiveContains(searchText) == true
             }
-            
-            Button("Try Again") {
-                smartHomeManager.refreshDevices()
-            }
-            .buttonStyle(.borderedProminent)
         }
-        .padding()
-    }
-    
-    private var emptyStateView: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "house.circle")
-                .font(.system(size: 48))
-                .foregroundColor(.secondary)
-            Text("No Devices Found")
-                .font(.headline)
-                .foregroundColor(.secondary)
-            Text("Your Ring devices will appear here")
-                .font(.caption)
-                .foregroundColor(.secondary)
-            
-            Button("Refresh") {
-                smartHomeManager.refreshDevices()
-            }
-            .buttonStyle(.borderedProminent)
+        
+        if let selectedType = selectedDeviceType {
+            devices = devices.filter { $0.deviceType == selectedType }
         }
-        .padding(.vertical, 32)
+        
+        return devices
     }
     
     private var deviceList: some View {
-        List {
-            ForEach(DeviceType.allCases, id: \.self) { deviceType in
-                let devices = smartHomeManager.getDevices(ofType: deviceType)
-                if !devices.isEmpty {
-                    Section(deviceType.rawValue + "s") {
-                        ForEach(devices) { device in
-                            RingDeviceRow(device: device, smartHomeManager: smartHomeManager)
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-struct RingDeviceRow: View {
-    let device: SmartDevice
-    let smartHomeManager: SmartHomeManager
-    @State private var showingActions = false
-    @State private var isLoading = false
-    @State private var deviceStatus: RingDeviceStatus?
-    
-    var body: some View {
-        HStack {
-            deviceIcon
-            
-            VStack(alignment: .leading, spacing: 4) {
-                Text(device.name)
-                    .font(.headline)
+        ScrollView {
+            LazyVStack(spacing: RingDesignSystem.Spacing.sm) {
+                // Device Type Filter
+                deviceTypeFilter
                 
-                HStack {
-                    Text(device.deviceType.rawValue)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    
-                    if let batteryLevel = device.batteryLevel {
-                        batteryIndicator(level: batteryLevel)
-                    }
-                    
-                    if let status = deviceStatus {
-                        signalIndicator(strength: status.signalStrength)
-                    }
-                    
-                    Spacer()
-                    
-                    StatusBadge(status: device.status)
-                }
-            }
-            
-            Spacer()
-            
-            if isLoading {
-                ProgressView()
-                    .scaleEffect(0.8)
-            } else {
-                quickActionButton
-            }
-        }
-        .padding(.vertical, 4)
-        .contentShape(Rectangle())
-        .onTapGesture {
-            showingActions = true
-        }
-        .onAppear {
-            loadDeviceStatus()
-        }
-        .actionSheet(isPresented: $showingActions) {
-            createActionSheet()
-        }
-    }
-    
-    private var deviceIcon: some View {
-        ZStack {
-            Circle()
-                .fill(device.status == .on ? Color.green.opacity(0.2) : Color.gray.opacity(0.2))
-                .frame(width: 40, height: 40)
-            
-            Image(systemName: device.deviceType.iconName)
-                .font(.title2)
-                .foregroundColor(device.status == .on ? .green : .gray)
-        }
-    }
-    
-    private func batteryIndicator(level: Int) -> some View {
-        HStack(spacing: 2) {
-            Image(systemName: level <= 20 ? "battery.25" : level <= 50 ? "battery.50" : "battery.100")
-                .font(.caption)
-                .foregroundColor(level <= 20 ? .red : level <= 50 ? .orange : .green)
-            Text("\(level)%")
-                .font(.caption2)
-                .foregroundColor(.secondary)
-        }
-    }
-    
-    private func signalIndicator(strength: Int) -> some View {
-        HStack(spacing: 1) {
-            ForEach(1...4, id: \.self) { bar in
-                Rectangle()
-                    .fill(bar <= strength ? Color.primary : Color.gray.opacity(0.3))
-                    .frame(width: 2, height: CGFloat(bar * 2 + 2))
-            }
-        }
-    }
-    
-    private var quickActionButton: some View {
-        Button(action: performQuickAction) {
-            Image(systemName: quickActionIcon)
-                .font(.title2)
-                .foregroundColor(.blue)
-        }
-    }
-    
-    private var quickActionIcon: String {
-        switch device.deviceType {
-        case .camera, .doorbell: return "camera.fill"
-        case .motionSensor: return "sensor.tag.radiowaves.forward.fill"
-        case .floodlight: return "lightbulb.fill"
-        case .chime: return "speaker.wave.3.fill"
-        }
-    }
-    
-    private func loadDeviceStatus() {
-        smartHomeManager.getDeviceStatus(for: device.id) { status in
-            DispatchQueue.main.async {
-                self.deviceStatus = status
-            }
-        }
-    }
-    
-    private func performQuickAction() {
-        isLoading = true
-        
-        switch device.deviceType {
-        case .camera, .doorbell:
-            smartHomeManager.captureSnapshot(for: device.id) { result in
-                DispatchQueue.main.async {
-                    isLoading = false
-                    // Could show a toast or alert here
-                }
-            }
-        case .motionSensor:
-            smartHomeManager.toggleMotionDetection(for: device.id) { _ in
-                DispatchQueue.main.async {
-                    isLoading = false
-                }
-            }
-        default:
-            isLoading = false
-        }
-    }
-    
-    private func createActionSheet() -> ActionSheet {
-        var buttons: [ActionSheet.Button] = []
-        
-        switch device.deviceType {
-        case .camera, .doorbell:
-            buttons.append(.default(Text("📹 View Live Stream")) {
-                isLoading = true
-                smartHomeManager.getLiveStream(for: device.id) { _ in
-                    DispatchQueue.main.async { isLoading = false }
-                }
-            })
-            buttons.append(.default(Text("📸 Capture Snapshot")) {
-                performQuickAction()
-            })
-            buttons.append(.default(Text("🔔 Toggle Motion Detection")) {
-                isLoading = true
-                smartHomeManager.toggleMotionDetection(for: device.id) { _ in
-                    DispatchQueue.main.async { isLoading = false }
-                }
-            })
-            
-            if device.deviceType == .doorbell {
-                buttons.append(.destructive(Text("🚨 Activate Siren")) {
-                    isLoading = true
-                    smartHomeManager.activateSiren(for: device.id) { _ in
-                        DispatchQueue.main.async { isLoading = false }
-                    }
-                })
-            }
-            
-        case .motionSensor:
-            buttons.append(.default(Text("🔔 Toggle Motion Detection")) {
-                performQuickAction()
-            })
-            
-        default:
-            break
-        }
-        
-        buttons.append(.cancel())
-        
-        return ActionSheet(
-            title: Text(device.name),
-            message: Text("Choose an action"),
-            buttons: buttons
-        )
-    }
-}
-
-struct StatusBadge: View {
-    let status: DeviceStatus
-    
-    var body: some View {
-        Text(status.description)
-            .font(.caption2)
-            .fontWeight(.medium)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 2)
-            .background(backgroundColor)
-            .foregroundColor(foregroundColor)
-            .cornerRadius(8)
-    }
-    
-    private var backgroundColor: Color {
-        switch status {
-        case .on, .open: return .green.opacity(0.2)
-        case .off, .closed: return .red.opacity(0.2)
-        case .unknown: return .gray.opacity(0.2)
-        }
-    }
-    
-    private var foregroundColor: Color {
-        switch status {
-        case .on, .open: return .green
-        case .off, .closed: return .red
-        case .unknown: return .gray
-        }
-    }
-}
-
-struct MotionAlertsView: View {
-    @ObservedObject var smartHomeManager: SmartHomeManager
-    @State private var selectedTimeframe: AlertTimeframe = .today
-    
-    enum AlertTimeframe: String, CaseIterable {
-        case hour = "Last Hour"
-        case today = "Today"
-        case week = "This Week"
-        
-        var timeInterval: TimeInterval {
-            switch self {
-            case .hour: return 3600
-            case .today: return 86400
-            case .week: return 604800
-            }
-        }
-    }
-    
-    var body: some View {
-        NavigationView {
-            VStack {
-                Picker("Timeframe", selection: $selectedTimeframe) {
-                    ForEach(AlertTimeframe.allCases, id: \.self) { timeframe in
-                        Text(timeframe.rawValue).tag(timeframe)
+                // Device Groups
+                ForEach(DeviceType.allCases, id: \.self) { deviceType in
+                    let devices = filteredDevices.filter { $0.deviceType == deviceType }
+                    if !devices.isEmpty {
+                        DeviceSection(
+                            deviceType: deviceType,
+                            devices: devices,
+                            smartHomeManager: smartHomeManager
+                        )
                     }
                 }
-                .pickerStyle(SegmentedPickerStyle())
-                .padding()
+            }
+            .padding(.horizontal, RingDesignSystem.Spacing.md)
+            .padding(.bottom, RingDesignSystem.Spacing.xxxl)
+        }
+    }
+    
+    private var deviceTypeFilter: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: RingDesignSystem.Spacing.sm) {
+                // All devices filter
+                FilterChip(
+                    title: "All",
+                    isSelected: selectedDeviceType == nil,
+                    action: { selectedDeviceType = nil }
+                )
                 
-                List {
-                    if filteredAlerts.isEmpty {
-                        emptyAlertsView
-                    } else {
-                        ForEach(filteredAlerts) { alert in
-                            MotionAlertRow(alert: alert, smartHomeManager: smartHomeManager)
-                        }
+                // Device type filters
+                ForEach(DeviceType.allCases, id: \.self) { deviceType in
+                    let count = smartHomeManager.getDevices(ofType: deviceType).count
+                    if count > 0 {
+                        FilterChip(
+                            title: "\(deviceType.rawValue)s (\(count))",
+                            isSelected: selectedDeviceType == deviceType,
+                            action: { selectedDeviceType = deviceType }
+                        )
                     }
                 }
             }
-            .navigationTitle("Motion Alerts")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Clear Old") {
-                        smartHomeManager.clearOldAlerts(olderThan: 7)
-                    }
-                }
-            }
+            .padding(.horizontal, RingDesignSystem.Spacing.md)
         }
+        .padding(.vertical, RingDesignSystem.Spacing.sm)
     }
     
-    private var filteredAlerts: [MotionAlert] {
-        let cutoffTime = Date().addingTimeInterval(-selectedTimeframe.timeInterval)
-        return smartHomeManager.recentMotionAlerts.filter { $0.timestamp > cutoffTime }
-    }
-    
-    private var emptyAlertsView: some View {
-        VStack(spacing: 16) {
-            Image(systemName: "bell.slash.circle")
-                .font(.system(size: 48))
-                .foregroundColor(.secondary)
-            Text("No Alerts")
-                .font(.headline)
-                .foregroundColor(.secondary)
-            Text("No motion detected in the selected timeframe")
-                .font(.caption)
-                .foregroundColor(.secondary)
+    private var emptyStateView: some View {
+        VStack(spacing: RingDesignSystem.Spacing.lg) {
+            Image(systemName: "house.circle")
+                .font(.system(size: 64))
+                .foregroundColor(RingDesignSystem.Colors.Foreground.tertiary)
+            
+            Text("No Devices Found")
+                .font(RingDesignSystem.Typography.title2)
+                .foregroundColor(RingDesignSystem.Colors.Foreground.primary)
+            
+            Text(searchText.isEmpty ? 
+                 "Your Ring devices will appear here" : 
+                 "No devices match your search")
+                .font(RingDesignSystem.Typography.body)
+                .foregroundColor(RingDesignSystem.Colors.Foreground.secondary)
                 .multilineTextAlignment(.center)
-        }
-        .padding(.vertical, 32)
-    }
-}
-
-struct MotionAlertRow: View {
-    let alert: MotionAlert
-    let smartHomeManager: SmartHomeManager
-    @State private var deviceName: String = "Unknown Device"
-    
-    var body: some View {
-        HStack {
-            alertIcon
             
-            VStack(alignment: .leading, spacing: 4) {
-                Text(alert.description)
-                    .font(.headline)
+            Button("Refresh Devices") {
+                Task {
+                    await refreshDevices()
+                }
+            }
+            .ringButton(style: .primary, size: .medium)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(RingDesignSystem.Spacing.xl)
+    }
+    
+    private var systemStatusButton: some View {
+        Button {
+            // Show system status
+        } label: {
+            HStack(spacing: RingDesignSystem.Spacing.xxs) {
+                let lowBatteryCount = smartHomeManager.getDevicesWithLowBattery().count
+                let offlineCount = smartHomeManager.getOfflineDevices().count
                 
-                HStack {
-                    Text(deviceName)
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    
-                    Spacer()
-                    
-                    confidenceBadge
-                }
+                Circle()
+                    .fill(
+                        lowBatteryCount > 0 || offlineCount > 0 ?
+                        RingDesignSystem.Colors.Alert.warning :
+                        RingDesignSystem.Colors.Alert.success
+                    )
+                    .frame(width: 8, height: 8)
                 
-                Text(timeAgoString)
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-            
-            Spacer()
-            
-            if alert.hasVideo {
-                Image(systemName: "video.fill")
-                    .foregroundColor(.blue)
+                Image(systemName: "chart.line.uptrend.xyaxis")
+                    .font(.title3)
+                    .foregroundColor(RingDesignSystem.Colors.Foreground.primary)
             }
         }
-        .padding(.vertical, 4)
-        .onAppear {
-            loadDeviceName()
+        .onTapWithFeedback(haptic: .light) {
+            // Handle tap
         }
     }
     
-    private var alertIcon: some View {
-        Image(systemName: alertIconName)
-            .font(.title2)
-            .foregroundColor(alertColor)
-            .frame(width: 32)
-    }
-    
-    private var alertIconName: String {
-        switch alert.alertType {
-        case .motion: return "sensor.tag.radiowaves.forward.fill"
-        case .person: return "person.fill"
-        case .vehicle: return "car.fill"
-        case .package: return "shippingbox.fill"
-        case .doorbell: return "bell.fill"
+    private var moreButton: some View {
+        Menu {
+            Button("Refresh Devices") {
+                Task { await refreshDevices() }
+            }
+            
+            Button("Bulk Actions") {
+                showingBulkActions = true
+            }
+            
+            Divider()
+            
+            Button("Sign Out") {
+                signOut()
+            }
+        } label: {
+            Image(systemName: "ellipsis.circle")
+                .font(.title3)
+                .foregroundColor(RingDesignSystem.Colors.Foreground.primary)
         }
     }
     
-    private var alertColor: Color {
-        switch alert.alertType {
-        case .motion: return .orange
-        case .person: return .blue
-        case .vehicle: return .purple
-        case .package: return .green
-        case .doorbell: return .yellow
-        }
+    private func refreshDevices() async {
+        RingDesignSystem.Haptics.light()
+        smartHomeManager.refreshDevices()
     }
     
-    private var confidenceBadge: some View {
-        Text("\(Int(alert.confidence * 100))%")
-            .font(.caption2)
-            .fontWeight(.medium)
-            .padding(.horizontal, 6)
-            .padding(.vertical, 2)
-            .background(alert.confidence > 0.8 ? Color.green.opacity(0.2) : Color.orange.opacity(0.2))
-            .foregroundColor(alert.confidence > 0.8 ? .green : .orange)
-            .cornerRadius(4)
-    }
-    
-    private var timeAgoString: String {
-        let formatter = RelativeDateTimeFormatter()
-        formatter.dateTimeStyle = .named
-        return formatter.localizedString(for: alert.timestamp, relativeTo: Date())
-    }
-    
-    private func loadDeviceName() {
-        if let device = smartHomeManager.getDevice(withId: alert.deviceId) {
-            deviceName = device.name
-        }
+    private func signOut() {
+        RingDesignSystem.Haptics.medium()
+        RingAPIManager.shared.signOut()
+        AuthenticationManager.shared.signOut()
     }
 }
 
-struct SystemStatusView: View {
-    @ObservedObject var smartHomeManager: SmartHomeManager
-    
-    var body: some View {
-        NavigationView {
-            List {
-                overviewSection
-                deviceHealthSection
-                alertsSection
-                maintenanceSection
-            }
-            .navigationTitle("System Status")
-        }
-    }
-    
-    private var overviewSection: some View {
-        Section("Overview") {
-            StatusRow(
-                title: "Total Devices",
-                value: "\(smartHomeManager.getDevices().count)",
-                icon: "house.fill",
-                color: .blue
-            )
-            
-            StatusRow(
-                title: "Active Alerts (1h)",
-                value: "\(smartHomeManager.getTotalActiveAlerts())",
-                icon: "exclamationmark.triangle.fill",
-                color: smartHomeManager.getTotalActiveAlerts() > 0 ? .orange : .green
-            )
-        }
-    }
-    
-    private var deviceHealthSection: some View {
-        Section("Device Health") {
-            let lowBatteryDevices = smartHomeManager.getDevicesWithLowBattery()
-            let offlineDevices = smartHomeManager.getOfflineDevices()
-            
-            StatusRow(
-                title: "Low Battery",
-                value: "\(lowBatteryDevices.count)",
-                icon: "battery.25",
-                color: lowBatteryDevices.isEmpty ? .green : .red
-            )
-            
-            StatusRow(
-                title: "Offline Devices",
-                value: "\(offlineDevices.count)",
-                icon: "wifi.slash",
-                color: offlineDevices.isEmpty ? .green : .red
-            )
-        }
-    }
-    
-    private var alertsSection: some View {
-        Section("Motion Detection") {
-            let disabledDevices = smartHomeManager.getDevicesWithMotionDetectionDisabled()
-            
-            StatusRow(
-                title: "Motion Detection Disabled",
-                value: "\(disabledDevices.count)",
-                icon: "sensor.tag.radiowaves.forward.fill",
-                color: disabledDevices.isEmpty ? .green : .orange
-            )
-        }
-    }
-    
-    private var maintenanceSection: some View {
-        Section("Quick Actions") {
-            Button(action: {
-                smartHomeManager.refreshDevices()
-            }) {
-                HStack {
-                    Image(systemName: "arrow.clockwise")
-                        .foregroundColor(.blue)
-                    Text("Refresh All Devices")
-                    Spacer()
-                }
-            }
-            
-            Button(action: {
-                smartHomeManager.clearOldAlerts(olderThan: 7)
-            }) {
-                HStack {
-                    Image(systemName: "trash")
-                        .foregroundColor(.red)
-                    Text("Clear Old Alerts")
-                    Spacer()
-                }
-            }
-        }
-    }
-}
+// MARK: - Filter Chip Component
 
-struct StatusRow: View {
+struct FilterChip: View {
     let title: String
-    let value: String
-    let icon: String
-    let color: Color
-    
-    var body: some View {
-        HStack {
-            Image(systemName: icon)
-                .foregroundColor(color)
-                .frame(width: 24)
-            
-            Text(title)
-            
-            Spacer()
-            
-            Text(value)
-                .fontWeight(.semibold)
-                .foregroundColor(color)
-        }
-    }
-}
-
-struct BulkActionsView: View {
-    @ObservedObject var smartHomeManager: SmartHomeManager
-    @Environment(\.presentationMode) var presentationMode
-    @State private var isProcessing = false
-    @State private var resultMessage: String?
-    
-    var body: some View {
-        NavigationView {
-            VStack(spacing: 20) {
-                Text("Bulk Device Actions")
-                    .font(.title2)
-                    .fontWeight(.bold)
-                    .padding()
-                
-                if isProcessing {
-                    ProgressView("Processing...")
-                        .padding()
-                } else {
-                    VStack(spacing: 16) {
-                        ActionButton(
-                            title: "Capture All Snapshots",
-                            icon: "camera.fill",
-                            color: .blue,
-                            action: captureAllSnapshots
-                        )
-                        
-                        ActionButton(
-                            title: "Enable All Motion Detection",
-                            icon: "sensor.tag.radiowaves.forward.fill",
-                            color: .green,
-                            action: enableAllMotionDetection
-                        )
-                        
-                        ActionButton(
-                            title: "Disable All Motion Detection",
-                            icon: "sensor.tag.radiowaves.forward",
-                            color: .orange,
-                            action: disableAllMotionDetection
-                        )
-                    }
-                    .padding()
-                }
-                
-                if let message = resultMessage {
-                    Text(message)
-                        .foregroundColor(.green)
-                        .padding()
-                }
-                
-                Spacer()
-            }
-            .navigationTitle("Bulk Actions")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") {
-                        presentationMode.wrappedValue.dismiss()
-                    }
-                }
-            }
-        }
-    }
-    
-    private func captureAllSnapshots() {
-        isProcessing = true
-        resultMessage = nil
-        
-        smartHomeManager.captureSnapshotsFromAllCameras { snapshots, errors in
-            DispatchQueue.main.async {
-                isProcessing = false
-                resultMessage = "Captured \(snapshots.count) snapshots, \(errors.count) failed"
-            }
-        }
-    }
-    
-    private func enableAllMotionDetection() {
-        isProcessing = true
-        resultMessage = nil
-        
-        smartHomeManager.enableMotionDetectionForAllDevices { success, total in
-            DispatchQueue.main.async {
-                isProcessing = false
-                resultMessage = "Enabled motion detection on \(success)/\(total) devices"
-            }
-        }
-    }
-    
-    private func disableAllMotionDetection() {
-        isProcessing = true
-        resultMessage = nil
-        
-        smartHomeManager.disableMotionDetectionForAllDevices { success, total in
-            DispatchQueue.main.async {
-                isProcessing = false
-                resultMessage = "Disabled motion detection on \(success)/\(total) devices"
-            }
-        }
-    }
-}
-
-struct ActionButton: View {
-    let title: String
-    let icon: String
-    let color: Color
+    let isSelected: Bool
     let action: () -> Void
     
     var body: some View {
         Button(action: action) {
-            HStack {
-                Image(systemName: icon)
-                    .font(.title2)
-                Text(title)
-                    .fontWeight(.medium)
-                Spacer()
-            }
-            .padding()
-            .background(color.opacity(0.1))
-            .foregroundColor(color)
-            .cornerRadius(12)
+            Text(title)
+                .font(RingDesignSystem.Typography.footnote)
+                .fontWeight(.medium)
+                .padding(.horizontal, RingDesignSystem.Spacing.sm)
+                .padding(.vertical, RingDesignSystem.Spacing.xs)
+                .background(
+                    RoundedRectangle(cornerRadius: RingDesignSystem.CornerRadius.lg)
+                        .fill(
+                            isSelected ?
+                            RingDesignSystem.Colors.ringBlue :
+                            RingDesignSystem.Colors.Background.secondary
+                        )
+                )
+                .foregroundColor(
+                    isSelected ?
+                    .white :
+                    RingDesignSystem.Colors.Foreground.primary
+                )
         }
+        .onTapWithFeedback(haptic: .selection) {
+            // Action handled in closure
+        }
+        .animation(RingDesignSystem.Animations.quick, value: isSelected)
     }
 }
 
+// MARK: - Device Section Component
+
+struct DeviceSection: View {
+    let deviceType: DeviceType
+    let devices: [SmartDevice]
+    let smartHomeManager: SmartHomeManager
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: RingDesignSystem.Spacing.sm) {
+            // Section Header
+            HStack {
+                HStack(spacing: RingDesignSystem.Spacing.xs) {
+                    Image(systemName: deviceType.iconName)
+                        .foregroundColor(deviceType.accentColor)
+                    
+                    Text("\(deviceType.rawValue)s")
+                        .font(RingDesignSystem.Typography.headline)
+                        .foregroundColor(RingDesignSystem.Colors.Foreground.primary)
+                }
+                
+                Spacer()
+                
+                Text("\(devices.count)")
+                    .font(RingDesignSystem.Typography.caption1)
+                    .fontWeight(.medium)
+                    .padding(.horizontal, RingDesignSystem.Spacing.xs)
+                    .padding(.vertical, RingDesignSystem.Spacing.xxs)
+                    .background(
+                        RoundedRectangle(cornerRadius: RingDesignSystem.CornerRadius.xs)
+                            .fill(deviceType.accentColor.opacity(0.2))
+                    )
+                    .foregroundColor(deviceType.accentColor)
+            }
+            .padding(.horizontal, RingDesignSystem.Spacing.sm)
+            
+            // Devices
+            LazyVStack(spacing: RingDesignSystem.Spacing.xs) {
+                ForEach(devices) { device in
+                    EnhancedRingDeviceRow(
+                        device: device,
+                        smartHomeManager: smartHomeManager
+                    )
+                }
+            }
+        }
+        .padding(.vertical, RingDesignSystem.Spacing.sm)
+    }
+}
+
+// This is getting quite long, so I'll continue with the enhanced device row in the next part
 #Preview {
     ContentView()
 } 

@@ -841,4 +841,303 @@ struct MotionAlert: Identifiable {
 extension Notification.Name {
     static let ringMotionAlert = Notification.Name("ringMotionAlert")
     static let ringDeviceStatusChanged = Notification.Name("ringDeviceStatusChanged")
+}
+
+// MARK: - Missing Data Structures and Enums
+
+struct MotionSchedule {
+    let enabled: Bool
+    let timeZone: TimeZone
+    let weeklySchedule: [DayOfWeek: [TimeRange]]
+    
+    struct TimeRange {
+        let start: Date
+        let end: Date
+    }
+    
+    enum DayOfWeek: Int, CaseIterable {
+        case sunday = 1, monday, tuesday, wednesday, thursday, friday, saturday
+        
+        var displayName: String {
+            switch self {
+            case .sunday: return "Sunday"
+            case .monday: return "Monday"
+            case .tuesday: return "Tuesday"
+            case .wednesday: return "Wednesday"
+            case .thursday: return "Thursday"
+            case .friday: return "Friday"
+            case .saturday: return "Saturday"
+            }
+        }
+    }
+}
+
+struct RingEvent {
+    let id: UUID
+    let deviceId: UUID
+    let timestamp: Date
+    let type: RingEventType
+    let duration: TimeInterval
+    let metadata: [String: Any]
+}
+
+enum RingEventType: String, CaseIterable {
+    case motion = "Motion"
+    case doorbell = "Doorbell"
+    case livestream = "Live Stream"
+    case snapshot = "Snapshot"
+    case maintenance = "Maintenance"
+    case geofence = "Geofence"
+    
+    var iconName: String {
+        switch self {
+        case .motion: return "sensor.tag.radiowaves.forward.fill"
+        case .doorbell: return "bell.fill"
+        case .livestream: return "video.fill"
+        case .snapshot: return "camera.fill"
+        case .maintenance: return "wrench.and.screwdriver.fill"
+        case .geofence: return "location.fill"
+        }
+    }
+}
+
+enum StreamQuality: String, CaseIterable {
+    case low = "Low (480p)"
+    case medium = "Medium (720p)"
+    case high = "High (1080p)"
+    case ultra = "Ultra (4K)"
+    
+    var bandwidth: String {
+        switch self {
+        case .low: return "1 Mbps"
+        case .medium: return "3 Mbps"
+        case .high: return "8 Mbps"
+        case .ultra: return "25 Mbps"
+        }
+    }
+}
+
+enum RingAuthResult {
+    case success(accessToken: String)
+    case failure(RingAPIError)
+}
+
+enum RingAPIError: Error, LocalizedError {
+    case notAuthenticated
+    case networkError
+    case invalidResponse
+    case deviceNotFound
+    case operationFailed
+    case streamUnavailable
+    case authenticationFailed
+    case rateLimitExceeded
+    case insufficientPermissions
+    case deviceOffline
+    case storageExceeded
+    
+    var errorDescription: String? {
+        switch self {
+        case .notAuthenticated: return "Please sign in to Ring"
+        case .networkError: return "Network connection error"
+        case .invalidResponse: return "Invalid response from Ring"
+        case .deviceNotFound: return "Device not found"
+        case .operationFailed: return "Operation failed"
+        case .streamUnavailable: return "Live stream unavailable"
+        case .authenticationFailed: return "Authentication failed"
+        case .rateLimitExceeded: return "Too many requests, please wait"
+        case .insufficientPermissions: return "Insufficient permissions"
+        case .deviceOffline: return "Device is offline"
+        case .storageExceeded: return "Storage limit exceeded"
+        }
+    }
+    
+    var recoveryAction: String? {
+        switch self {
+        case .notAuthenticated: return "Sign in to continue"
+        case .networkError: return "Check your connection"
+        case .deviceNotFound: return "Refresh devices"
+        case .operationFailed: return "Try again"
+        case .streamUnavailable: return "Check device status"
+        case .authenticationFailed: return "Re-authenticate"
+        case .rateLimitExceeded: return "Wait a moment"
+        case .insufficientPermissions: return "Check permissions"
+        case .deviceOffline: return "Check device power"
+        case .storageExceeded: return "Free up space"
+        default: return nil
+        }
+    }
+}
+
+// MARK: - Advanced Motion Detection Functions
+
+extension RingAPIManager {
+    
+    func getRecentMotionAlerts(for deviceId: UUID, limit: Int = 10, completion: @escaping (Result<[MotionAlert], RingAPIError>) -> Void) {
+        guard isAuthenticated else {
+            completion(.failure(.notAuthenticated))
+            return
+        }
+        
+        debugLog("📋 Fetching recent motion alerts for device \(deviceId)")
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            var alerts: [MotionAlert] = []
+            
+            for i in 0..<limit {
+                let timestamp = Date().addingTimeInterval(-Double(i * 300 + Int.random(in: 0...299)))
+                let alertTypes = ["Motion detected", "Person detected", "Vehicle detected", "Package detected"]
+                let description = alertTypes.randomElement()!
+                
+                alerts.append(MotionAlert(
+                    id: UUID(),
+                    deviceId: deviceId,
+                    timestamp: timestamp,
+                    description: description,
+                    alertType: .motion,
+                    confidence: Double.random(in: 0.7...1.0),
+                    hasVideo: Bool.random()
+                ))
+            }
+            
+            completion(.success(alerts.sorted { $0.timestamp > $1.timestamp }))
+        }
+    }
+    
+    func enableMotionDetection(for deviceId: UUID, completion: @escaping (Result<Void, RingAPIError>) -> Void) {
+        guard isAuthenticated else {
+            completion(.failure(.notAuthenticated))
+            return
+        }
+        
+        debugLog("🔔 Enabling motion detection for device \(deviceId)")
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            self.deviceStatuses[deviceId]?.motionDetectionEnabled = true
+            completion(.success(()))
+            self.sendLocalNotification(title: "Motion Detection Enabled", body: "Motion alerts are now active")
+        }
+    }
+    
+    func disableMotionDetection(for deviceId: UUID, completion: @escaping (Result<Void, RingAPIError>) -> Void) {
+        guard isAuthenticated else {
+            completion(.failure(.notAuthenticated))
+            return
+        }
+        
+        debugLog("🔕 Disabling motion detection for device \(deviceId)")
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            self.deviceStatuses[deviceId]?.motionDetectionEnabled = false
+            completion(.success(()))
+            self.sendLocalNotification(title: "Motion Detection Disabled", body: "Motion alerts are now paused")
+        }
+    }
+    
+    func setSirenState(for deviceId: UUID, enabled: Bool, duration: TimeInterval = 30, completion: @escaping (Result<Void, RingAPIError>) -> Void) {
+        guard isAuthenticated else {
+            completion(.failure(.notAuthenticated))
+            return
+        }
+        
+        debugLog("🚨 \(enabled ? "Activating" : "Deactivating") siren for device \(deviceId)")
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            if enabled {
+                // Auto-deactivate after duration
+                DispatchQueue.main.asyncAfter(deadline: .now() + duration) {
+                    self.debugLog("⏰ Auto-deactivating siren after \(duration) seconds")
+                    self.sendLocalNotification(title: "Siren Deactivated", body: "Emergency siren automatically stopped")
+                }
+                self.sendLocalNotification(title: "Emergency Siren Activated", body: "Siren will auto-stop in \(Int(duration)) seconds")
+            }
+            completion(.success(()))
+        }
+    }
+    
+    func setPrivacyMode(for deviceId: UUID, enabled: Bool, completion: @escaping (Result<Void, RingAPIError>) -> Void) {
+        guard isAuthenticated else {
+            completion(.failure(.notAuthenticated))
+            return
+        }
+        
+        debugLog("🔒 \(enabled ? "Enabling" : "Disabling") privacy mode for device \(deviceId)")
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            completion(.success(()))
+            let message = enabled ? "Camera recording paused" : "Camera recording resumed"
+            self.sendLocalNotification(title: "Privacy Mode", body: message)
+        }
+    }
+    
+    func getDeviceStatus(for deviceId: UUID, completion: @escaping (Result<RingDeviceStatus, RingAPIError>) -> Void) {
+        guard isAuthenticated else {
+            completion(.failure(.notAuthenticated))
+            return
+        }
+        
+        debugLog("📊 Getting device status for \(deviceId)")
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            if let status = self.deviceStatuses[deviceId] {
+                completion(.success(status))
+            } else {
+                // Create default status
+                let status = RingDeviceStatus(
+                    isOnline: true,
+                    batteryLevel: Int.random(in: 60...95),
+                    motionDetectionEnabled: true,
+                    lastMotionTime: Date().addingTimeInterval(-Double.random(in: 300...7200)),
+                    signalStrength: Int.random(in: 1...4),
+                    firmwareVersion: "2.1.\(Int.random(in: 10...99))",
+                    temperature: Int.random(in: 18...25),
+                    recordingMode: .auto
+                )
+                self.deviceStatuses[deviceId] = status
+                completion(.success(status))
+            }
+        }
+    }
+    
+    func getAllDevicesStatus(completion: @escaping (Result<[UUID: RingDeviceStatus], RingAPIError>) -> Void) {
+        guard isAuthenticated else {
+            completion(.failure(.notAuthenticated))
+            return
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            completion(.success(self.deviceStatuses))
+        }
+    }
+    
+    func getDeviceHistory(for deviceId: UUID, days: Int = 7, completion: @escaping (Result<[RingEvent], RingAPIError>) -> Void) {
+        guard isAuthenticated else {
+            completion(.failure(.notAuthenticated))
+            return
+        }
+        
+        debugLog("📈 Fetching device history for \(deviceId) - \(days) days")
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            var events: [RingEvent] = []
+            
+            for day in 0..<days {
+                let eventsPerDay = Int.random(in: 5...15)
+                for _ in 0..<eventsPerDay {
+                    let timestamp = Date().addingTimeInterval(-Double(day * 86400 + Int.random(in: 0...86400)))
+                    let eventTypes: [RingEventType] = [.motion, .doorbell, .livestream, .snapshot]
+                    
+                    events.append(RingEvent(
+                        id: UUID(),
+                        deviceId: deviceId,
+                        timestamp: timestamp,
+                        type: eventTypes.randomElement()!,
+                        duration: TimeInterval.random(in: 10...120),
+                        metadata: [:]
+                    ))
+                }
+            }
+            
+            completion(.success(events.sorted { $0.timestamp > $1.timestamp }))
+        }
+    }
 } 
