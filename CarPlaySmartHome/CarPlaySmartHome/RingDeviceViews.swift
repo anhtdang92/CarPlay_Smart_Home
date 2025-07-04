@@ -1555,3 +1555,559 @@ struct AdvancedFiltersSheet: View {
         }
     }
 }
+
+// MARK: - Enhanced RingDevice Model
+struct RingDevice: Identifiable, Codable {
+    let id = UUID()
+    var name: String
+    var type: DeviceType
+    var location: String
+    var status: DeviceStatus
+    var isOn: Bool
+    var energyUsage: Double
+    var lastUpdated: Date
+    var icon: String
+    var brightness: Double
+    var temperature: Double?
+    var batteryLevel: Double?
+    var isFavorite: Bool
+    var isShared: Bool
+    var sharedWith: [String]
+    var automationRules: [String]
+    var maintenanceDue: Date?
+    var lastMaintenance: Date?
+    var firmwareVersion: String
+    var signalStrength: Double
+    var isOnline: Bool {
+        return status == .online
+    }
+    
+    enum DeviceType: String, CaseIterable, Codable {
+        case light = "Light"
+        case camera = "Camera"
+        case sensor = "Sensor"
+        case thermostat = "Thermostat"
+        case lock = "Lock"
+        case doorbell = "Doorbell"
+        case speaker = "Speaker"
+        case switch = "Switch"
+        case outlet = "Outlet"
+        case fan = "Fan"
+        case blind = "Blind"
+        case garage = "Garage"
+        
+        var icon: String {
+            switch self {
+            case .light: return "lightbulb.fill"
+            case .camera: return "video.fill"
+            case .sensor: return "sensor.tag.radiowaves.forward.fill"
+            case .thermostat: return "thermometer"
+            case .lock: return "lock.fill"
+            case .doorbell: return "bell.fill"
+            case .speaker: return "speaker.wave.2.fill"
+            case .switch: return "switch.2"
+            case .outlet: return "poweroutlet.type.b.fill"
+            case .fan: return "fan.fill"
+            case .blind: return "blind.horizontal.closed"
+            case .garage: return "garage.fill"
+            }
+        }
+        
+        var color: Color {
+            switch self {
+            case .light: return .orange
+            case .camera: return .blue
+            case .sensor: return .green
+            case .thermostat: return .red
+            case .lock: return .purple
+            case .doorbell: return .pink
+            case .speaker: return .indigo
+            case .switch: return .gray
+            case .outlet: return .brown
+            case .fan: return .cyan
+            case .blind: return .mint
+            case .garage: return .teal
+            }
+        }
+    }
+    
+    enum DeviceStatus: String, CaseIterable, Codable {
+        case online = "Online"
+        case offline = "Offline"
+        case connecting = "Connecting"
+        case updating = "Updating"
+        case error = "Error"
+        
+        var color: Color {
+            switch self {
+            case .online: return .successGreen
+            case .offline: return .errorRed
+            case .connecting: return .warningOrange
+            case .updating: return .infoBlue
+            case .error: return .errorRed
+            }
+        }
+        
+        var icon: String {
+            switch self {
+            case .online: return "checkmark.circle.fill"
+            case .offline: return "xmark.circle.fill"
+            case .connecting: return "arrow.clockwise.circle.fill"
+            case .updating: return "arrow.triangle.2.circlepath.circle.fill"
+            case .error: return "exclamationmark.triangle.fill"
+            }
+        }
+    }
+    
+    init(name: String, type: DeviceType, location: String, status: DeviceStatus = .online, isOn: Bool = false) {
+        self.name = name
+        self.type = type
+        self.location = location
+        self.status = status
+        self.isOn = isOn
+        self.energyUsage = Double.random(in: 0.1...5.0)
+        self.lastUpdated = Date()
+        self.icon = type.icon
+        self.brightness = 1.0
+        self.temperature = type == .thermostat ? Double.random(in: 18...25) : nil
+        self.batteryLevel = type == .sensor || type == .camera ? Double.random(in: 0.2...1.0) : nil
+        self.isFavorite = false
+        self.isShared = false
+        self.sharedWith = []
+        self.automationRules = []
+        self.maintenanceDue = nil
+        self.lastMaintenance = nil
+        self.firmwareVersion = "1.2.3"
+        self.signalStrength = Double.random(in: 0.5...1.0)
+    }
+    
+    static let sampleDevices = [
+        RingDevice(name: "Living Room Light", type: .light, location: "Living Room"),
+        RingDevice(name: "Kitchen Light", type: .light, location: "Kitchen"),
+        RingDevice(name: "Front Door Camera", type: .camera, location: "Front Door"),
+        RingDevice(name: "Motion Sensor", type: .sensor, location: "Hallway"),
+        RingDevice(name: "Smart Thermostat", type: .thermostat, location: "Living Room"),
+        RingDevice(name: "Front Door Lock", type: .lock, location: "Front Door"),
+        RingDevice(name: "Doorbell", type: .doorbell, location: "Front Door"),
+        RingDevice(name: "Kitchen Speaker", type: .speaker, location: "Kitchen"),
+        RingDevice(name: "Bedroom Light", type: .light, location: "Bedroom"),
+        RingDevice(name: "Bathroom Light", type: .light, location: "Bathroom"),
+        RingDevice(name: "Garage Door", type: .garage, location: "Garage"),
+        RingDevice(name: "Smart Outlet", type: .outlet, location: "Living Room")
+    ]
+}
+
+// MARK: - Enhanced Device Views
+struct EnhancedDeviceCard: View {
+    let device: RingDevice
+    @ObservedObject var smartHomeManager: SmartHomeManager
+    @State private var isPressed = false
+    @State private var showDetails = false
+    
+    var body: some View {
+        GlassmorphismCard {
+            VStack(spacing: 16) {
+                // Device header
+                HStack {
+                    // Device icon with status
+                    ZStack {
+                        Circle()
+                            .fill(device.type.color.opacity(0.2))
+                            .frame(width: 60, height: 60)
+                        
+                        Image(systemName: device.icon)
+                            .font(.title2)
+                            .foregroundColor(device.type.color)
+                        
+                        // Status indicator
+                        Circle()
+                            .fill(device.status.color)
+                            .frame(width: 12, height: 12)
+                            .offset(x: 20, y: -20)
+                    }
+                    
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(device.name)
+                            .font(.ringBody)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.primary)
+                        
+                        Text(device.location)
+                            .font(.ringSmall)
+                            .foregroundColor(.secondary)
+                        
+                        HStack(spacing: 4) {
+                            Image(systemName: device.status.icon)
+                                .font(.caption)
+                                .foregroundColor(device.status.color)
+                            
+                            Text(device.status.rawValue)
+                                .font(.ringSmall)
+                                .foregroundColor(device.status.color)
+                        }
+                    }
+                    
+                    Spacer()
+                    
+                    // Favorite button
+                    Button(action: {
+                        HapticFeedback.impact(style: .light)
+                        smartHomeManager.toggleFavorite(device)
+                    }) {
+                        Image(systemName: device.isFavorite ? "heart.fill" : "heart")
+                            .font(.title3)
+                            .foregroundColor(device.isFavorite ? .red : .secondary)
+                    }
+                }
+                
+                // Device controls
+                HStack(spacing: 16) {
+                    // Power toggle
+                    VStack(spacing: 4) {
+                        Text("Power")
+                            .font(.ringSmall)
+                            .foregroundColor(.secondary)
+                        
+                        Toggle("", isOn: Binding(
+                            get: { device.isOn },
+                            set: { newValue in
+                                HapticFeedback.impact(style: .medium)
+                                smartHomeManager.toggleDevice(device)
+                            }
+                        ))
+                        .toggleStyle(CustomToggleStyle())
+                    }
+                    
+                    // Brightness slider (for lights)
+                    if device.type == .light {
+                        VStack(spacing: 4) {
+                            Text("Brightness")
+                                .font(.ringSmall)
+                                .foregroundColor(.secondary)
+                            
+                            Slider(value: Binding(
+                                get: { device.brightness },
+                                set: { newValue in
+                                    // In a real app, this would update the device
+                                    HapticFeedback.impact(style: .light)
+                                }
+                            ), in: 0...1)
+                            .accentColor(device.type.color)
+                        }
+                    }
+                    
+                    // Temperature control (for thermostats)
+                    if device.type == .thermostat, let temperature = device.temperature {
+                        VStack(spacing: 4) {
+                            Text("Temperature")
+                                .font(.ringSmall)
+                                .foregroundColor(.secondary)
+                            
+                            Text("\(Int(temperature))°C")
+                                .font(.ringBody)
+                                .fontWeight(.semibold)
+                                .foregroundColor(.primary)
+                        }
+                    }
+                }
+                
+                // Device metrics
+                HStack(spacing: 20) {
+                    MetricView(
+                        title: "Energy",
+                        value: "\(device.energyUsage, specifier: "%.1f") kWh",
+                        icon: "bolt.fill",
+                        color: .warningOrange
+                    )
+                    
+                    if let batteryLevel = device.batteryLevel {
+                        MetricView(
+                            title: "Battery",
+                            value: "\(Int(batteryLevel * 100))%",
+                            icon: "battery.100",
+                            color: batteryLevel > 0.2 ? .successGreen : .errorRed
+                        )
+                    }
+                    
+                    MetricView(
+                        title: "Signal",
+                        value: "\(Int(device.signalStrength * 100))%",
+                        icon: "wifi",
+                        color: device.signalStrength > 0.7 ? .successGreen : .warningOrange
+                    )
+                }
+                
+                // Action buttons
+                HStack(spacing: 12) {
+                    Button(action: {
+                        HapticFeedback.impact(style: .light)
+                        showDetails = true
+                    }) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "info.circle")
+                                .font(.caption)
+                            Text("Details")
+                                .font(.ringSmall)
+                        }
+                        .foregroundColor(.primary)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(.ultraThinMaterial)
+                        )
+                    }
+                    
+                    if device.isShared {
+                        Button(action: {
+                            HapticFeedback.impact(style: .light)
+                        }) {
+                            HStack(spacing: 4) {
+                                Image(systemName: "person.2")
+                                    .font(.caption)
+                                Text("Shared")
+                                    .font(.ringSmall)
+                            }
+                            .foregroundColor(.blue)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .fill(.blue.opacity(0.1))
+                            )
+                        }
+                    }
+                    
+                    Spacer()
+                    
+                    // Maintenance indicator
+                    if let maintenanceDue = device.maintenanceDue, maintenanceDue < Date() {
+                        HStack(spacing: 4) {
+                            Image(systemName: "wrench.and.screwdriver")
+                                .font(.caption)
+                            Text("Maintenance")
+                                .font(.ringSmall)
+                        }
+                        .foregroundColor(.errorRed)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 6)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(.errorRed.opacity(0.1))
+                        )
+                    }
+                }
+            }
+            .padding()
+        }
+        .scaleEffect(isPressed ? 0.98 : 1.0)
+        .animation(.easeInOut(duration: 0.1), value: isPressed)
+        .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
+            isPressed = pressing
+        }, perform: {})
+        .sheet(isPresented: $showDetails) {
+            DeviceDetailView(device: device, smartHomeManager: smartHomeManager)
+        }
+    }
+}
+
+// MARK: - Metric View
+struct MetricView: View {
+    let title: String
+    let value: String
+    let icon: String
+    let color: Color
+    
+    var body: some View {
+        VStack(spacing: 4) {
+            HStack(spacing: 4) {
+                Image(systemName: icon)
+                    .font(.caption)
+                    .foregroundColor(color)
+                
+                Text(title)
+                    .font(.ringSmall)
+                    .foregroundColor(.secondary)
+            }
+            
+            Text(value)
+                .font(.ringSmall)
+                .fontWeight(.semibold)
+                .foregroundColor(.primary)
+        }
+    }
+}
+
+// MARK: - Device Grid View
+struct EnhancedDeviceGridView: View {
+    @ObservedObject var smartHomeManager: SmartHomeManager
+    @State private var selectedCategory: DeviceCategory = .all
+    @State private var searchText = ""
+    @State private var showFilters = false
+    
+    private let columns = [
+        GridItem(.flexible()),
+        GridItem(.flexible())
+    ]
+    
+    private var filteredDevices: [RingDevice] {
+        var devices = smartHomeManager.devices
+        
+        // Filter by category
+        if selectedCategory != .all {
+            devices = smartHomeManager.getDevicesByCategory(selectedCategory)
+        }
+        
+        // Filter by search
+        if !searchText.isEmpty {
+            devices = smartHomeManager.searchDevices(query: searchText)
+        }
+        
+        return devices
+    }
+    
+    var body: some View {
+        VStack(spacing: 16) {
+            // Search and filter bar
+            HStack {
+                HStack {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundColor(.secondary)
+                    
+                    TextField("Search devices...", text: $searchText)
+                        .textFieldStyle(PlainTextFieldStyle())
+                }
+                .padding(.horizontal, 12)
+                .padding(.vertical, 8)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(.ultraThinMaterial)
+                )
+                
+                Button(action: {
+                    HapticFeedback.impact(style: .light)
+                    showFilters = true
+                }) {
+                    Image(systemName: "line.3.horizontal.decrease.circle")
+                        .font(.title3)
+                        .foregroundColor(.primary)
+                }
+            }
+            .padding(.horizontal)
+            
+            // Category filter
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    ForEach(DeviceCategory.allCases, id: \.self) { category in
+                        CategoryFilterButton(
+                            category: category,
+                            isSelected: selectedCategory == category
+                        ) {
+                            HapticFeedback.impact(style: .light)
+                            selectedCategory = category
+                        }
+                    }
+                }
+                .padding(.horizontal)
+            }
+            
+            // Device grid
+            if filteredDevices.isEmpty {
+                EmptyStateView(
+                    title: "No devices found",
+                    subtitle: "Try adjusting your search or filters",
+                    icon: "magnifyingglass"
+                )
+            } else {
+                LazyVGrid(columns: columns, spacing: 16) {
+                    ForEach(filteredDevices) { device in
+                        EnhancedDeviceCard(
+                            device: device,
+                            smartHomeManager: smartHomeManager
+                        )
+                    }
+                }
+                .padding(.horizontal)
+            }
+        }
+        .sheet(isPresented: $showFilters) {
+            SearchFiltersView(
+                selectedCategory: $selectedCategory,
+                selectedStatus: .constant(.all)
+            )
+        }
+    }
+}
+
+// MARK: - Category Filter Button
+struct CategoryFilterButton: View {
+    let category: DeviceCategory
+    let isSelected: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            Text(category.rawValue)
+                .font(.ringSmall)
+                .fontWeight(.medium)
+                .foregroundColor(isSelected ? .white : .primary)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(isSelected ? .blue : .ultraThinMaterial)
+                )
+        }
+        .buttonStyle(PlainButtonStyle())
+        .scaleEffect(isSelected ? 1.05 : 1.0)
+        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
+    }
+}
+
+// MARK: - Empty State View
+struct EmptyStateView: View {
+    let title: String
+    let subtitle: String
+    let icon: String
+    
+    var body: some View {
+        VStack(spacing: 16) {
+            Image(systemName: icon)
+                .font(.system(size: 48))
+                .foregroundColor(.secondary)
+            
+            VStack(spacing: 8) {
+                Text(title)
+                    .font(.ringHeadline)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.primary)
+                
+                Text(subtitle)
+                    .font(.ringBody)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+        }
+        .padding()
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+// MARK: - Device Category
+enum DeviceCategory: String, CaseIterable {
+    case all = "All"
+    case lights = "Lights"
+    case cameras = "Cameras"
+    case sensors = "Sensors"
+    case thermostats = "Thermostats"
+    case locks = "Locks"
+}
+
+// MARK: - Device Status
+enum DeviceStatus: String, CaseIterable {
+    case all = "All"
+    case online = "Online"
+    case offline = "Offline"
+    case active = "Active"
+    case inactive = "Inactive"
+}

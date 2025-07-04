@@ -19,25 +19,208 @@ struct ContentView: View {
     @State private var showingWidgets = false
     @State private var showingHomeKit = false
     @State private var showingMultiAccount = false
-
-    var body: some View {
-        ZStack {
-            // Dynamic background gradient
-            backgroundGradient
-                .ignoresSafeArea()
-            
-            if !hasCompletedOnboarding {
-                OnboardingView(hasCompletedOnboarding: $hasCompletedOnboarding)
-            } else if authManager.isAuthenticated {
-                MainTabView(smartHomeManager: smartHomeManager)
-            } else {
-                LoginView(authManager: authManager)
+    @State private var showingSettings = false
+    @State private var showingDeviceSetup = false
+    @State private var showingAnalytics = false
+    @State private var showingHealthDashboard = false
+    @State private var showingVoiceSearch = false
+    @State private var showingMaintenanceScheduler = false
+    @State private var showingEnergyAnalytics = false
+    @State private var showingInsightsDashboard = false
+    @State private var showingDataBackup = false
+    @State private var showingPerformanceMonitor = false
+    @State private var showingSearchFilters = false
+    @State private var showingDeviceGroups = false
+    @State private var showingFavorites = false
+    @State private var showingPushNotifications = false
+    
+    // Animation states
+    @State private var isAnimating = false
+    @State private var showConfetti = false
+    @State private var pulseAnimation = false
+    
+    // Search and filter states
+    @State private var searchText = ""
+    @State private var selectedCategory: DeviceCategory = .all
+    @State private var selectedStatus: DeviceStatus = .all
+    @State private var showingAdvancedSearch = false
+    
+    // UI Enhancement states
+    @State private var isDarkMode = false
+    @State private var showHapticFeedback = true
+    @State private var animationSpeed: AnimationSpeed = .normal
+    
+    enum AnimationSpeed: String, CaseIterable {
+        case slow = "Slow"
+        case normal = "Normal"
+        case fast = "Fast"
+        
+        var duration: Double {
+            switch self {
+            case .slow: return 0.8
+            case .normal: return 0.4
+            case .fast: return 0.2
             }
         }
-        .animation(RingDesignSystem.Animations.gentle, value: authManager.isAuthenticated)
-        .animation(RingDesignSystem.Animations.gentle, value: hasCompletedOnboarding)
+    }
+    
+    var body: some View {
+        ZStack {
+            // Animated gradient background
+            AnimatedGradientBackground(colors: [.blue.opacity(0.1), .purple.opacity(0.1), .pink.opacity(0.1)])
+            
+            VStack(spacing: 0) {
+                // Enhanced header with glassmorphism
+                GlassmorphismCard {
+                    VStack(spacing: 16) {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Smart Home")
+                                    .font(.ringTitle)
+                                    .foregroundColor(.primary)
+                                
+                                Text("\(smartHomeManager.devices.count) devices connected")
+                                    .font(.ringCaption)
+                                    .foregroundColor(.secondary)
+                            }
+                            
+                            Spacer()
+                            
+                            // Status indicators with animations
+                            HStack(spacing: 12) {
+                                // Online devices counter
+                                VStack(spacing: 2) {
+                                    AnimatedCounter(
+                                        value: smartHomeManager.devices.filter { $0.status == .online }.count,
+                                        prefix: "",
+                                        suffix: ""
+                                    )
+                                    .font(.ringSmall)
+                                    .foregroundColor(.successGreen)
+                                    
+                                    Text("Online")
+                                        .font(.ringSmall)
+                                        .foregroundColor(.secondary)
+                                }
+                                
+                                // Pulse animation for active devices
+                                if smartHomeManager.devices.contains(where: { $0.status == .online }) {
+                                    PulseAnimation()
+                                        .frame(width: 8, height: 8)
+                                }
+                                
+                                // Settings button with haptic feedback
+                                Button(action: {
+                                    HapticFeedback.impact(style: .light)
+                                    showingSettings = true
+                                }) {
+                                    Image(systemName: "gearshape.fill")
+                                        .font(.title2)
+                                        .foregroundColor(.primary)
+                                        .frame(width: 44, height: 44)
+                                        .background(
+                                            Circle()
+                                                .fill(.ultraThinMaterial)
+                                        )
+                                }
+                            }
+                        }
+                        
+                        // Enhanced search bar with floating label
+                        FloatingLabelTextField(
+                            placeholder: "Search devices...",
+                            text: $searchText,
+                            icon: "magnifyingglass"
+                        )
+                        .onTapGesture {
+                            HapticFeedback.selection()
+                        }
+                    }
+                    .padding()
+                }
+                .padding(.horizontal)
+                .padding(.top)
+                
+                // Enhanced tab bar with animations
+                AnimatedTabBar(
+                    selectedTab: $selectedTab,
+                    tabs: [
+                        .init(title: "Home", icon: "house.fill", color: .blue),
+                        .init(title: "Devices", icon: "lightbulb.fill", color: .orange),
+                        .init(title: "Automation", icon: "clock.fill", color: .purple),
+                        .init(title: "Analytics", icon: "chart.bar.fill", color: .green),
+                        .init(title: "Settings", icon: "person.fill", color: .gray)
+                    ]
+                )
+                .padding(.vertical, 8)
+                
+                // Main content with parallax effect
+                ParallaxScrollView(headerHeight: 100) {
+                    VStack(spacing: 20) {
+                        switch selectedTab {
+                        case 0:
+                            RingDeviceHomeView(smartHomeManager: smartHomeManager)
+                        case 1:
+                            RingDeviceViews(smartHomeManager: smartHomeManager)
+                        case 2:
+                            RingAdvancedDesign(smartHomeManager: smartHomeManager)
+                        case 3:
+                            RingSystemViews(smartHomeManager: smartHomeManager)
+                        case 4:
+                            RingPolishedComponents(smartHomeManager: smartHomeManager)
+                        default:
+                            RingDeviceHomeView(smartHomeManager: smartHomeManager)
+                        }
+                    }
+                    .padding(.horizontal)
+                    .padding(.bottom, 100) // Space for floating action button
+                }
+            }
+            
+            // Floating action button with gradient
+            VStack {
+                Spacer()
+                
+                HStack {
+                    Spacer()
+                    
+                    FloatingActionButton(
+                        icon: "plus",
+                        action: {
+                            HapticFeedback.impact(style: .medium)
+                            showingDeviceSetup = true
+                        },
+                        color: .blue
+                    )
+                    .scaleEffect(pulseAnimation ? 1.1 : 1.0)
+                    .animation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true), value: pulseAnimation)
+                }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 20)
+            }
+            
+            // Confetti overlay for celebrations
+            if showConfetti {
+                ConfettiView()
+                    .allowsHitTesting(false)
+            }
+        }
         .onAppear {
-            checkOnboardingStatus()
+            // Start animations
+            withAnimation(.easeInOut(duration: 1.0)) {
+                isAnimating = true
+            }
+            
+            // Start pulse animation after delay
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                pulseAnimation = true
+            }
+            
+            // Check for first launch
+            if !UserDefaults.standard.bool(forKey: "hasLaunchedBefore") {
+                showingOnboarding = true
+                UserDefaults.standard.set(true, forKey: "hasLaunchedBefore")
+            }
         }
         .sheet(isPresented: $showingOnboarding) {
             OnboardingView()
@@ -83,24 +266,58 @@ struct ContentView: View {
         .sheet(isPresented: $showingMultiAccount) {
             MultiAccountView()
         }
-    }
-    
-    private var backgroundGradient: some View {
-        LinearGradient(
-            colors: colorScheme == .dark ? 
-            [RingDesignSystem.DarkMode.enhancedBackground, Color(red: 0.05, green: 0.05, blue: 0.1)] :
-            [Color(red: 0.95, green: 0.97, blue: 1.0), Color.white],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
-    }
-    
-    private func checkOnboardingStatus() {
-        // Check if user has completed onboarding
-        let hasCompletedOnboarding = UserDefaults.standard.bool(forKey: "hasCompletedOnboarding")
-        if !hasCompletedOnboarding {
-            showingOnboarding = true
+        .sheet(isPresented: $showingSettings) {
+            SettingsView(
+                smartHomeManager: smartHomeManager,
+                multiAccountManager: MultiAccountManager(),
+                siriShortcutsManager: SiriShortcutsManager(),
+                widgetManager: WidgetManager(),
+                homeKitManager: HomeKitIntegration()
+            )
         }
+        .sheet(isPresented: $showingDeviceSetup) {
+            DeviceSetupWizardView(smartHomeManager: smartHomeManager)
+        }
+        .sheet(isPresented: $showingAnalytics) {
+            AnalyticsView(smartHomeManager: smartHomeManager)
+        }
+        .sheet(isPresented: $showingHealthDashboard) {
+            SystemHealthDashboardView(smartHomeManager: smartHomeManager)
+        }
+        .sheet(isPresented: $showingVoiceSearch) {
+            VoiceSearchView(smartHomeManager: smartHomeManager)
+        }
+        .sheet(isPresented: $showingMaintenanceScheduler) {
+            MaintenanceSchedulerView(smartHomeManager: smartHomeManager)
+        }
+        .sheet(isPresented: $showingEnergyAnalytics) {
+            EnergyAnalyticsView(smartHomeManager: smartHomeManager)
+        }
+        .sheet(isPresented: $showingInsightsDashboard) {
+            SmartHomeInsightsView(smartHomeManager: smartHomeManager)
+        }
+        .sheet(isPresented: $showingDataBackup) {
+            DataBackupRestoreView()
+        }
+        .sheet(isPresented: $showingPerformanceMonitor) {
+            PerformanceMonitorView()
+        }
+        .sheet(isPresented: $showingSearchFilters) {
+            SearchFiltersView(
+                selectedCategory: $selectedCategory,
+                selectedStatus: $selectedStatus
+            )
+        }
+        .sheet(isPresented: $showingDeviceGroups) {
+            DeviceGroupsView(smartHomeManager: smartHomeManager)
+        }
+        .sheet(isPresented: $showingFavorites) {
+            FavoritesView(smartHomeManager: smartHomeManager)
+        }
+        .sheet(isPresented: $showingPushNotifications) {
+            PushNotificationPreferencesView()
+        }
+        .preferredColorScheme(isDarkMode ? .dark : .light)
     }
 }
 
@@ -513,198 +730,185 @@ extension Color {
 // MARK: - Onboarding View
 
 struct OnboardingView: View {
-    @Binding var hasCompletedOnboarding: Bool
+    @Environment(\.dismiss) private var dismiss
     @State private var currentPage = 0
-    @Environment(\.colorScheme) var colorScheme
     
-    private let onboardingPages = [
+    let pages = [
         OnboardingPage(
-            title: "Welcome to Ring Smart Home",
-            subtitle: "Control your home security from anywhere with CarPlay integration",
-            icon: "shield.lefthalf.filled.badge.checkmark",
-            color: RingDesignSystem.Colors.ringBlue
+            title: "Welcome to Smart Home",
+            subtitle: "Control your home with ease",
+            image: "house.fill",
+            color: .blue
         ),
         OnboardingPage(
-            title: "Smart Device Control",
-            subtitle: "Monitor cameras, doorbells, and sensors with real-time alerts",
-            icon: "video.fill",
-            color: RingDesignSystem.Colors.ringGreen
+            title: "Smart Automation",
+            subtitle: "Set up rules and schedules",
+            image: "clock.fill",
+            color: .purple
         ),
         OnboardingPage(
-            title: "CarPlay Integration",
-            subtitle: "Access your home security while driving with voice commands",
-            icon: "car.fill",
-            color: RingDesignSystem.Colors.ringOrange
+            title: "Voice Control",
+            subtitle: "Use Siri to control devices",
+            image: "mic.fill",
+            color: .orange
         ),
         OnboardingPage(
-            title: "Privacy & Security",
-            subtitle: "Your data is encrypted and secure. You're in control.",
-            icon: "lock.shield.fill",
-            color: RingDesignSystem.Colors.ringPurple
+            title: "Analytics & Insights",
+            subtitle: "Monitor your home's performance",
+            image: "chart.bar.fill",
+            color: .green
         )
     ]
     
     var body: some View {
-        GeometryReader { geometry in
-            VStack(spacing: 0) {
-                // Page Content
+        ZStack {
+            AnimatedGradientBackground(colors: [.blue.opacity(0.1), .purple.opacity(0.1)])
+            
+            VStack(spacing: 30) {
+                // Page indicator
+                HStack(spacing: 8) {
+                    ForEach(0..<pages.count, id: \.self) { index in
+                        Circle()
+                            .fill(currentPage == index ? pages[index].color : .gray.opacity(0.3))
+                            .frame(width: 8, height: 8)
+                            .scaleEffect(currentPage == index ? 1.2 : 1.0)
+                            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: currentPage)
+                    }
+                }
+                .padding(.top, 50)
+                
+                // Page content
                 TabView(selection: $currentPage) {
-                    ForEach(0..<onboardingPages.count, id: \.self) { index in
-                        OnboardingPageView(page: onboardingPages[index])
+                    ForEach(0..<pages.count, id: \.self) { index in
+                        OnboardingPageView(page: pages[index])
                             .tag(index)
                     }
                 }
                 .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
-                .animation(RingDesignSystem.Animations.gentle, value: currentPage)
+                .animation(.easeInOut(duration: 0.3), value: currentPage)
                 
-                // Bottom Section
-                VStack(spacing: RingDesignSystem.Spacing.lg) {
-                    // Page Indicators
-                    pageIndicators
+                // Navigation buttons
+                HStack {
+                    if currentPage > 0 {
+                        Button("Back") {
+                            withAnimation {
+                                currentPage -= 1
+                            }
+                            HapticFeedback.impact(style: .light)
+                        }
+                        .buttonStyle(SecondaryButtonStyle())
+                    }
                     
-                    // Action Buttons
-                    actionButtons
+                    Spacer()
+                    
+                    Button(currentPage == pages.count - 1 ? "Get Started" : "Next") {
+                        if currentPage == pages.count - 1 {
+                            dismiss()
+                            HapticFeedback.notification(type: .success)
+                        } else {
+                            withAnimation {
+                                currentPage += 1
+                            }
+                            HapticFeedback.impact(style: .light)
+                        }
+                    }
+                    .buttonStyle(PrimaryButtonStyle())
                 }
-                .padding(.horizontal, RingDesignSystem.Spacing.xl)
-                .padding(.bottom, geometry.safeAreaInsets.bottom + RingDesignSystem.Spacing.xl)
+                .padding(.horizontal, 30)
+                .padding(.bottom, 50)
             }
         }
-    }
-    
-    private var pageIndicators: some View {
-        HStack(spacing: RingDesignSystem.Spacing.sm) {
-            ForEach(0..<onboardingPages.count, id: \.self) { index in
-                Circle()
-                    .fill(index == currentPage ? 
-                          onboardingPages[index].color : 
-                          RingDesignSystem.Colors.Foreground.tertiary)
-                    .frame(width: index == currentPage ? 12 : 8, height: index == currentPage ? 12 : 8)
-                    .animation(RingDesignSystem.Animations.quick, value: currentPage)
-            }
-        }
-    }
-    
-    private var actionButtons: some View {
-        VStack(spacing: RingDesignSystem.Spacing.md) {
-            if currentPage == onboardingPages.count - 1 {
-                // Get Started Button
-                Button {
-                    RingDesignSystem.Haptics.success()
-                    withAnimation(RingDesignSystem.Animations.gentle) {
-                        hasCompletedOnboarding = true
-                    }
-                } label: {
-                    Text("Get Started")
-                        .font(RingDesignSystem.Typography.headline)
-                        .fontWeight(.semibold)
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .frame(minHeight: RingDesignSystem.TouchTarget.minimumSize)
-                        .background(
-                            LinearGradient(
-                                colors: [RingDesignSystem.Colors.ringBlue, RingDesignSystem.Colors.ringBlue.opacity(0.8)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                        .clipShape(RoundedRectangle(cornerRadius: RingDesignSystem.CornerRadius.lg))
-                        .shadow(color: RingDesignSystem.Colors.ringBlue.opacity(0.3), radius: 8, x: 0, y: 4)
-                }
-            } else {
-                // Next Button
-                Button {
-                    RingDesignSystem.Haptics.navigation()
-                    withAnimation(RingDesignSystem.Animations.gentle) {
-                        currentPage += 1
-                    }
-                } label: {
-                    Text("Next")
-                        .font(RingDesignSystem.Typography.headline)
-                        .fontWeight(.semibold)
-                        .foregroundColor(RingDesignSystem.Colors.ringBlue)
-                        .frame(maxWidth: .infinity)
-                        .frame(minHeight: RingDesignSystem.TouchTarget.minimumSize)
-                        .background(
-                            RoundedRectangle(cornerRadius: RingDesignSystem.CornerRadius.lg)
-                                .fill(RingDesignSystem.Colors.Fill.secondary)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: RingDesignSystem.CornerRadius.lg)
-                                        .stroke(RingDesignSystem.Colors.ringBlue.opacity(0.3), lineWidth: 1)
-                                )
-                        )
-                }
-                
-                // Skip Button
-                Button {
-                    RingDesignSystem.Haptics.navigation()
-                    withAnimation(RingDesignSystem.Animations.gentle) {
-                        hasCompletedOnboarding = true
-                    }
-                } label: {
-                    Text("Skip")
-                        .font(RingDesignSystem.Typography.subheadline)
-                        .foregroundColor(RingDesignSystem.Colors.Foreground.secondary)
-                }
-                .frame(minHeight: RingDesignSystem.TouchTarget.minimumSize)
-            }
-        }
+        .ignoresSafeArea()
     }
 }
 
 struct OnboardingPage {
     let title: String
     let subtitle: String
-    let icon: String
+    let image: String
     let color: Color
 }
 
 struct OnboardingPageView: View {
     let page: OnboardingPage
-    @Environment(\.colorScheme) var colorScheme
+    @State private var isAnimating = false
     
     var body: some View {
-        VStack(spacing: RingDesignSystem.Spacing.xxl) {
-            Spacer()
+        VStack(spacing: 40) {
+            // Animated icon
+            Image(systemName: page.image)
+                .font(.system(size: 80, weight: .light))
+                .foregroundColor(page.color)
+                .scaleEffect(isAnimating ? 1.1 : 1.0)
+                .animation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true), value: isAnimating)
             
-            // Icon
-            ZStack {
-                Circle()
-                    .fill(
-                        RadialGradient(
-                            colors: page.color.gradientColors,
-                            center: .center,
-                            startRadius: 30,
-                            endRadius: 80
-                        )
-                    )
-                    .frame(width: 160, height: 160)
-                    .liquidGlass(style: .regular, cornerRadius: 80)
-                
-                Image(systemName: page.icon)
-                    .font(.system(size: 64, weight: .medium))
-                    .foregroundColor(.white)
-                    .shadow(color: .black.opacity(0.3), radius: 4, x: 0, y: 2)
-            }
-            .pulse(active: true)
-            
-            // Content
-            VStack(spacing: RingDesignSystem.Spacing.lg) {
+            VStack(spacing: 16) {
                 Text(page.title)
-                    .font(RingDesignSystem.Typography.largeTitle)
-                    .foregroundColor(RingDesignSystem.Colors.Foreground.primary)
+                    .font(.ringTitle)
+                    .fontWeight(.bold)
                     .multilineTextAlignment(.center)
                 
                 Text(page.subtitle)
-                    .font(RingDesignSystem.Typography.body)
-                    .foregroundColor(RingDesignSystem.Colors.Foreground.secondary)
+                    .font(.ringBody)
+                    .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
-                    .lineLimit(nil)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.horizontal, 40)
             }
-            .padding(.horizontal, RingDesignSystem.Spacing.xl)
-            
-            Spacer()
         }
+        .onAppear {
+            isAnimating = true
+        }
+    }
+}
+
+// MARK: - Enhanced Button Styles
+struct PrimaryButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.ringBody)
+            .fontWeight(.semibold)
+            .foregroundColor(.white)
+            .frame(height: 50)
+            .frame(maxWidth: .infinity)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(
+                        LinearGradient(
+                            colors: [.blue, .purple],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .shadow(
+                        color: .blue.opacity(0.3),
+                        radius: 8,
+                        x: 0,
+                        y: 4
+                    )
+            )
+            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
+            .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
+    }
+}
+
+struct SecondaryButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.ringBody)
+            .fontWeight(.medium)
+            .foregroundColor(.primary)
+            .frame(height: 50)
+            .frame(maxWidth: .infinity)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(.ultraThinMaterial)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(.gray.opacity(0.3), lineWidth: 1)
+                    )
+            )
+            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
+            .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
     }
 }
 

@@ -873,6 +873,343 @@ class SmartHomeManager: ObservableObject {
             lastUpdated: Date()
         )
     }
+
+    // MARK: - Enhanced Device Management
+    func refreshDeviceStatus() {
+        // Simulate refreshing device status
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            for i in devices.indices {
+                devices[i].lastUpdated = Date()
+                devices[i].status = Bool.random() ? .online : .offline
+            }
+        }
+    }
+    
+    func turnOnAllDevices() {
+        for i in devices.indices {
+            devices[i].isOn = true
+            devices[i].lastUpdated = Date()
+        }
+        HapticFeedback.notification(type: .success)
+    }
+    
+    func turnOffAllDevices() {
+        for i in devices.indices {
+            devices[i].isOn = false
+            devices[i].lastUpdated = Date()
+        }
+        HapticFeedback.notification(type: .success)
+    }
+    
+    func setAwayMode() {
+        // Turn off lights, enable security
+        for i in devices.indices {
+            if devices[i].type == .light {
+                devices[i].isOn = false
+            } else if devices[i].type == .camera || devices[i].type == .sensor {
+                devices[i].isOn = true
+            }
+            devices[i].lastUpdated = Date()
+        }
+        HapticFeedback.notification(type: .success)
+    }
+    
+    func setHomeMode() {
+        // Turn on essential lights, disable some security
+        for i in devices.indices {
+            if devices[i].type == .light && devices[i].location.contains("Living") {
+                devices[i].isOn = true
+            } else if devices[i].type == .camera {
+                devices[i].isOn = false
+            }
+            devices[i].lastUpdated = Date()
+        }
+        HapticFeedback.notification(type: .success)
+    }
+    
+    func setNightMode() {
+        // Dim lights, enable security
+        for i in devices.indices {
+            if devices[i].type == .light {
+                devices[i].isOn = true
+                devices[i].brightness = 0.3
+            } else if devices[i].type == .camera || devices[i].type == .sensor {
+                devices[i].isOn = true
+            }
+            devices[i].lastUpdated = Date()
+        }
+        HapticFeedback.notification(type: .success)
+    }
+    
+    func getDeviceGroups() -> [String: [RingDevice]] {
+        var groups: [String: [RingDevice]] = [:]
+        
+        for device in devices {
+            let group = device.location
+            if groups[group] == nil {
+                groups[group] = []
+            }
+            groups[group]?.append(device)
+        }
+        
+        return groups
+    }
+    
+    func getFavoriteDevices() -> [RingDevice] {
+        return devices.filter { $0.isFavorite }
+    }
+    
+    func toggleFavorite(_ device: RingDevice) {
+        if let index = devices.firstIndex(where: { $0.id == device.id }) {
+            devices[index].isFavorite.toggle()
+            HapticFeedback.impact(style: .light)
+        }
+    }
+    
+    func getDevicesByCategory(_ category: DeviceCategory) -> [RingDevice] {
+        switch category {
+        case .all:
+            return devices
+        case .lights:
+            return devices.filter { $0.type == .light }
+        case .cameras:
+            return devices.filter { $0.type == .camera }
+        case .sensors:
+            return devices.filter { $0.type == .sensor }
+        case .thermostats:
+            return devices.filter { $0.type == .thermostat }
+        case .locks:
+            return devices.filter { $0.type == .lock }
+        }
+    }
+    
+    func getDevicesByStatus(_ status: DeviceStatus) -> [RingDevice] {
+        switch status {
+        case .all:
+            return devices
+        case .online:
+            return devices.filter { $0.status == .online }
+        case .offline:
+            return devices.filter { $0.status == .offline }
+        case .active:
+            return devices.filter { $0.isOn }
+        case .inactive:
+            return devices.filter { !$0.isOn }
+        }
+    }
+    
+    func searchDevices(query: String) -> [RingDevice] {
+        if query.isEmpty {
+            return devices
+        }
+        
+        return devices.filter { device in
+            device.name.localizedCaseInsensitiveContains(query) ||
+            device.location.localizedCaseInsensitiveContains(query) ||
+            device.type.rawValue.localizedCaseInsensitiveContains(query)
+        }
+    }
+    
+    func getEnergyUsageStats() -> EnergyUsageStats {
+        let totalUsage = devices.reduce(0) { $0 + $1.energyUsage }
+        let averageUsage = devices.isEmpty ? 0 : totalUsage / Double(devices.count)
+        let maxUsage = devices.map { $0.energyUsage }.max() ?? 0
+        let minUsage = devices.map { $0.energyUsage }.min() ?? 0
+        
+        return EnergyUsageStats(
+            totalUsage: totalUsage,
+            averageUsage: averageUsage,
+            maxUsage: maxUsage,
+            minUsage: minUsage,
+            deviceCount: devices.count
+        )
+    }
+    
+    func getSystemHealth() -> SystemHealth {
+        let onlineDevices = devices.filter { $0.status == .online }.count
+        let totalDevices = devices.count
+        let healthPercentage = totalDevices > 0 ? Double(onlineDevices) / Double(totalDevices) : 0
+        
+        let issues = devices.compactMap { device -> SystemIssue? in
+            if device.status == .offline {
+                return SystemIssue(
+                    type: .offline,
+                    deviceName: device.name,
+                    description: "Device is offline",
+                    severity: .medium
+                )
+            }
+            if device.energyUsage > 5.0 {
+                return SystemIssue(
+                    type: .highEnergyUsage,
+                    deviceName: device.name,
+                    description: "High energy consumption detected",
+                    severity: .low
+                )
+            }
+            return nil
+        }
+        
+        return SystemHealth(
+            overallHealth: healthPercentage,
+            onlineDevices: onlineDevices,
+            totalDevices: totalDevices,
+            issues: issues
+        )
+    }
+    
+    func getAutomationRules() -> [AutomationRule] {
+        return [
+            AutomationRule(
+                id: UUID(),
+                name: "Night Mode",
+                description: "Dim lights and enable security at 10 PM",
+                trigger: .time(hour: 22, minute: 0),
+                actions: [
+                    AutomationAction(type: .dimLights, value: 0.3),
+                    AutomationAction(type: .enableSecurity, value: 1.0)
+                ],
+                isEnabled: true
+            ),
+            AutomationRule(
+                id: UUID(),
+                name: "Away Mode",
+                description: "Turn off lights and enable cameras when away",
+                trigger: .location(entering: false),
+                actions: [
+                    AutomationAction(type: .turnOffLights, value: 0.0),
+                    AutomationAction(type: .enableCameras, value: 1.0)
+                ],
+                isEnabled: true
+            ),
+            AutomationRule(
+                id: UUID(),
+                name: "Motion Detection",
+                description: "Turn on lights when motion is detected",
+                trigger: .motion,
+                actions: [
+                    AutomationAction(type: .turnOnLights, value: 1.0)
+                ],
+                isEnabled: false
+            )
+        ]
+    }
+    
+    func addAutomationRule(_ rule: AutomationRule) {
+        // In a real app, this would save to persistent storage
+        HapticFeedback.notification(type: .success)
+    }
+    
+    func deleteAutomationRule(_ rule: AutomationRule) {
+        // In a real app, this would remove from persistent storage
+        HapticFeedback.notification(type: .success)
+    }
+    
+    func toggleAutomationRule(_ rule: AutomationRule) {
+        // In a real app, this would update the rule's enabled state
+        HapticFeedback.impact(style: .light)
+    }
+    
+    func getDeviceComparison() -> DeviceComparison {
+        let categories = DeviceCategory.allCases.filter { $0 != .all }
+        var comparisons: [CategoryComparison] = []
+        
+        for category in categories {
+            let categoryDevices = getDevicesByCategory(category)
+            if !categoryDevices.isEmpty {
+                let avgEnergy = categoryDevices.reduce(0) { $0 + $1.energyUsage } / Double(categoryDevices.count)
+                let onlineCount = categoryDevices.filter { $0.status == .online }.count
+                
+                comparisons.append(CategoryComparison(
+                    category: category,
+                    deviceCount: categoryDevices.count,
+                    averageEnergyUsage: avgEnergy,
+                    onlinePercentage: Double(onlineCount) / Double(categoryDevices.count)
+                ))
+            }
+        }
+        
+        return DeviceComparison(categories: comparisons)
+    }
+    
+    func shareDevice(_ device: RingDevice, with email: String) {
+        // In a real app, this would send an invitation
+        HapticFeedback.notification(type: .success)
+    }
+    
+    func getDeviceSharingInfo() -> [DeviceSharing] {
+        return [
+            DeviceSharing(
+                device: devices.first ?? RingDevice.sampleDevices[0],
+                sharedWith: ["john@example.com", "jane@example.com"],
+                permissions: [.view, .control],
+                sharedDate: Date().addingTimeInterval(-86400)
+            )
+        ]
+    }
+    
+    func getMaintenanceSchedule() -> [MaintenanceTask] {
+        return [
+            MaintenanceTask(
+                id: UUID(),
+                deviceName: "Living Room Light",
+                task: "Replace bulb",
+                dueDate: Date().addingTimeInterval(7 * 86400),
+                priority: .medium,
+                isCompleted: false
+            ),
+            MaintenanceTask(
+                id: UUID(),
+                deviceName: "Front Door Camera",
+                task: "Clean lens",
+                dueDate: Date().addingTimeInterval(30 * 86400),
+                priority: .low,
+                isCompleted: false
+            )
+        ]
+    }
+    
+    func addMaintenanceTask(_ task: MaintenanceTask) {
+        // In a real app, this would save to persistent storage
+        HapticFeedback.notification(type: .success)
+    }
+    
+    func completeMaintenanceTask(_ task: MaintenanceTask) {
+        // In a real app, this would mark the task as completed
+        HapticFeedback.notification(type: .success)
+    }
+    
+    func getInsights() -> [SmartHomeInsight] {
+        return [
+            SmartHomeInsight(
+                id: UUID(),
+                type: .energySaving,
+                title: "Energy Usage Optimized",
+                description: "Your devices are using 15% less energy this week",
+                value: "15%",
+                trend: .positive,
+                date: Date()
+            ),
+            SmartHomeInsight(
+                id: UUID(),
+                type: .security,
+                title: "Security Alert",
+                description: "Motion detected at front door at 2:30 AM",
+                value: "1",
+                trend: .neutral,
+                date: Date().addingTimeInterval(-3600)
+            ),
+            SmartHomeInsight(
+                id: UUID(),
+                type: .automation,
+                title: "Automation Active",
+                description: "Night mode automation triggered 5 times this week",
+                value: "5",
+                trend: .positive,
+                date: Date()
+            )
+        ]
+    }
 }
 
 // MARK: - Supporting Types
@@ -974,5 +1311,136 @@ class DeviceSetupWizard: ObservableObject {
         
         smartHomeManager.addDevice(newDevice)
         currentStep = .complete
+    }
+}
+
+// MARK: - Supporting Models
+struct EnergyUsageStats {
+    let totalUsage: Double
+    let averageUsage: Double
+    let maxUsage: Double
+    let minUsage: Double
+    let deviceCount: Int
+}
+
+struct SystemHealth {
+    let overallHealth: Double
+    let onlineDevices: Int
+    let totalDevices: Int
+    let issues: [SystemIssue]
+}
+
+struct SystemIssue {
+    let type: IssueType
+    let deviceName: String
+    let description: String
+    let severity: IssueSeverity
+    
+    enum IssueType {
+        case offline
+        case highEnergyUsage
+        case connectivity
+        case battery
+    }
+    
+    enum IssueSeverity {
+        case low
+        case medium
+        case high
+        case critical
+    }
+}
+
+struct AutomationRule {
+    let id: UUID
+    let name: String
+    let description: String
+    let trigger: AutomationTrigger
+    let actions: [AutomationAction]
+    var isEnabled: Bool
+}
+
+enum AutomationTrigger {
+    case time(hour: Int, minute: Int)
+    case location(entering: Bool)
+    case motion
+    case deviceState(deviceId: UUID, state: Bool)
+}
+
+struct AutomationAction {
+    let type: ActionType
+    let value: Double
+    
+    enum ActionType {
+        case turnOnLights
+        case turnOffLights
+        case dimLights
+        case enableSecurity
+        case enableCameras
+        case setTemperature
+    }
+}
+
+struct DeviceComparison {
+    let categories: [CategoryComparison]
+}
+
+struct CategoryComparison {
+    let category: DeviceCategory
+    let deviceCount: Int
+    let averageEnergyUsage: Double
+    let onlinePercentage: Double
+}
+
+struct DeviceSharing {
+    let device: RingDevice
+    let sharedWith: [String]
+    let permissions: [SharingPermission]
+    let sharedDate: Date
+    
+    enum SharingPermission {
+        case view
+        case control
+        case admin
+    }
+}
+
+struct MaintenanceTask {
+    let id: UUID
+    let deviceName: String
+    let task: String
+    let dueDate: Date
+    let priority: TaskPriority
+    var isCompleted: Bool
+    
+    enum TaskPriority {
+        case low
+        case medium
+        case high
+        case critical
+    }
+}
+
+struct SmartHomeInsight {
+    let id: UUID
+    let type: InsightType
+    let title: String
+    let description: String
+    let value: String
+    let trend: InsightTrend
+    let date: Date
+    
+    enum InsightType {
+        case energySaving
+        case security
+        case automation
+        case performance
+        case maintenance
+    }
+    
+    enum InsightTrend {
+        case positive
+        case negative
+        case neutral
     }
 } 

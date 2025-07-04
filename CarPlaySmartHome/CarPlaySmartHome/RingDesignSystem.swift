@@ -977,3 +977,626 @@ extension RingDesignSystem {
         static let full = CGFloat(999)
     }
 }
+
+// MARK: - Advanced UI Components
+struct GlassmorphismCard<Content: View>: View {
+    let content: Content
+    let blurRadius: CGFloat
+    let cornerRadius: CGFloat
+    let shadowRadius: CGFloat
+    
+    init(
+        blurRadius: CGFloat = 20,
+        cornerRadius: CGFloat = 16,
+        shadowRadius: CGFloat = 10,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.blurRadius = blurRadius
+        self.cornerRadius = cornerRadius
+        self.shadowRadius = shadowRadius
+        self.content = content()
+    }
+    
+    var body: some View {
+        content
+            .background(
+                RoundedRectangle(cornerRadius: cornerRadius)
+                    .fill(.ultraThinMaterial)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: cornerRadius)
+                            .stroke(
+                                LinearGradient(
+                                    colors: [.white.opacity(0.3), .clear],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ),
+                                lineWidth: 1
+                            )
+                    )
+            )
+            .shadow(
+                color: .black.opacity(0.1),
+                radius: shadowRadius,
+                x: 0,
+                y: 5
+            )
+    }
+}
+
+struct GradientButton: View {
+    let title: String
+    let icon: String?
+    let gradient: LinearGradient
+    let action: () -> Void
+    let isLoading: Bool
+    
+    init(
+        title: String,
+        icon: String? = nil,
+        gradient: LinearGradient = LinearGradient(
+            colors: [.blue, .purple],
+            startPoint: .leading,
+            endPoint: .trailing
+        ),
+        isLoading: Bool = false,
+        action: @escaping () -> Void
+    ) {
+        self.title = title
+        self.icon = icon
+        self.gradient = gradient
+        self.isLoading = isLoading
+        self.action = action
+    }
+    
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 8) {
+                if isLoading {
+                    ProgressView()
+                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                        .scaleEffect(0.8)
+                } else if let icon = icon {
+                    Image(systemName: icon)
+                        .font(.system(size: 16, weight: .semibold))
+                }
+                
+                Text(title)
+                    .font(.system(size: 16, weight: .semibold))
+            }
+            .foregroundColor(.white)
+            .frame(maxWidth: .infinity)
+            .frame(height: 50)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(gradient)
+                    .shadow(
+                        color: gradient.stops.first?.color.opacity(0.3) ?? .blue.opacity(0.3),
+                        radius: 8,
+                        x: 0,
+                        y: 4
+                    )
+            )
+        }
+        .buttonStyle(ScaleButtonStyle())
+        .disabled(isLoading)
+    }
+}
+
+struct ScaleButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
+            .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
+    }
+}
+
+struct FloatingActionButton: View {
+    let icon: String
+    let action: () -> Void
+    let color: Color
+    
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: icon)
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundColor(.white)
+                .frame(width: 56, height: 56)
+                .background(
+                    Circle()
+                        .fill(color)
+                        .shadow(
+                            color: color.opacity(0.3),
+                            radius: 8,
+                            x: 0,
+                            y: 4
+                        )
+                )
+        }
+        .buttonStyle(ScaleButtonStyle())
+    }
+}
+
+struct AnimatedProgressRing: View {
+    let progress: Double
+    let lineWidth: CGFloat
+    let size: CGFloat
+    let color: Color
+    
+    @State private var animatedProgress: Double = 0
+    
+    var body: some View {
+        ZStack {
+            Circle()
+                .stroke(color.opacity(0.2), lineWidth: lineWidth)
+            
+            Circle()
+                .trim(from: 0, to: animatedProgress)
+                .stroke(
+                    color,
+                    style: StrokeStyle(
+                        lineWidth: lineWidth,
+                        lineCap: .round
+                    )
+                )
+                .rotationEffect(.degrees(-90))
+                .animation(.easeInOut(duration: 1.0), value: animatedProgress)
+        }
+        .frame(width: size, height: size)
+        .onAppear {
+            animatedProgress = progress
+        }
+        .onChange(of: progress) { newValue in
+            animatedProgress = newValue
+        }
+    }
+}
+
+struct ShimmerView: View {
+    @State private var isAnimating = false
+    
+    var body: some View {
+        LinearGradient(
+            colors: [
+                Color.gray.opacity(0.3),
+                Color.gray.opacity(0.1),
+                Color.gray.opacity(0.3)
+            ],
+            startPoint: .leading,
+            endPoint: .trailing
+        )
+        .mask(
+            Rectangle()
+                .fill(
+                    LinearGradient(
+                        colors: [.clear, .white, .clear],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                )
+                .offset(x: isAnimating ? 200 : -200)
+        )
+        .onAppear {
+            withAnimation(
+                .linear(duration: 1.5)
+                .repeatForever(autoreverses: false)
+            ) {
+                isAnimating = true
+            }
+        }
+    }
+}
+
+struct ParallaxScrollView<Content: View>: View {
+    let content: Content
+    let headerHeight: CGFloat
+    
+    init(headerHeight: CGFloat = 200, @ViewBuilder content: () -> Content) {
+        self.headerHeight = headerHeight
+        self.content = content()
+    }
+    
+    var body: some View {
+        ScrollView {
+            GeometryReader { geometry in
+                let offset = geometry.frame(in: .global).minY
+                let height = headerHeight + (offset > 0 ? offset : 0)
+                
+                Color.clear
+                    .frame(height: headerHeight)
+                    .offset(y: offset > 0 ? -offset * 0.5 : 0)
+            }
+            .frame(height: headerHeight)
+            
+            content
+        }
+    }
+}
+
+struct ConfettiView: View {
+    @State private var particles: [Particle] = []
+    
+    struct Particle: Identifiable {
+        let id = UUID()
+        var x: Double
+        var y: Double
+        var rotation: Double
+        var scale: Double
+        var color: Color
+    }
+    
+    var body: some View {
+        ZStack {
+            ForEach(particles) { particle in
+                Circle()
+                    .fill(particle.color)
+                    .frame(width: 8, height: 8)
+                    .scaleEffect(particle.scale)
+                    .position(x: particle.x, y: particle.y)
+                    .rotationEffect(.degrees(particle.rotation))
+            }
+        }
+        .onAppear {
+            createParticles()
+        }
+    }
+    
+    private func createParticles() {
+        let colors: [Color] = [.red, .blue, .green, .yellow, .purple, .orange]
+        
+        for _ in 0..<50 {
+            let particle = Particle(
+                x: Double.random(in: 0...UIScreen.main.bounds.width),
+                y: Double.random(in: 0...UIScreen.main.bounds.height),
+                rotation: Double.random(in: 0...360),
+                scale: Double.random(in: 0.5...1.5),
+                color: colors.randomElement() ?? .blue
+            )
+            particles.append(particle)
+        }
+        
+        withAnimation(.easeInOut(duration: 3.0)) {
+            for i in particles.indices {
+                particles[i].y -= 200
+                particles[i].rotation += 360
+            }
+        }
+    }
+}
+
+struct MorphingShape: View {
+    @State private var morphing = false
+    
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(.blue)
+                .frame(width: 100, height: 100)
+                .scaleEffect(morphing ? 1.2 : 1.0)
+                .animation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true), value: morphing)
+            
+            RoundedRectangle(cornerRadius: morphing ? 50 : 0)
+                .fill(.purple)
+                .frame(width: 100, height: 100)
+                .scaleEffect(morphing ? 0.8 : 1.0)
+                .animation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true), value: morphing)
+        }
+        .onAppear {
+            morphing = true
+        }
+    }
+}
+
+struct NeumorphicButton: View {
+    let title: String
+    let icon: String
+    let action: () -> Void
+    let isPressed: Bool
+    
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 8) {
+                Image(systemName: icon)
+                    .font(.title2)
+                    .foregroundColor(isPressed ? .blue : .primary)
+                
+                Text(title)
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .foregroundColor(isPressed ? .blue : .primary)
+            }
+            .frame(width: 80, height: 80)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color(.systemBackground))
+                    .shadow(
+                        color: isPressed ? .clear : .black.opacity(0.1),
+                        radius: isPressed ? 0 : 8,
+                        x: isPressed ? 0 : 4,
+                        y: isPressed ? 0 : 4
+                    )
+                    .shadow(
+                        color: isPressed ? .clear : .white.opacity(0.8),
+                        radius: isPressed ? 0 : 8,
+                        x: isPressed ? 0 : -4,
+                        y: isPressed ? 0 : -4
+                    )
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
+        .scaleEffect(isPressed ? 0.95 : 1.0)
+        .animation(.easeInOut(duration: 0.1), value: isPressed)
+    }
+}
+
+struct AnimatedTabBar: View {
+    @Binding var selectedTab: Int
+    let tabs: [TabItem]
+    
+    struct TabItem {
+        let title: String
+        let icon: String
+        let color: Color
+    }
+    
+    var body: some View {
+        HStack(spacing: 0) {
+            ForEach(Array(tabs.enumerated()), id: \.offset) { index, tab in
+                Button(action: {
+                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                        selectedTab = index
+                    }
+                }) {
+                    VStack(spacing: 4) {
+                        Image(systemName: tab.icon)
+                            .font(.system(size: 20, weight: selectedTab == index ? .semibold : .medium))
+                            .foregroundColor(selectedTab == index ? tab.color : .secondary)
+                            .scaleEffect(selectedTab == index ? 1.2 : 1.0)
+                            .animation(.spring(response: 0.3, dampingFraction: 0.7), value: selectedTab)
+                        
+                        Text(tab.title)
+                            .font(.caption2)
+                            .fontWeight(selectedTab == index ? .semibold : .medium)
+                            .foregroundColor(selectedTab == index ? tab.color : .secondary)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+                }
+                .buttonStyle(PlainButtonStyle())
+            }
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 5)
+        )
+        .padding(.horizontal)
+    }
+}
+
+struct AnimatedCounter: View {
+    let value: Int
+    let prefix: String
+    let suffix: String
+    
+    @State private var animatedValue: Int = 0
+    
+    var body: some View {
+        HStack(spacing: 4) {
+            if !prefix.isEmpty {
+                Text(prefix)
+                    .font(.headline)
+                    .foregroundColor(.secondary)
+            }
+            
+            Text("\(animatedValue)")
+                .font(.title)
+                .fontWeight(.bold)
+                .foregroundColor(.primary)
+                .animation(.easeOut(duration: 0.5), value: animatedValue)
+            
+            if !suffix.isEmpty {
+                Text(suffix)
+                    .font(.headline)
+                    .foregroundColor(.secondary)
+            }
+        }
+        .onAppear {
+            animateToValue()
+        }
+        .onChange(of: value) { _ in
+            animateToValue()
+        }
+    }
+    
+    private func animateToValue() {
+        withAnimation(.easeOut(duration: 0.5)) {
+            animatedValue = value
+        }
+    }
+}
+
+struct PulseAnimation: View {
+    @State private var isPulsing = false
+    
+    var body: some View {
+        Circle()
+            .fill(.blue)
+            .scaleEffect(isPulsing ? 1.5 : 1.0)
+            .opacity(isPulsing ? 0.0 : 1.0)
+            .animation(
+                .easeInOut(duration: 1.0)
+                .repeatForever(autoreverses: false),
+                value: isPulsing
+            )
+            .onAppear {
+                isPulsing = true
+            }
+    }
+}
+
+struct WaveAnimation: View {
+    @State private var waveOffset = 0.0
+    
+    var body: some View {
+        ZStack {
+            ForEach(0..<3) { index in
+                Circle()
+                    .stroke(.blue.opacity(0.3), lineWidth: 2)
+                    .scaleEffect(1.0 + Double(index) * 0.2)
+                    .opacity(1.0 - Double(index) * 0.3)
+                    .animation(
+                        .easeInOut(duration: 2.0)
+                        .repeatForever(autoreverses: false)
+                        .delay(Double(index) * 0.3),
+                        value: waveOffset
+                    )
+            }
+        }
+        .onAppear {
+            waveOffset = 1.0
+        }
+    }
+}
+
+struct FloatingLabelTextField: View {
+    let placeholder: String
+    @Binding var text: String
+    let icon: String?
+    
+    @State private var isFocused = false
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                if let icon = icon {
+                    Image(systemName: icon)
+                        .foregroundColor(.secondary)
+                        .frame(width: 20)
+                }
+                
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(placeholder)
+                        .font(.caption)
+                        .foregroundColor(isFocused || !text.isEmpty ? .blue : .secondary)
+                        .scaleEffect(isFocused || !text.isEmpty ? 0.8 : 1.0)
+                        .offset(y: isFocused || !text.isEmpty ? -8 : 0)
+                        .animation(.easeInOut(duration: 0.2), value: isFocused || !text.isEmpty)
+                    
+                    TextField("", text: $text)
+                        .textFieldStyle(PlainTextFieldStyle())
+                        .onTapGesture {
+                            isFocused = true
+                        }
+                }
+            }
+            
+            Rectangle()
+                .fill(isFocused ? Color.blue : Color.gray.opacity(0.3))
+                .frame(height: 1)
+                .animation(.easeInOut(duration: 0.2), value: isFocused)
+        }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(.systemGray6))
+        )
+    }
+}
+
+struct AnimatedGradientBackground: View {
+    @State private var gradientStart = UnitPoint(x: 0, y: 0)
+    @State private var gradientEnd = UnitPoint(x: 1, y: 1)
+    
+    let colors: [Color]
+    
+    init(colors: [Color] = [.blue, .purple, .pink]) {
+        self.colors = colors
+    }
+    
+    var body: some View {
+        LinearGradient(
+            colors: colors,
+            startPoint: gradientStart,
+            endPoint: gradientEnd
+        )
+        .ignoresSafeArea()
+        .onAppear {
+            withAnimation(
+                .easeInOut(duration: 3.0)
+                .repeatForever(autoreverses: true)
+            ) {
+                gradientStart = UnitPoint(x: 1, y: 1)
+                gradientEnd = UnitPoint(x: 0, y: 0)
+            }
+        }
+    }
+}
+
+struct HapticFeedback {
+    static func impact(style: UIImpactFeedbackGenerator.FeedbackStyle) {
+        let impactFeedback = UIImpactFeedbackGenerator(style: style)
+        impactFeedback.impactOccurred()
+    }
+    
+    static func notification(type: UINotificationFeedbackGenerator.FeedbackType) {
+        let notificationFeedback = UINotificationFeedbackGenerator()
+        notificationFeedback.notificationOccurred(type)
+    }
+    
+    static func selection() {
+        let selectionFeedback = UISelectionFeedbackGenerator()
+        selectionFeedback.selectionChanged()
+    }
+}
+
+// MARK: - Enhanced Color System
+extension Color {
+    static let ringPrimary = Color("RingPrimary")
+    static let ringSecondary = Color("RingSecondary")
+    static let ringAccent = Color("RingAccent")
+    static let ringBackground = Color("RingBackground")
+    static let ringSurface = Color("RingSurface")
+    
+    static let successGreen = Color(red: 0.2, green: 0.8, blue: 0.2)
+    static let warningOrange = Color(red: 1.0, green: 0.6, blue: 0.0)
+    static let errorRed = Color(red: 0.9, green: 0.2, blue: 0.2)
+    static let infoBlue = Color(red: 0.2, green: 0.6, blue: 1.0)
+    
+    static let glassBackground = Color.white.opacity(0.1)
+    static let glassBorder = Color.white.opacity(0.2)
+}
+
+// MARK: - Enhanced Animation System
+extension Animation {
+    static let ringSpring = Animation.spring(response: 0.6, dampingFraction: 0.8, blendDuration: 0)
+    static let ringEaseOut = Animation.easeOut(duration: 0.3)
+    static let ringEaseIn = Animation.easeIn(duration: 0.3)
+    static let ringEaseInOut = Animation.easeInOut(duration: 0.3)
+    
+    static let gentle = Animation.easeInOut(duration: 0.4)
+    static let snappy = Animation.spring(response: 0.4, dampingFraction: 0.7)
+    static let bouncy = Animation.spring(response: 0.5, dampingFraction: 0.6)
+}
+
+// MARK: - Enhanced Typography
+extension Font {
+    static let ringTitle = Font.system(size: 28, weight: .bold, design: .rounded)
+    static let ringHeadline = Font.system(size: 20, weight: .semibold, design: .rounded)
+    static let ringBody = Font.system(size: 16, weight: .regular, design: .rounded)
+    static let ringCaption = Font.system(size: 14, weight: .medium, design: .rounded)
+    static let ringSmall = Font.system(size: 12, weight: .medium, design: .rounded)
+}
+
+// MARK: - Enhanced Spacing
+extension CGFloat {
+    static let ringSpacing: CGFloat = 16
+    static let ringSpacingSmall: CGFloat = 8
+    static let ringSpacingLarge: CGFloat = 24
+    static let ringSpacingExtraLarge: CGFloat = 32
+    
+    static let ringCornerRadius: CGFloat = 12
+    static let ringCornerRadiusSmall: CGFloat = 8
+    static let ringCornerRadiusLarge: CGFloat = 16
+}
