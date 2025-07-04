@@ -1,203 +1,200 @@
 import SwiftUI
-import UIKit
-import Charts
 
-// MARK: - Advanced Design Components
-
-@available(iOS 15.0, *)
-struct RingAdvancedDesign {
+struct RingAdvancedDesign: View {
+    @ObservedObject var smartHomeManager: SmartHomeManager
+    @State private var selectedDevice: RingDevice?
+    @State private var showingDeviceDetail = false
+    @State private var isAnimating = false
+    @State private var showWelcomeAnimation = false
+    @State private var selectedTab = 0
     
-    // MARK: - Advanced Gradients
+    // Advanced UI states
+    @State private var show3DEffects = true
+    @State private var showParticleEffects = false
+    @State private var showAdvancedControls = false
+    @State private var showDeviceComparison = false
+    @State private var showAutomationWizard = false
     
-    struct Gradients {
-        
-        static let heroGradient = LinearGradient(
-            colors: [
-                Color(red: 0.0, green: 0.48, blue: 1.0),
-                Color(red: 0.2, green: 0.6, blue: 1.0),
-                Color(red: 0.4, green: 0.8, blue: 1.0)
-            ],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
-        
-        static let successGradient = LinearGradient(
-            colors: [
-                Color(red: 0.2, green: 0.78, blue: 0.35),
-                Color(red: 0.3, green: 0.85, blue: 0.4),
-                Color(red: 0.1, green: 0.7, blue: 0.3)
-            ],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
-        
-        static let warningGradient = LinearGradient(
-            colors: [
-                Color(red: 1.0, green: 0.38, blue: 0.0),
-                Color(red: 1.0, green: 0.5, blue: 0.1),
-                Color(red: 0.9, green: 0.3, blue: 0.0)
-            ],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
-        
-        static let glassGradient = LinearGradient(
-            colors: [
-                Color.white.opacity(0.25),
-                Color.white.opacity(0.1),
-                Color.white.opacity(0.05)
-            ],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
-        
-        static let shimmerGradient = LinearGradient(
-            colors: [
-                Color.white.opacity(0),
-                Color.white.opacity(0.8),
-                Color.white.opacity(0),
-            ],
-            startPoint: .leading,
-            endPoint: .trailing
-        )
-        
-        static func deviceGradient(for type: DeviceType) -> LinearGradient {
-            switch type {
-            case .camera:
-                return LinearGradient(
-                    colors: [
-                        RingDesignSystem.Colors.ringBlue,
-                        RingDesignSystem.Colors.ringBlue.opacity(0.8),
-                        Color(red: 0.1, green: 0.6, blue: 1.0)
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            case .doorbell:
-                return LinearGradient(
-                    colors: [
-                        RingDesignSystem.Colors.ringOrange,
-                        RingDesignSystem.Colors.ringOrange.opacity(0.8),
-                        Color(red: 1.0, green: 0.5, blue: 0.1)
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            case .motionSensor:
-                return LinearGradient(
-                    colors: [
-                        RingDesignSystem.Colors.ringGreen,
-                        RingDesignSystem.Colors.ringGreen.opacity(0.8),
-                        Color(red: 0.3, green: 0.9, blue: 0.4)
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            case .floodlight:
-                return LinearGradient(
-                    colors: [
-                        RingDesignSystem.Colors.ringYellow,
-                        RingDesignSystem.Colors.ringYellow.opacity(0.8),
-                        Color(red: 1.0, green: 0.9, blue: 0.1)
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            case .chime:
-                return LinearGradient(
-                    colors: [
-                        RingDesignSystem.Colors.ringPurple,
-                        RingDesignSystem.Colors.ringPurple.opacity(0.8),
-                        Color(red: 0.8, green: 0.4, blue: 0.9)
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
+    var body: some View {
+        ZStack {
+            // Animated background with particles
+            if showParticleEffects {
+                ParticleBackground()
+            }
+            
+            VStack(spacing: 0) {
+                // Enhanced header with 3D effects
+                if showWelcomeAnimation {
+                    AdvancedHeaderView(smartHomeManager: smartHomeManager)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                }
+                
+                // Advanced tab navigation
+                AdvancedTabNavigation(selectedTab: $selectedTab)
+                    .padding(.vertical, 8)
+                
+                // Main content with advanced animations
+                TabView(selection: $selectedTab) {
+                    // Device Control Center
+                    AdvancedDeviceControlCenter(smartHomeManager: smartHomeManager)
+                        .tag(0)
+                    
+                    // Automation Studio
+                    AutomationStudioView(smartHomeManager: smartHomeManager)
+                        .tag(1)
+                    
+                    // Analytics Dashboard
+                    AdvancedAnalyticsDashboard(smartHomeManager: smartHomeManager)
+                        .tag(2)
+                    
+                    // System Monitor
+                    SystemMonitorView(smartHomeManager: smartHomeManager)
+                        .tag(3)
+                }
+                .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+                .animation(.easeInOut(duration: 0.3), value: selectedTab)
+            }
+            
+            // Floating action menu
+            VStack {
+                Spacer()
+                
+                HStack {
+                    Spacer()
+                    
+                    AdvancedFloatingActionMenu(
+                        showAdvancedControls: $showAdvancedControls,
+                        showDeviceComparison: $showDeviceComparison,
+                        showAutomationWizard: $showAutomationWizard
+                    )
+                }
+                .padding(.horizontal, 20)
+                .padding(.bottom, 20)
             }
         }
-    }
-    
-    // MARK: - Enhanced Shadows
-    
-    struct Shadows {
-        
-        static let floatingShadow = [
-            Shadow(color: .black.opacity(0.1), radius: 1, x: 0, y: 1),
-            Shadow(color: .black.opacity(0.1), radius: 6, x: 0, y: 4),
-            Shadow(color: .black.opacity(0.1), radius: 16, x: 0, y: 8)
-        ]
-        
-        static let elevatedShadow = [
-            Shadow(color: .black.opacity(0.15), radius: 2, x: 0, y: 2),
-            Shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 6),
-            Shadow(color: .black.opacity(0.1), radius: 24, x: 0, y: 12)
-        ]
-        
-        static let glowShadow = [
-            Shadow(color: RingDesignSystem.Colors.ringBlue.opacity(0.3), radius: 8, x: 0, y: 0),
-            Shadow(color: RingDesignSystem.Colors.ringBlue.opacity(0.2), radius: 16, x: 0, y: 0),
-            Shadow(color: RingDesignSystem.Colors.ringBlue.opacity(0.1), radius: 32, x: 0, y: 0)
-        ]
-        
-        struct Shadow {
-            let color: Color
-            let radius: CGFloat
-            let x: CGFloat
-            let y: CGFloat
+        .onAppear {
+            startAdvancedAnimations()
+        }
+        .sheet(isPresented: $showDeviceComparison) {
+            DeviceComparisonView(smartHomeManager: smartHomeManager)
+        }
+        .sheet(isPresented: $showAutomationWizard) {
+            AutomationWizardView(smartHomeManager: smartHomeManager)
         }
     }
     
-    // MARK: - Advanced Animations
-    
-    struct Animations {
+    private func startAdvancedAnimations() {
+        withAnimation(.easeInOut(duration: 1.0).delay(0.2)) {
+            showWelcomeAnimation = true
+        }
         
-        static let gentleSpring = Animation.interpolatingSpring(
-            mass: 0.8,
-            stiffness: 100,
-            damping: 12,
-            initialVelocity: 0
-        )
+        withAnimation(.easeInOut(duration: 0.8).delay(0.5)) {
+            isAnimating = true
+        }
         
-        static let bouncySpring = Animation.interpolatingSpring(
-            mass: 0.6,
-            stiffness: 150,
-            damping: 8,
-            initialVelocity: 0
-        )
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            showParticleEffects = true
+        }
         
-        static let smoothSpring = Animation.interpolatingSpring(
-            mass: 1.0,
-            stiffness: 120,
-            damping: 15,
-            initialVelocity: 0
-        )
-        
-        static let pulseAnimation = Animation.easeInOut(duration: 2.0)
-            .repeatForever(autoreverses: true)
-        
-        static let shimmerAnimation = Animation.linear(duration: 1.5)
-            .repeatForever(autoreverses: false)
-        
-        static let breatheAnimation = Animation.easeInOut(duration: 3.0)
-            .repeatForever(autoreverses: true)
-        
-        static let floatAnimation = Animation.easeInOut(duration: 4.0)
-            .repeatForever(autoreverses: true)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            showAdvancedControls = true
+        }
     }
 }
-
-// MARK: - Enhanced View Modifiers
-
-@available(iOS 15.0, *)
-extension View {
     
-    // MARK: - Advanced Liquid Glass Effect
+}
+
+// MARK: - Advanced Header View
+struct AdvancedHeaderView: View {
+    @ObservedObject var smartHomeManager: SmartHomeManager
+    @State private var animateGradient = false
+    @State private var pulseAnimation = false
     
-    func advancedLiquidGlass(
-        intensity: RingAdvancedDesign.GlassIntensity = .medium,
-        cornerRadius: CGFloat = RingDesignSystem.CornerRadius.lg,
-        showBorder: Bool = true
-    ) -> some View {
+    var body: some View {
+        GlassmorphismCard {
+            VStack(spacing: 20) {
+                // 3D animated title
+                HStack {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Smart Home")
+                            .font(.system(size: 32, weight: .bold, design: .rounded))
+                            .foregroundStyle(
+                                LinearGradient(
+                                    colors: [.blue, .purple, .pink],
+                                    startPoint: animateGradient ? .topLeading : .bottomTrailing,
+                                    endPoint: animateGradient ? .bottomTrailing : .topLeading
+                                )
+                            )
+                            .scaleEffect(pulseAnimation ? 1.05 : 1.0)
+                            .animation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true), value: pulseAnimation)
+                        
+                        Text("Advanced Control Center")
+                            .font(.ringBody)
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    Spacer()
+                    
+                    // 3D rotating device icon
+                    ZStack {
+                        Circle()
+                            .fill(
+                                RadialGradient(
+                                    colors: [.blue.opacity(0.3), .clear],
+                                    center: .center,
+                                    startRadius: 20,
+                                    endRadius: 40
+                                )
+                            )
+                            .frame(width: 80, height: 80)
+                            .rotation3DEffect(.degrees(animateGradient ? 360 : 0), axis: (x: 0, y: 1, z: 0))
+                            .animation(.linear(duration: 8.0).repeatForever(autoreverses: false), value: animateGradient)
+                        
+                        Image(systemName: "house.fill")
+                            .font(.system(size: 32))
+                            .foregroundColor(.blue)
+                            .rotation3DEffect(.degrees(animateGradient ? -360 : 0), axis: (x: 0, y: 1, z: 0))
+                            .animation(.linear(duration: 8.0).repeatForever(autoreverses: false), value: animateGradient)
+                    }
+                }
+                
+                // Advanced status indicators
+                HStack(spacing: 20) {
+                    AdvancedStatusCard(
+                        title: "Online",
+                        count: smartHomeManager.devices.filter { $0.status == .online }.count,
+                        total: smartHomeManager.devices.count,
+                        color: .successGreen,
+                        icon: "checkmark.circle.fill"
+                    )
+                    
+                    AdvancedStatusCard(
+                        title: "Active",
+                        count: smartHomeManager.devices.filter { $0.isOn }.count,
+                        total: smartHomeManager.devices.count,
+                        color: .warningOrange,
+                        icon: "bolt.fill"
+                    )
+                    
+                    AdvancedStatusCard(
+                        title: "Automation",
+                        count: smartHomeManager.getAutomationRules().filter { $0.isEnabled }.count,
+                        total: smartHomeManager.getAutomationRules().count,
+                        color: .purple,
+                        icon: "clock.fill"
+                    )
+                }
+            }
+            .padding()
+        }
+        .padding(.horizontal)
+        .padding(.top)
+        .onAppear {
+            animateGradient = true
+            pulseAnimation = true
+        }
+    }
+}
         self
             .background(
                 RoundedRectangle(cornerRadius: cornerRadius)
@@ -1380,27 +1377,750 @@ struct DevicePerformance {
     }
 }
 
-// MARK: - Detailed Chart View
+// MARK: - Advanced Status Card
+struct AdvancedStatusCard: View {
+    let title: String
+    let count: Int
+    let total: Int
+    let color: Color
+    let icon: String
+    
+    @State private var animateProgress = false
+    
+    private var percentage: Double {
+        total > 0 ? Double(count) / Double(total) : 0
+    }
+    
+    var body: some View {
+        VStack(spacing: 12) {
+            // Animated icon
+            ZStack {
+                Circle()
+                    .fill(color.opacity(0.2))
+                    .frame(width: 50, height: 50)
+                
+                Image(systemName: icon)
+                    .font(.title2)
+                    .foregroundColor(color)
+                    .scaleEffect(animateProgress ? 1.2 : 1.0)
+                    .animation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true), value: animateProgress)
+            }
+            
+            VStack(spacing: 4) {
+                Text("\(count)")
+                    .font(.ringHeadline)
+                    .fontWeight(.bold)
+                    .foregroundColor(.primary)
+                
+                Text(title)
+                    .font(.ringSmall)
+                    .foregroundColor(.secondary)
+            }
+            
+            // Animated progress ring
+            ZStack {
+                Circle()
+                    .stroke(color.opacity(0.2), lineWidth: 4)
+                    .frame(width: 40, height: 40)
+                
+                Circle()
+                    .trim(from: 0, to: animateProgress ? percentage : 0)
+                    .stroke(
+                        color,
+                        style: StrokeStyle(
+                            lineWidth: 4,
+                            lineCap: .round
+                        )
+                    )
+                    .frame(width: 40, height: 40)
+                    .rotationEffect(.degrees(-90))
+                    .animation(.easeInOut(duration: 1.0), value: animateProgress)
+            }
+        }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(color.opacity(0.3), lineWidth: 1)
+                )
+        )
+        .onAppear {
+            withAnimation(.easeInOut(duration: 1.0).delay(0.5)) {
+                animateProgress = true
+            }
+        }
+    }
+}
 
-struct DetailedChartView: View {
-    let timeRange: TimeRange
+// MARK: - Advanced Tab Navigation
+struct AdvancedTabNavigation: View {
+    @Binding var selectedTab: Int
+    
+    private let tabs = [
+        ("Control", "slider.horizontal.3"),
+        ("Automation", "clock.fill"),
+        ("Analytics", "chart.bar.fill"),
+        ("Monitor", "gauge")
+    ]
+    
+    var body: some View {
+        HStack(spacing: 0) {
+            ForEach(Array(tabs.enumerated()), id: \.offset) { index, tab in
+                AdvancedTabButton(
+                    title: tab.0,
+                    icon: tab.1,
+                    isSelected: selectedTab == index,
+                    color: getTabColor(index)
+                ) {
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                        selectedTab = index
+                    }
+                    HapticFeedback.impact(style: .medium)
+                }
+            }
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 8)
+        .background(
+            RoundedRectangle(cornerRadius: 20)
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.1), radius: 10, x: 0, y: 5)
+        )
+        .padding(.horizontal)
+    }
+    
+    private func getTabColor(_ index: Int) -> Color {
+        switch index {
+        case 0: return .blue
+        case 1: return .purple
+        case 2: return .green
+        case 3: return .orange
+        default: return .gray
+        }
+    }
+}
+
+// MARK: - Advanced Tab Button
+struct AdvancedTabButton: View {
+    let title: String
+    let icon: String
+    let isSelected: Bool
+    let color: Color
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 6) {
+                ZStack {
+                    Circle()
+                        .fill(isSelected ? color : .clear)
+                        .frame(width: 40, height: 40)
+                        .scaleEffect(isSelected ? 1.0 : 0.8)
+                        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
+                    
+                    Image(systemName: icon)
+                        .font(.system(size: 18, weight: isSelected ? .semibold : .medium))
+                        .foregroundColor(isSelected ? .white : .secondary)
+                        .scaleEffect(isSelected ? 1.1 : 1.0)
+                        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
+                }
+                
+                Text(title)
+                    .font(.ringSmall)
+                    .fontWeight(isSelected ? .semibold : .medium)
+                    .foregroundColor(isSelected ? color : .secondary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 8)
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+}
+
+// MARK: - Advanced Device Control Center
+struct AdvancedDeviceControlCenter: View {
+    @ObservedObject var smartHomeManager: SmartHomeManager
+    @State private var selectedCategory: DeviceCategory = .all
+    @State private var showGridLayout = true
+    @State private var animateCards = false
+    
+    var body: some View {
+        VStack(spacing: 20) {
+            // Category selector with 3D effects
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 16) {
+                    ForEach(DeviceCategory.allCases, id: \.self) { category in
+                        Category3DButton(
+                            category: category,
+                            isSelected: selectedCategory == category
+                        ) {
+                            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                                selectedCategory = category
+                            }
+                            HapticFeedback.impact(style: .light)
+                        }
+                    }
+                }
+                .padding(.horizontal)
+            }
+            
+            // Layout toggle with animation
+            HStack {
+                Text("Device Control")
+                    .font(.ringHeadline)
+                    .fontWeight(.semibold)
+                
+                Spacer()
+                
+                Button(action: {
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                        showGridLayout.toggle()
+                    }
+                    HapticFeedback.impact(style: .light)
+                }) {
+                    Image(systemName: showGridLayout ? "list.bullet" : "square.grid.2x2")
+                        .font(.title3)
+                        .foregroundColor(.primary)
+                        .frame(width: 44, height: 44)
+                        .background(
+                            Circle()
+                                .fill(.ultraThinMaterial)
+                        )
+                        .rotation3DEffect(.degrees(showGridLayout ? 0 : 180), axis: (x: 0, y: 1, z: 0))
+                }
+            }
+            .padding(.horizontal)
+            
+            // Device grid/list with advanced animations
+            if showGridLayout {
+                AdvancedDeviceGridView(
+                    smartHomeManager: smartHomeManager,
+                    selectedCategory: selectedCategory,
+                    animateCards: $animateCards
+                )
+            } else {
+                AdvancedDeviceListView(
+                    smartHomeManager: smartHomeManager,
+                    selectedCategory: selectedCategory
+                )
+            }
+        }
+        .onAppear {
+            withAnimation(.easeInOut(duration: 0.8).delay(0.3)) {
+                animateCards = true
+            }
+        }
+    }
+}
+
+// MARK: - Category 3D Button
+struct Category3DButton: View {
+    let category: DeviceCategory
+    let isSelected: Bool
+    let action: () -> Void
+    
+    @State private var isPressed = false
+    
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: 8) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(
+                            LinearGradient(
+                                colors: isSelected ? [.blue, .purple] : [.gray.opacity(0.1), .gray.opacity(0.05)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 80, height: 80)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16)
+                                .stroke(isSelected ? .blue.opacity(0.5) : .clear, lineWidth: 2)
+                        )
+                        .shadow(
+                            color: isSelected ? .blue.opacity(0.3) : .black.opacity(0.1),
+                            radius: isSelected ? 8 : 4,
+                            x: 0,
+                            y: isSelected ? 4 : 2
+                        )
+                        .scaleEffect(isPressed ? 0.95 : 1.0)
+                        .rotation3DEffect(.degrees(isSelected ? 5 : 0), axis: (x: 1, y: 0, z: 0))
+                    
+                    Image(systemName: getCategoryIcon(category))
+                        .font(.title2)
+                        .foregroundColor(isSelected ? .white : .primary)
+                        .scaleEffect(isSelected ? 1.1 : 1.0)
+                }
+                
+                Text(category.rawValue)
+                    .font(.ringSmall)
+                    .fontWeight(.medium)
+                    .foregroundColor(isSelected ? .blue : .primary)
+            }
+        }
+        .buttonStyle(PlainButtonStyle())
+        .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
+            withAnimation(.easeInOut(duration: 0.1)) {
+                isPressed = pressing
+            }
+        }, perform: {})
+    }
+    
+    private func getCategoryIcon(_ category: DeviceCategory) -> String {
+        switch category {
+        case .all: return "house.fill"
+        case .lights: return "lightbulb.fill"
+        case .cameras: return "video.fill"
+        case .sensors: return "sensor.tag.radiowaves.forward.fill"
+        case .thermostats: return "thermometer"
+        case .locks: return "lock.fill"
+        }
+    }
+}
+
+// MARK: - Advanced Device Grid View
+struct AdvancedDeviceGridView: View {
+    @ObservedObject var smartHomeManager: SmartHomeManager
+    let selectedCategory: DeviceCategory
+    @Binding var animateCards: Bool
+    
+    private let columns = [
+        GridItem(.flexible()),
+        GridItem(.flexible())
+    ]
+    
+    private var filteredDevices: [RingDevice] {
+        if selectedCategory == .all {
+            return smartHomeManager.devices
+        } else {
+            return smartHomeManager.getDevicesByCategory(selectedCategory)
+        }
+    }
+    
+    var body: some View {
+        LazyVGrid(columns: columns, spacing: 16) {
+            ForEach(Array(filteredDevices.enumerated()), id: \.element.id) { index, device in
+                AdvancedDeviceCard(
+                    device: device,
+                    smartHomeManager: smartHomeManager
+                )
+                .offset(y: animateCards ? 0 : 100)
+                .opacity(animateCards ? 1 : 0)
+                .rotation3DEffect(.degrees(animateCards ? 0 : 15), axis: (x: 1, y: 0, z: 0))
+                .animation(
+                    .spring(response: 0.6, dampingFraction: 0.8)
+                    .delay(Double(index) * 0.1),
+                    value: animateCards
+                )
+            }
+        }
+        .padding(.horizontal)
+    }
+}
+
+// MARK: - Advanced Device List View
+struct AdvancedDeviceListView: View {
+    @ObservedObject var smartHomeManager: SmartHomeManager
+    let selectedCategory: DeviceCategory
+    
+    private var filteredDevices: [RingDevice] {
+        if selectedCategory == .all {
+            return smartHomeManager.devices
+        } else {
+            return smartHomeManager.getDevicesByCategory(selectedCategory)
+        }
+    }
+    
+    var body: some View {
+        LazyVStack(spacing: 12) {
+            ForEach(filteredDevices) { device in
+                AdvancedDeviceListItem(
+                    device: device,
+                    smartHomeManager: smartHomeManager
+                )
+                .transition(.slide.combined(with: .opacity))
+            }
+        }
+        .padding(.horizontal)
+    }
+}
+
+// MARK: - Advanced Device Card
+struct AdvancedDeviceCard: View {
+    let device: RingDevice
+    @ObservedObject var smartHomeManager: SmartHomeManager
+    @State private var isPressed = false
+    @State private var showDetails = false
+    @State private var animateGlow = false
+    
+    var body: some View {
+        Button(action: {
+            HapticFeedback.impact(style: .medium)
+            showDetails = true
+        }) {
+            VStack(spacing: 16) {
+                // Device icon with 3D effects
+                ZStack {
+                    Circle()
+                        .fill(
+                            RadialGradient(
+                                colors: [device.type.color.opacity(0.3), .clear],
+                                center: .center,
+                                startRadius: 20,
+                                endRadius: 40
+                            )
+                        )
+                        .frame(width: 70, height: 70)
+                        .scaleEffect(animateGlow ? 1.1 : 1.0)
+                        .animation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true), value: animateGlow)
+                    
+                    Image(systemName: device.icon)
+                        .font(.title)
+                        .foregroundColor(device.type.color)
+                        .rotation3DEffect(.degrees(isPressed ? 15 : 0), axis: (x: 1, y: 0, z: 0))
+                }
+                
+                VStack(spacing: 4) {
+                    Text(device.name)
+                        .font(.ringBody)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.primary)
+                        .lineLimit(1)
+                    
+                    Text(device.location)
+                        .font(.ringSmall)
+                        .foregroundColor(.secondary)
+                }
+                
+                // Advanced toggle with 3D effect
+                ZStack {
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(device.isOn ? device.type.color : .gray.opacity(0.3))
+                        .frame(width: 50, height: 30)
+                        .overlay(
+                            Circle()
+                                .fill(.white)
+                                .frame(width: 26, height: 26)
+                                .offset(x: device.isOn ? 10 : -10)
+                                .shadow(color: .black.opacity(0.2), radius: 2, x: 0, y: 1)
+                        )
+                        .rotation3DEffect(.degrees(isPressed ? 5 : 0), axis: (x: 1, y: 0, z: 0))
+                }
+                .onTapGesture {
+                    HapticFeedback.impact(style: .medium)
+                    smartHomeManager.toggleDevice(device)
+                }
+            }
+            .padding()
+            .background(
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(.ultraThinMaterial)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 20)
+                            .stroke(device.type.color.opacity(0.3), lineWidth: 1)
+                    )
+                    .shadow(
+                        color: device.type.color.opacity(0.2),
+                        radius: isPressed ? 8 : 4,
+                        x: 0,
+                        y: isPressed ? 4 : 2
+                    )
+            )
+            .scaleEffect(isPressed ? 0.95 : 1.0)
+            .rotation3DEffect(.degrees(isPressed ? 2 : 0), axis: (x: 1, y: 0, z: 0))
+        }
+        .buttonStyle(PlainButtonStyle())
+        .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
+            withAnimation(.easeInOut(duration: 0.1)) {
+                isPressed = pressing
+            }
+        }, perform: {})
+        .onAppear {
+            animateGlow = true
+        }
+        .sheet(isPresented: $showDetails) {
+            AdvancedDeviceDetailView(device: device, smartHomeManager: smartHomeManager)
+        }
+    }
+}
+
+// MARK: - Advanced Device List Item
+struct AdvancedDeviceListItem: View {
+    let device: RingDevice
+    @ObservedObject var smartHomeManager: SmartHomeManager
+    @State private var isPressed = false
+    
+    var body: some View {
+        HStack(spacing: 16) {
+            // Device icon with 3D effect
+            ZStack {
+                Circle()
+                    .fill(device.type.color.opacity(0.2))
+                    .frame(width: 50, height: 50)
+                
+                Image(systemName: device.icon)
+                    .font(.title3)
+                    .foregroundColor(device.type.color)
+                    .rotation3DEffect(.degrees(isPressed ? 15 : 0), axis: (x: 1, y: 0, z: 0))
+            }
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text(device.name)
+                    .font(.ringBody)
+                    .fontWeight(.semibold)
+                    .foregroundColor(.primary)
+                
+                HStack {
+                    Text(device.location)
+                        .font(.ringSmall)
+                        .foregroundColor(.secondary)
+                    
+                    Spacer()
+                    
+                    Text("\(device.energyUsage, specifier: "%.1f") kWh")
+                        .font(.ringSmall)
+                        .foregroundColor(.secondary)
+                }
+            }
+            
+            Spacer()
+            
+            // Advanced toggle
+            ZStack {
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(device.isOn ? device.type.color : .gray.opacity(0.3))
+                    .frame(width: 44, height: 28)
+                    .overlay(
+                        Circle()
+                            .fill(.white)
+                            .frame(width: 24, height: 24)
+                            .offset(x: device.isOn ? 8 : -8)
+                            .shadow(color: .black.opacity(0.2), radius: 2, x: 0, y: 1)
+                    )
+                    .rotation3DEffect(.degrees(isPressed ? 5 : 0), axis: (x: 1, y: 0, z: 0))
+            }
+            .onTapGesture {
+                HapticFeedback.impact(style: .medium)
+                smartHomeManager.toggleDevice(device)
+            }
+        }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 16)
+                .fill(.ultraThinMaterial)
+                .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+        )
+        .scaleEffect(isPressed ? 0.98 : 1.0)
+        .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
+            withAnimation(.easeInOut(duration: 0.1)) {
+                isPressed = pressing
+            }
+        }, perform: {})
+    }
+}
+
+// MARK: - Advanced Floating Action Menu
+struct AdvancedFloatingActionMenu: View {
+    @Binding var showAdvancedControls: Bool
+    @Binding var showDeviceComparison: Bool
+    @Binding var showAutomationWizard: Bool
+    @State private var isExpanded = false
+    @State private var animateButtons = false
+    
+    var body: some View {
+        VStack(spacing: 16) {
+            // Secondary action buttons
+            if isExpanded {
+                VStack(spacing: 12) {
+                    FloatingActionButton(
+                        icon: "chart.bar.xaxis",
+                        action: {
+                            HapticFeedback.impact(style: .medium)
+                            showDeviceComparison = true
+                        },
+                        color: .green
+                    )
+                    .scaleEffect(animateButtons ? 1.0 : 0.5)
+                    .opacity(animateButtons ? 1.0 : 0.0)
+                    .animation(.spring(response: 0.4, dampingFraction: 0.8).delay(0.1), value: animateButtons)
+                    
+                    FloatingActionButton(
+                        icon: "wand.and.stars",
+                        action: {
+                            HapticFeedback.impact(style: .medium)
+                            showAutomationWizard = true
+                        },
+                        color: .purple
+                    )
+                    .scaleEffect(animateButtons ? 1.0 : 0.5)
+                    .opacity(animateButtons ? 1.0 : 0.0)
+                    .animation(.spring(response: 0.4, dampingFraction: 0.8).delay(0.2), value: animateButtons)
+                }
+            }
+            
+            // Main action button
+            Button(action: {
+                HapticFeedback.impact(style: .medium)
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                    isExpanded.toggle()
+                }
+                
+                if isExpanded {
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8).delay(0.1)) {
+                        animateButtons = true
+                    }
+                } else {
+                    animateButtons = false
+                }
+            }) {
+                Image(systemName: isExpanded ? "xmark" : "plus")
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundColor(.white)
+                    .frame(width: 56, height: 56)
+                    .background(
+                        Circle()
+                            .fill(
+                                LinearGradient(
+                                    colors: [.blue, .purple],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .shadow(color: .blue.opacity(0.3), radius: 8, x: 0, y: 4)
+                    )
+                    .rotationEffect(.degrees(isExpanded ? 45 : 0))
+                    .animation(.spring(response: 0.4, dampingFraction: 0.8), value: isExpanded)
+            }
+        }
+    }
+}
+
+// MARK: - Particle Background
+struct ParticleBackground: View {
+    @State private var particles: [Particle] = []
+    
+    struct Particle: Identifiable {
+        let id = UUID()
+        var x: Double
+        var y: Double
+        var size: Double
+        var opacity: Double
+        var speed: Double
+    }
+    
+    var body: some View {
+        ZStack {
+            ForEach(particles) { particle in
+                Circle()
+                    .fill(.blue.opacity(particle.opacity))
+                    .frame(width: particle.size, height: particle.size)
+                    .position(x: particle.x, y: particle.y)
+                    .animation(
+                        .linear(duration: particle.speed)
+                        .repeatForever(autoreverses: false),
+                        value: particle.x
+                    )
+            }
+        }
+        .onAppear {
+            createParticles()
+        }
+    }
+    
+    private func createParticles() {
+        for _ in 0..<20 {
+            let particle = Particle(
+                x: Double.random(in: 0...UIScreen.main.bounds.width),
+                y: Double.random(in: 0...UIScreen.main.bounds.height),
+                size: Double.random(in: 2...6),
+                opacity: Double.random(in: 0.1...0.3),
+                speed: Double.random(in: 3...8)
+            )
+            particles.append(particle)
+        }
+        
+        // Animate particles
+        withAnimation(.linear(duration: 5.0).repeatForever(autoreverses: false)) {
+            for i in particles.indices {
+                particles[i].y -= 200
+                particles[i].x += Double.random(in: -50...50)
+            }
+        }
+    }
+}
+
+// MARK: - Placeholder Views
+struct AutomationStudioView: View {
+    @ObservedObject var smartHomeManager: SmartHomeManager
+    
+    var body: some View {
+        VStack {
+            Text("Automation Studio")
+                .font(.ringTitle)
+                .foregroundColor(.primary)
+            
+            Text("Advanced automation controls coming soon...")
+                .font(.ringBody)
+                .foregroundColor(.secondary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+struct AdvancedAnalyticsDashboard: View {
+    @ObservedObject var smartHomeManager: SmartHomeManager
+    
+    var body: some View {
+        VStack {
+            Text("Analytics Dashboard")
+                .font(.ringTitle)
+                .foregroundColor(.primary)
+            
+            Text("Advanced analytics coming soon...")
+                .font(.ringBody)
+                .foregroundColor(.secondary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+struct SystemMonitorView: View {
+    @ObservedObject var smartHomeManager: SmartHomeManager
+    
+    var body: some View {
+        VStack {
+            Text("System Monitor")
+                .font(.ringTitle)
+                .foregroundColor(.primary)
+            
+            Text("System monitoring coming soon...")
+                .font(.ringBody)
+                .foregroundColor(.secondary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+}
+
+struct AdvancedDeviceDetailView: View {
+    let device: RingDevice
+    @ObservedObject var smartHomeManager: SmartHomeManager
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
         NavigationView {
             VStack {
-                Text("Detailed Analytics for \(timeRange.displayName)")
-                    .font(RingDesignSystem.Typography.headline)
-                    .padding()
+                Text("Advanced Device Details")
+                    .font(.ringTitle)
+                    .foregroundColor(.primary)
                 
-                Spacer()
-                
-                Text("Detailed chart implementation would go here")
-                    .foregroundColor(RingDesignSystem.Colors.Foreground.secondary)
-                
-                Spacer()
+                Text("Coming soon...")
+                    .font(.ringBody)
+                    .foregroundColor(.secondary)
             }
-            .navigationTitle("Detailed View")
+            .navigationTitle("Device Details")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -1410,5 +2130,68 @@ struct DetailedChartView: View {
                 }
             }
         }
+    }
+}
+
+struct DeviceComparisonView: View {
+    @ObservedObject var smartHomeManager: SmartHomeManager
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        NavigationView {
+            VStack {
+                Text("Device Comparison")
+                    .font(.ringTitle)
+                    .foregroundColor(.primary)
+                
+                Text("Coming soon...")
+                    .font(.ringBody)
+                    .foregroundColor(.secondary)
+            }
+            .navigationTitle("Device Comparison")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+}
+
+struct AutomationWizardView: View {
+    @ObservedObject var smartHomeManager: SmartHomeManager
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        NavigationView {
+            VStack {
+                Text("Automation Wizard")
+                .font(.ringTitle)
+                .foregroundColor(.primary)
+                
+                Text("Coming soon...")
+                .font(.ringBody)
+                .foregroundColor(.secondary)
+            }
+            .navigationTitle("Automation Wizard")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Preview
+struct RingAdvancedDesign_Previews: PreviewProvider {
+    static var previews: some View {
+        RingAdvancedDesign(smartHomeManager: SmartHomeManager())
     }
 }
