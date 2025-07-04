@@ -7,14 +7,16 @@ struct RingDeviceHomeView: View {
     @State private var isRefreshing = false
     @State private var showQuickActions = false
     @State private var selectedQuickAction: QuickAction?
+    @State private var selectedCategory: DeviceCategory? = nil
+    @State private var showGrid = true
+    @State private var animateCards = false
+    @State private var showLiquidEffects = false
     
     // Animation states
-    @State private var animateCards = false
     @State private var showWelcomeAnimation = false
     @State private var pulseAnimation = false
     
     // UI Enhancement states
-    @State private var showGridLayout = true
     @State private var showDeviceStatus = true
     @State private var showEnergyUsage = true
     
@@ -47,128 +49,270 @@ struct RingDeviceHomeView: View {
     }
     
     var body: some View {
-        VStack(spacing: 20) {
-            // Welcome section with animated counter
-            if showWelcomeAnimation {
-                GlassmorphismCard {
+        ScrollView {
+            LazyVStack(spacing: 20) {
+                // Enhanced quick actions section
+                FloatingLabelCard(title: "Quick Actions", color: .blue) {
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: 12) {
+                        MagneticButton(
+                            icon: "power",
+                            color: .green
+                        ) {
+                            smartHomeManager.turnAllDevicesOn()
+                        }
+                        
+                        MagneticButton(
+                            icon: "poweroff",
+                            color: .red
+                        ) {
+                            smartHomeManager.turnAllDevicesOff()
+                        }
+                        
+                        MagneticButton(
+                            icon: "house",
+                            color: .orange
+                        ) {
+                            smartHomeManager.setAwayMode()
+                        }
+                        
+                        MagneticButton(
+                            icon: "moon.fill",
+                            color: .purple
+                        ) {
+                            smartHomeManager.setNightMode()
+                        }
+                    }
+                }
+                .offset(y: animateCards ? 0 : 50)
+                .opacity(animateCards ? 1 : 0)
+                
+                // Enhanced device status overview
+                FloatingLabelCard(title: "System Status", color: .green) {
                     VStack(spacing: 16) {
                         HStack {
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text("Welcome Home")
-                                    .font(.ringTitle)
-                                    .foregroundColor(.primary)
-                                
-                                Text("Your smart home is ready")
-                                    .font(.ringBody)
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Online Devices")
+                                    .font(.ringCaption)
                                     .foregroundColor(.secondary)
+                                Text("\(smartHomeManager.onlineDevices)")
+                                    .font(.ringTitle)
+                                    .fontWeight(.bold)
                             }
                             
                             Spacer()
                             
-                            // Animated device counter
-                            VStack(spacing: 4) {
-                                AnimatedCounter(
-                                    value: smartHomeManager.devices.count,
-                                    prefix: "",
-                                    suffix: ""
-                                )
-                                .font(.ringHeadline)
-                                .foregroundColor(.blue)
-                                
-                                Text("Devices")
-                                    .font(.ringSmall)
-                                    .foregroundColor(.secondary)
-                            }
+                            AnimatedProgressBar(
+                                progress: Double(smartHomeManager.onlineDevices) / Double(max(smartHomeManager.devices.count, 1)),
+                                color: .green,
+                                height: 8
+                            )
+                            .frame(width: 100)
                         }
                         
-                        // Quick actions row
-                        if showQuickActions {
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 12) {
-                                    ForEach(QuickAction.allCases, id: \.self) { action in
-                                        QuickActionButton(
-                                            action: action,
-                                            isSelected: selectedQuickAction == action
-                                        ) {
-                                            HapticFeedback.impact(style: .medium)
-                                            selectedQuickAction = action
-                                            executeQuickAction(action)
-                                        }
-                                    }
-                                }
-                                .padding(.horizontal)
+                        HStack {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Energy Usage")
+                                    .font(.ringCaption)
+                                    .foregroundColor(.secondary)
+                                Text("\(smartHomeManager.totalEnergyUsage, specifier: "%.1f") kWh")
+                                    .font(.ringTitle)
+                                    .fontWeight(.bold)
                             }
+                            
+                            Spacer()
+                            
+                            AnimatedIcon(
+                                icon: "bolt.fill",
+                                color: .yellow,
+                                animationType: .pulse
+                            )
+                        }
+                        
+                        HStack {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text("Active Automations")
+                                    .font(.ringCaption)
+                                    .foregroundColor(.secondary)
+                                Text("\(smartHomeManager.activeAutomations)")
+                                    .font(.ringTitle)
+                                    .fontWeight(.bold)
+                            }
+                            
+                            Spacer()
+                            
+                            AnimatedIcon(
+                                icon: "gearshape.fill",
+                                color: .blue,
+                                animationType: .rotate
+                            )
                         }
                     }
-                    .padding()
+                }
+                .offset(y: animateCards ? 0 : 50)
+                .opacity(animateCards ? 1 : 0)
+                
+                // Enhanced category filters with morphing buttons
+                FloatingLabelCard(title: "Categories", color: .purple) {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 12) {
+                            MorphingButton(
+                                title: "All",
+                                icon: "square.grid.2x2"
+                            ) {
+                                selectedCategory = nil
+                            }
+                            
+                            ForEach(DeviceCategory.allCases, id: \.self) { category in
+                                MorphingButton(
+                                    title: category.displayName,
+                                    icon: category.icon
+                                ) {
+                                    selectedCategory = category
+                                }
+                            }
+                        }
+                        .padding(.horizontal, 4)
+                    }
+                }
+                .offset(y: animateCards ? 0 : 50)
+                .opacity(animateCards ? 1 : 0)
+                
+                // Enhanced device grid/list toggle
+                HStack {
+                    Text("Devices")
+                        .font(.ringTitle)
+                        .fontWeight(.bold)
+                    
+                    Spacer()
+                    
+                    HStack(spacing: 8) {
+                        Button(action: {
+                            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                                showGrid = true
+                            }
+                        }) {
+                            Image(systemName: "square.grid.2x2")
+                                .font(.title3)
+                                .foregroundColor(showGrid ? .blue : .secondary)
+                                .frame(width: 40, height: 40)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .fill(showGrid ? .blue.opacity(0.2) : .clear)
+                                )
+                        }
+                        
+                        Button(action: {
+                            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                                showGrid = false
+                            }
+                        }) {
+                            Image(systemName: "list.bullet")
+                                .font(.title3)
+                                .foregroundColor(!showGrid ? .blue : .secondary)
+                                .frame(width: 40, height: 40)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .fill(!showGrid ? .blue.opacity(0.2) : .clear)
+                                )
+                        }
+                    }
                 }
                 .padding(.horizontal)
-                .transition(.move(edge: .top).combined(with: .opacity))
-            }
-            
-            // Device status overview
-            if showDeviceStatus {
-                DeviceStatusOverview(smartHomeManager: smartHomeManager)
-                    .transition(.scale.combined(with: .opacity))
-            }
-            
-            // Energy usage summary
-            if showEnergyUsage {
-                EnergyUsageSummary(smartHomeManager: smartHomeManager)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-            }
-            
-            // Device grid/list toggle
-            HStack {
-                Text("Your Devices")
-                    .font(.ringHeadline)
-                    .fontWeight(.semibold)
+                .offset(y: animateCards ? 0 : 50)
+                .opacity(animateCards ? 1 : 0)
                 
-                Spacer()
-                
-                // Layout toggle
-                Button(action: {
-                    HapticFeedback.impact(style: .light)
-                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                        showGridLayout.toggle()
+                // Enhanced device display
+                if showGrid {
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 16), count: 2), spacing: 16) {
+                        ForEach(filteredDevices.indices, id: \.self) { index in
+                            EnhancedDeviceCard(
+                                device: filteredDevices[index],
+                                smartHomeManager: smartHomeManager
+                            )
+                            .offset(y: animateCards ? 0 : 100)
+                            .opacity(animateCards ? 1 : 0)
+                            .animation(
+                                .spring(response: 0.6, dampingFraction: 0.8)
+                                .delay(Double(index) * 0.1),
+                                value: animateCards
+                            )
+                        }
                     }
-                }) {
-                    Image(systemName: showGridLayout ? "list.bullet" : "square.grid.2x2")
-                        .font(.title3)
-                        .foregroundColor(.primary)
-                        .frame(width: 44, height: 44)
-                        .background(
-                            Circle()
-                                .fill(.ultraThinMaterial)
-                        )
+                    .padding(.horizontal)
+                } else {
+                    LazyVStack(spacing: 12) {
+                        ForEach(filteredDevices.indices, id: \.self) { index in
+                            EnhancedDeviceListCard(
+                                device: filteredDevices[index],
+                                smartHomeManager: smartHomeManager
+                            )
+                            .offset(y: animateCards ? 0 : 100)
+                            .opacity(animateCards ? 1 : 0)
+                            .animation(
+                                .spring(response: 0.6, dampingFraction: 0.8)
+                                .delay(Double(index) * 0.05),
+                                value: animateCards
+                            )
+                        }
+                    }
+                    .padding(.horizontal)
+                }
+                
+                // Empty state with liquid effects
+                if filteredDevices.isEmpty {
+                    VStack(spacing: 20) {
+                        if showLiquidEffects {
+                            LiquidBlobView(color: .blue, size: 100)
+                        }
+                        
+                        VStack(spacing: 12) {
+                            Text("No Devices Found")
+                                .font(.ringTitle)
+                                .fontWeight(.bold)
+                            
+                            Text("Add some devices to get started with your smart home")
+                                .font(.ringBody)
+                                .foregroundColor(.secondary)
+                                .multilineTextAlignment(.center)
+                        }
+                        
+                        RippleButton(
+                            title: "Add Device",
+                            icon: "plus"
+                        ) {
+                            // Add device action
+                        }
+                    }
+                    .padding(.vertical, 40)
+                    .offset(y: animateCards ? 0 : 50)
+                    .opacity(animateCards ? 1 : 0)
                 }
             }
-            .padding(.horizontal)
-            
-            // Device grid/list
-            if showGridLayout {
-                DeviceGridView(
-                    smartHomeManager: smartHomeManager,
-                    selectedDevice: $selectedDevice,
-                    showingDeviceDetail: $showingDeviceDetail,
-                    animateCards: $animateCards
-                )
-            } else {
-                DeviceListView(
-                    smartHomeManager: smartHomeManager,
-                    selectedDevice: $selectedDevice,
-                    showingDeviceDetail: $showingDeviceDetail
-                )
-            }
+            .padding(.vertical)
         }
         .onAppear {
-            startAnimations()
+            withAnimation(.spring(response: 0.8, dampingFraction: 0.8).delay(0.2)) {
+                animateCards = true
+            }
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                withAnimation(.easeInOut(duration: 1.0)) {
+                    showLiquidEffects = true
+                }
+            }
         }
         .sheet(isPresented: $showingDeviceDetail) {
             if let device = selectedDevice {
                 DeviceDetailView(device: device, smartHomeManager: smartHomeManager)
             }
         }
+    }
+    
+    private var filteredDevices: [RingDevice] {
+        if let category = selectedCategory {
+            return smartHomeManager.devices.filter { $0.category == category }
+        }
+        return smartHomeManager.devices
     }
     
     private func startAnimations() {
@@ -803,5 +947,187 @@ extension Date {
 struct RingDeviceHomeView_Previews: PreviewProvider {
     static var previews: some View {
         RingDeviceHomeView(smartHomeManager: SmartHomeManager())
+    }
+}
+
+struct EnhancedDeviceCard: View {
+    let device: RingDevice
+    @ObservedObject var smartHomeManager: SmartHomeManager
+    @State private var isPressed = false
+    @State private var showGlow = false
+    
+    var body: some View {
+        GlowingCard(
+            glowColor: device.status == .online ? .green : .red,
+            intensity: showGlow ? 0.4 : 0.2
+        ) {
+            VStack(spacing: 12) {
+                // Device icon with animation
+                ZStack {
+                    Circle()
+                        .fill(
+                            RadialGradient(
+                                colors: [
+                                    device.status == .online ? .green : .red,
+                                    device.status == .online ? .green.opacity(0.3) : .red.opacity(0.3)
+                                ],
+                                center: .center,
+                                startRadius: 0,
+                                endRadius: 30
+                            )
+                        )
+                        .frame(width: 60, height: 60)
+                        .scaleEffect(isPressed ? 0.9 : 1.0)
+                    
+                    Image(systemName: device.category.icon)
+                        .font(.title2)
+                        .foregroundColor(.white)
+                        .rotationEffect(.degrees(showGlow ? 360 : 0))
+                        .animation(.linear(duration: 2.0).repeatForever(autoreverses: false), value: showGlow)
+                }
+                
+                // Device info
+                VStack(spacing: 4) {
+                    Text(device.name)
+                        .font(.ringBody)
+                        .fontWeight(.semibold)
+                        .lineLimit(1)
+                    
+                    Text(device.category.displayName)
+                        .font(.ringSmall)
+                        .foregroundColor(.secondary)
+                }
+                
+                // Status indicator
+                HStack {
+                    Circle()
+                        .fill(device.status == .online ? .green : .red)
+                        .frame(width: 8, height: 8)
+                        .scaleEffect(showGlow ? 1.2 : 1.0)
+                        .animation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true), value: showGlow)
+                    
+                    Text(device.status.rawValue.capitalized)
+                        .font(.ringSmall)
+                        .foregroundColor(.secondary)
+                }
+                
+                // Device toggle
+                AnimatedToggle(
+                    isOn: Binding(
+                        get: { device.isOn },
+                        set: { newValue in
+                            if newValue {
+                                smartHomeManager.turnDeviceOn(device)
+                            } else {
+                                smartHomeManager.turnDeviceOff(device)
+                            }
+                        }
+                    ),
+                    color: device.status == .online ? .blue : .gray
+                )
+            }
+            .padding()
+        }
+        .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
+            withAnimation(.easeInOut(duration: 0.1)) {
+                isPressed = pressing
+            }
+        }, perform: {})
+        .onAppear {
+            withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
+                showGlow = true
+            }
+        }
+    }
+}
+
+struct EnhancedDeviceListCard: View {
+    let device: RingDevice
+    @ObservedObject var smartHomeManager: SmartHomeManager
+    @State private var isPressed = false
+    @State private var showGlow = false
+    
+    var body: some View {
+        GlowingCard(
+            glowColor: device.status == .online ? .green : .red,
+            intensity: showGlow ? 0.3 : 0.1
+        ) {
+            HStack(spacing: 16) {
+                // Device icon
+                ZStack {
+                    Circle()
+                        .fill(
+                            RadialGradient(
+                                colors: [
+                                    device.status == .online ? .green : .red,
+                                    device.status == .online ? .green.opacity(0.3) : .red.opacity(0.3)
+                                ],
+                                center: .center,
+                                startRadius: 0,
+                                endRadius: 25
+                            )
+                        )
+                        .frame(width: 50, height: 50)
+                        .scaleEffect(isPressed ? 0.9 : 1.0)
+                    
+                    Image(systemName: device.category.icon)
+                        .font(.title3)
+                        .foregroundColor(.white)
+                        .rotationEffect(.degrees(showGlow ? 360 : 0))
+                        .animation(.linear(duration: 3.0).repeatForever(autoreverses: false), value: showGlow)
+                }
+                
+                // Device info
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(device.name)
+                        .font(.ringBody)
+                        .fontWeight(.semibold)
+                    
+                    Text(device.category.displayName)
+                        .font(.ringSmall)
+                        .foregroundColor(.secondary)
+                    
+                    HStack {
+                        Circle()
+                            .fill(device.status == .online ? .green : .red)
+                            .frame(width: 6, height: 6)
+                            .scaleEffect(showGlow ? 1.2 : 1.0)
+                            .animation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true), value: showGlow)
+                        
+                        Text(device.status.rawValue.capitalized)
+                            .font(.ringSmall)
+                            .foregroundColor(.secondary)
+                    }
+                }
+                
+                Spacer()
+                
+                // Device toggle
+                AnimatedToggle(
+                    isOn: Binding(
+                        get: { device.isOn },
+                        set: { newValue in
+                            if newValue {
+                                smartHomeManager.turnDeviceOn(device)
+                            } else {
+                                smartHomeManager.turnDeviceOff(device)
+                            }
+                        }
+                    ),
+                    color: device.status == .online ? .blue : .gray
+                )
+            }
+            .padding()
+        }
+        .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
+            withAnimation(.easeInOut(duration: 0.1)) {
+                isPressed = pressing
+            }
+        }, perform: {})
+        .onAppear {
+            withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
+                showGlow = true
+            }
+        }
     }
 } 
