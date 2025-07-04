@@ -184,106 +184,198 @@ struct SystemStatusView: View {
     }
 }
 
-// MARK: - Settings View
+// MARK: - Enhanced Settings View
 
 struct SettingsView: View {
     @ObservedObject var smartHomeManager: SmartHomeManager
+    @State private var showingNotificationSettings = false
+    @State private var showingDataManagement = false
+    @State private var showingAnalytics = false
+    @State private var showingDeviceSetup = false
+    @State private var showingBackupRestore = false
+    @State private var showingAbout = false
     
     var body: some View {
         NavigationView {
             List {
-                profileSection
-                deviceSection
-                notificationSection
-                securitySection
+                // Account Section
+                accountSection
+                
+                // Notifications Section
+                notificationsSection
+                
+                // Device Management Section
+                deviceManagementSection
+                
+                // Data & Privacy Section
+                dataPrivacySection
+                
+                // System Section
+                systemSection
+                
+                // Support Section
                 supportSection
-                signOutSection
             }
             .navigationTitle("Settings")
             .navigationBarTitleDisplayMode(.large)
-        }
-    }
-    
-    private var profileSection: some View {
-        Section {
-            HStack(spacing: RingDesignSystem.Spacing.md) {
-                Circle()
-                    .fill(RingDesignSystem.Colors.ringBlue)
-                    .frame(width: 50, height: 50)
-                    .overlay(
-                        Text("JD")
-                            .font(RingDesignSystem.Typography.headline)
-                            .fontWeight(.semibold)
-                            .foregroundColor(.white)
-                    )
-                
-                VStack(alignment: .leading, spacing: RingDesignSystem.Spacing.xs) {
-                    Text("John Doe")
-                        .font(RingDesignSystem.Typography.headline)
-                        .foregroundColor(RingDesignSystem.Colors.Foreground.primary)
-                    
-                    Text("john.doe@example.com")
-                        .font(RingDesignSystem.Typography.caption1)
-                        .foregroundColor(RingDesignSystem.Colors.Foreground.secondary)
-                }
-                
-                Spacer()
+            .sheet(isPresented: $showingNotificationSettings) {
+                NotificationSettingsView(smartHomeManager: smartHomeManager)
             }
-            .padding(.vertical, RingDesignSystem.Spacing.xs)
+            .sheet(isPresented: $showingDataManagement) {
+                DataManagementView(smartHomeManager: smartHomeManager)
+            }
+            .sheet(isPresented: $showingAnalytics) {
+                AnalyticsView(smartHomeManager: smartHomeManager)
+            }
+            .sheet(isPresented: $showingDeviceSetup) {
+                DeviceSetupWizardView(smartHomeManager: smartHomeManager)
+            }
+            .sheet(isPresented: $showingBackupRestore) {
+                BackupRestoreView(smartHomeManager: smartHomeManager)
+            }
+            .sheet(isPresented: $showingAbout) {
+                AboutView()
+            }
         }
     }
     
-    private var deviceSection: some View {
-        Section("Devices") {
+    private var accountSection: some View {
+        Section("Account") {
             SettingsRow(
-                title: "Device Management",
-                icon: "house.fill",
+                title: "Ring Account",
+                subtitle: "Manage your Ring account settings",
+                icon: "person.circle.fill",
                 color: RingDesignSystem.Colors.ringBlue
-            )
+            ) {
+                // Navigate to Ring account settings
+                RingDesignSystem.Haptics.navigation()
+            }
             
             SettingsRow(
-                title: "Geofencing",
-                icon: "location.fill",
+                title: "CarPlay Settings",
+                subtitle: "Configure CarPlay integration",
+                icon: "car.fill",
                 color: RingDesignSystem.Colors.ringGreen
-            )
-            
-            SettingsRow(
-                title: "Motion Detection",
-                icon: "sensor.tag.radiowaves.forward.fill",
-                color: RingDesignSystem.Colors.ringOrange
-            )
+            ) {
+                // Navigate to CarPlay settings
+                RingDesignSystem.Haptics.navigation()
+            }
         }
     }
     
-    private var notificationSection: some View {
+    private var notificationsSection: some View {
         Section("Notifications") {
             SettingsRow(
-                title: "Push Notifications",
+                title: "Notification Preferences",
+                subtitle: "Customize alert settings",
                 icon: "bell.fill",
-                color: RingDesignSystem.Colors.ringYellow
-            )
+                color: RingDesignSystem.Colors.ringOrange
+            ) {
+                showingNotificationSettings = true
+                RingDesignSystem.Haptics.navigation()
+            }
             
             SettingsRow(
-                title: "Alert Preferences",
-                icon: "exclamationmark.triangle.fill",
-                color: RingDesignSystem.Colors.ringRed
-            )
+                title: "Quiet Hours",
+                subtitle: smartHomeManager.notificationPreferences.quietHours.enabled ? "Enabled" : "Disabled",
+                icon: "moon.fill",
+                color: RingDesignSystem.Colors.ringPurple
+            ) {
+                showingNotificationSettings = true
+                RingDesignSystem.Haptics.navigation()
+            }
         }
     }
     
-    private var securitySection: some View {
-        Section("Security & Privacy") {
+    private var deviceManagementSection: some View {
+        Section("Device Management") {
             SettingsRow(
-                title: "Privacy Settings",
-                icon: "lock.fill",
-                color: RingDesignSystem.Colors.ringPurple
-            )
+                title: "Add Device",
+                subtitle: "Set up a new Ring device",
+                icon: "plus.circle.fill",
+                color: RingDesignSystem.Colors.ringBlue
+            ) {
+                showingDeviceSetup = true
+                RingDesignSystem.Haptics.navigation()
+            }
             
             SettingsRow(
-                title: "Data & Storage",
-                icon: "internaldrive.fill",
+                title: "Device Organization",
+                subtitle: "Group and organize devices",
+                icon: "folder.fill",
+                color: RingDesignSystem.Colors.ringGreen
+            ) {
+                // Navigate to device organization
+                RingDesignSystem.Haptics.navigation()
+            }
+            
+            SettingsRow(
+                title: "System Health",
+                subtitle: "Monitor device performance",
+                icon: "heart.fill",
+                color: RingDesignSystem.Colors.ringRed
+            ) {
+                // Navigate to system health
+                RingDesignSystem.Haptics.navigation()
+            }
+        }
+    }
+    
+    private var dataPrivacySection: some View {
+        Section("Data & Privacy") {
+            SettingsRow(
+                title: "Data Management",
+                subtitle: "Backup and restore data",
+                icon: "icloud.fill",
+                color: RingDesignSystem.Colors.ringBlue
+            ) {
+                showingDataManagement = true
+                RingDesignSystem.Haptics.navigation()
+            }
+            
+            SettingsRow(
+                title: "Analytics & Usage",
+                subtitle: "View app usage statistics",
+                icon: "chart.bar.fill",
+                color: RingDesignSystem.Colors.ringOrange
+            ) {
+                showingAnalytics = true
+                RingDesignSystem.Haptics.navigation()
+            }
+            
+            SettingsRow(
+                title: "Privacy Settings",
+                subtitle: "Control data sharing",
+                icon: "lock.shield.fill",
+                color: RingDesignSystem.Colors.ringPurple
+            ) {
+                // Navigate to privacy settings
+                RingDesignSystem.Haptics.navigation()
+            }
+        }
+    }
+    
+    private var systemSection: some View {
+        Section("System") {
+            SettingsRow(
+                title: "Performance",
+                subtitle: "Monitor app performance",
+                icon: "speedometer",
+                color: RingDesignSystem.Colors.ringGreen
+            ) {
+                // Navigate to performance monitoring
+                RingDesignSystem.Haptics.navigation()
+            }
+            
+            SettingsRow(
+                title: "App Version",
+                subtitle: "1.0.0 (Build 1)",
+                icon: "info.circle.fill",
                 color: RingDesignSystem.Colors.Foreground.secondary
-            )
+            ) {
+                showingAbout = true
+                RingDesignSystem.Haptics.navigation()
+            }
         }
     }
     
@@ -291,205 +383,220 @@ struct SettingsView: View {
         Section("Support") {
             SettingsRow(
                 title: "Help & Support",
+                subtitle: "Get help and contact support",
                 icon: "questionmark.circle.fill",
                 color: RingDesignSystem.Colors.ringBlue
-            )
+            ) {
+                // Navigate to help and support
+                RingDesignSystem.Haptics.navigation()
+            }
             
             SettingsRow(
-                title: "Contact Support",
-                icon: "message.fill",
+                title: "Feedback",
+                subtitle: "Send feedback and suggestions",
+                icon: "envelope.fill",
                 color: RingDesignSystem.Colors.ringGreen
-            )
-        }
-    }
-    
-    private var signOutSection: some View {
-        Section {
-            Button {
-                signOut()
-            } label: {
-                HStack {
-                    Image(systemName: "rectangle.portrait.and.arrow.right")
-                        .foregroundColor(RingDesignSystem.Colors.ringRed)
-                    
-                    Text("Sign Out")
-                        .foregroundColor(RingDesignSystem.Colors.ringRed)
-                }
+            ) {
+                // Open feedback form
+                RingDesignSystem.Haptics.navigation()
             }
         }
-    }
-    
-    private func signOut() {
-        RingDesignSystem.Haptics.medium()
-        RingAPIManager.shared.signOut()
-        AuthenticationManager.shared.signOut()
     }
 }
 
-// MARK: - Bulk Actions View
+// MARK: - Notification Settings View
 
-struct BulkActionsView: View {
+struct NotificationSettingsView: View {
     @ObservedObject var smartHomeManager: SmartHomeManager
+    @State private var preferences: SmartHomeManager.NotificationPreferences
     @Environment(\.dismiss) var dismiss
-    @State private var isProcessing = false
-    @State private var resultMessage: String?
+    
+    init(smartHomeManager: SmartHomeManager) {
+        self.smartHomeManager = smartHomeManager
+        self._preferences = State(initialValue: smartHomeManager.notificationPreferences)
+    }
     
     var body: some View {
         NavigationView {
-            ScrollView {
-                VStack(spacing: RingDesignSystem.Spacing.lg) {
-                    if isProcessing {
-                        processingView
-                    } else {
-                        actionsGrid
-                    }
+            Form {
+                Section("Alert Types") {
+                    Toggle("Motion Alerts", isOn: $preferences.motionAlerts)
+                    Toggle("Doorbell Rings", isOn: $preferences.doorbellRings)
+                    Toggle("System Alerts", isOn: $preferences.systemAlerts)
+                    Toggle("Battery Warnings", isOn: $preferences.batteryWarnings)
+                }
+                
+                Section("Quiet Hours") {
+                    Toggle("Enable Quiet Hours", isOn: $preferences.quietHours.enabled)
                     
-                    if let message = resultMessage {
-                        resultView(message: message)
+                    if preferences.quietHours.enabled {
+                        DatePicker("Start Time", selection: $preferences.quietHours.startTime, displayedComponents: .hourAndMinute)
+                        DatePicker("End Time", selection: $preferences.quietHours.endTime, displayedComponents: .hourAndMinute)
                     }
                 }
-                .padding(RingDesignSystem.Spacing.md)
+                
+                Section("Device-Specific Alerts") {
+                    ForEach(smartHomeManager.getDevices(), id: \.id) { device in
+                        Toggle(device.name, isOn: Binding(
+                            get: { preferences.deviceSpecificAlerts[device.id.uuidString] ?? true },
+                            set: { preferences.deviceSpecificAlerts[device.id.uuidString] = $0 }
+                        ))
+                    }
+                }
             }
-            .background(RingDesignSystem.Colors.Background.primary.ignoresSafeArea())
-            .navigationTitle("Bulk Actions")
+            .navigationTitle("Notification Settings")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Save") {
+                        smartHomeManager.updateNotificationPreferences(preferences)
+                        dismiss()
+                    }
+                    .fontWeight(.semibold)
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Data Management View
+
+struct DataManagementView: View {
+    @ObservedObject var smartHomeManager: SmartHomeManager
+    @State private var showingBackupOptions = false
+    @State private var showingRestoreOptions = false
+    @State private var showingExportOptions = false
+    @Environment(\.dismiss) var dismiss
+    
+    var body: some View {
+        NavigationView {
+            List {
+                Section("Backup & Restore") {
+                    SettingsRow(
+                        title: "Create Backup",
+                        subtitle: "Save your data locally",
+                        icon: "icloud.and.arrow.up.fill",
+                        color: RingDesignSystem.Colors.ringBlue
+                    ) {
+                        showingBackupOptions = true
+                        RingDesignSystem.Haptics.navigation()
+                    }
+                    
+                    SettingsRow(
+                        title: "Restore Backup",
+                        subtitle: "Restore from saved backup",
+                        icon: "icloud.and.arrow.down.fill",
+                        color: RingDesignSystem.Colors.ringGreen
+                    ) {
+                        showingRestoreOptions = true
+                        RingDesignSystem.Haptics.navigation()
+                    }
+                }
+                
+                Section("Export Data") {
+                    SettingsRow(
+                        title: "Export Device Data",
+                        subtitle: "Export as JSON file",
+                        icon: "square.and.arrow.up.fill",
+                        color: RingDesignSystem.Colors.ringOrange
+                    ) {
+                        showingExportOptions = true
+                        RingDesignSystem.Haptics.navigation()
+                    }
+                }
+                
+                Section("Data Usage") {
+                    HStack {
+                        VStack(alignment: .leading) {
+                            Text("Local Storage")
+                                .font(RingDesignSystem.Typography.subheadline)
+                            Text("2.4 MB used")
+                                .font(RingDesignSystem.Typography.caption1)
+                                .foregroundColor(RingDesignSystem.Colors.Foreground.secondary)
+                        }
+                        
+                        Spacer()
+                        
+                        ProgressView(value: 0.24)
+                            .frame(width: 60)
+                    }
+                }
+            }
+            .navigationTitle("Data Management")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button("Done") {
                         dismiss()
                     }
-                    .foregroundColor(RingDesignSystem.Colors.ringBlue)
                 }
             }
         }
     }
+}
+
+// MARK: - Analytics View
+
+struct AnalyticsView: View {
+    @ObservedObject var smartHomeManager: SmartHomeManager
+    @Environment(\.dismiss) var dismiss
     
-    private var actionsGrid: some View {
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: RingDesignSystem.Spacing.md) {
-            BulkActionCard(
-                title: "Capture All Snapshots",
-                subtitle: "Take photos from all cameras",
-                icon: "camera.fill",
-                color: RingDesignSystem.Colors.ringBlue
-            ) {
-                performBulkSnapshots()
+    var body: some View {
+        NavigationView {
+            List {
+                Section("Usage Statistics") {
+                    AnalyticsRow(
+                        title: "Total Sessions",
+                        value: "\(smartHomeManager.userAnalytics.totalSessions)",
+                        icon: "chart.line.uptrend.xyaxis",
+                        color: RingDesignSystem.Colors.ringBlue
+                    )
+                    
+                    AnalyticsRow(
+                        title: "Average Session",
+                        value: String(format: "%.1f min", smartHomeManager.userAnalytics.averageSessionDuration / 60),
+                        icon: "clock.fill",
+                        color: RingDesignSystem.Colors.ringGreen
+                    )
+                }
+                
+                Section("Most Used Features") {
+                    ForEach(Array(smartHomeManager.userAnalytics.mostUsedFeatures.prefix(5)), id: \.key) { feature in
+                        HStack {
+                            Text(feature.key.replacingOccurrences(of: "_", with: " ").capitalized)
+                            Spacer()
+                            Text("\(feature.value)")
+                                .foregroundColor(RingDesignSystem.Colors.Foreground.secondary)
+                        }
+                    }
+                }
+                
+                Section("Device Interactions") {
+                    ForEach(Array(smartHomeManager.userAnalytics.deviceInteractions.prefix(5)), id: \.key) { interaction in
+                        HStack {
+                            Text(interaction.key.replacingOccurrences(of: "_", with: " ").capitalized)
+                            Spacer()
+                            Text("\(interaction.value)")
+                                .foregroundColor(RingDesignSystem.Colors.Foreground.secondary)
+                        }
+                    }
+                }
             }
-            
-            BulkActionCard(
-                title: "Enable Motion Detection",
-                subtitle: "Turn on for all devices",
-                icon: "sensor.tag.radiowaves.forward.fill",
-                color: RingDesignSystem.Colors.ringGreen
-            ) {
-                enableAllMotionDetection()
+            .navigationTitle("Analytics")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
             }
-            
-            BulkActionCard(
-                title: "Disable Motion Detection",
-                subtitle: "Turn off for all devices",
-                icon: "sensor.tag.radiowaves.forward",
-                color: RingDesignSystem.Colors.ringOrange
-            ) {
-                disableAllMotionDetection()
-            }
-            
-            BulkActionCard(
-                title: "System Health Check",
-                subtitle: "Check all device status",
-                icon: "stethoscope",
-                color: RingDesignSystem.Colors.ringPurple
-            ) {
-                performHealthCheck()
-            }
-        }
-    }
-    
-    private var processingView: some View {
-        VStack(spacing: RingDesignSystem.Spacing.lg) {
-            ProgressView()
-                .progressViewStyle(CircularProgressViewStyle(tint: RingDesignSystem.Colors.ringBlue))
-                .scaleEffect(1.5)
-            
-            Text("Processing...")
-                .font(RingDesignSystem.Typography.headline)
-                .foregroundColor(RingDesignSystem.Colors.Foreground.primary)
-        }
-        .frame(maxWidth: .infinity, maxHeight: 200)
-        .liquidGlass(cornerRadius: RingDesignSystem.CornerRadius.lg)
-        .shimmer(active: true)
-    }
-    
-    private func resultView(message: String) -> some View {
-        VStack(spacing: RingDesignSystem.Spacing.md) {
-            Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 48))
-                .foregroundColor(RingDesignSystem.Colors.ringGreen)
-            
-            Text("Complete")
-                .font(RingDesignSystem.Typography.headline)
-                .foregroundColor(RingDesignSystem.Colors.Foreground.primary)
-            
-            Text(message)
-                .font(RingDesignSystem.Typography.body)
-                .foregroundColor(RingDesignSystem.Colors.Foreground.secondary)
-                .multilineTextAlignment(.center)
-        }
-        .padding(RingDesignSystem.Spacing.lg)
-        .liquidGlass(cornerRadius: RingDesignSystem.CornerRadius.lg)
-        .transition(.scale.combined(with: .opacity))
-    }
-    
-    private func performBulkSnapshots() {
-        isProcessing = true
-        resultMessage = nil
-        RingDesignSystem.Haptics.medium()
-        
-        smartHomeManager.captureSnapshotsFromAllCameras { snapshots, errors in
-            DispatchQueue.main.async {
-                isProcessing = false
-                resultMessage = "Captured \(snapshots.count) snapshots, \(errors.count) failed"
-                RingDesignSystem.Haptics.success()
-            }
-        }
-    }
-    
-    private func enableAllMotionDetection() {
-        isProcessing = true
-        resultMessage = nil
-        RingDesignSystem.Haptics.medium()
-        
-        smartHomeManager.enableMotionDetectionForAllDevices { success, total in
-            DispatchQueue.main.async {
-                isProcessing = false
-                resultMessage = "Enabled motion detection on \(success)/\(total) devices"
-                RingDesignSystem.Haptics.success()
-            }
-        }
-    }
-    
-    private func disableAllMotionDetection() {
-        isProcessing = true
-        resultMessage = nil
-        RingDesignSystem.Haptics.medium()
-        
-        smartHomeManager.disableMotionDetectionForAllDevices { success, total in
-            DispatchQueue.main.async {
-                isProcessing = false
-                resultMessage = "Disabled motion detection on \(success)/\(total) devices"
-                RingDesignSystem.Haptics.success()
-            }
-        }
-    }
-    
-    private func performHealthCheck() {
-        isProcessing = true
-        resultMessage = nil
-        RingDesignSystem.Haptics.medium()
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-            isProcessing = false
-            resultMessage = "System health check completed successfully"
-            RingDesignSystem.Haptics.success()
         }
     }
 }
@@ -589,31 +696,6 @@ struct QuickActionButton: View {
 
 struct SettingsRow: View {
     let title: String
-    let icon: String
-    let color: Color
-    
-    var body: some View {
-        HStack {
-            Image(systemName: icon)
-                .font(RingDesignSystem.Typography.subheadline)
-                .foregroundColor(color)
-                .frame(width: 24)
-            
-            Text(title)
-                .font(RingDesignSystem.Typography.subheadline)
-                .foregroundColor(RingDesignSystem.Colors.Foreground.primary)
-            
-            Spacer()
-            
-            Image(systemName: "chevron.right")
-                .font(RingDesignSystem.Typography.caption2)
-                .foregroundColor(RingDesignSystem.Colors.Foreground.tertiary)
-        }
-    }
-}
-
-struct BulkActionCard: View {
-    let title: String
     let subtitle: String
     let icon: String
     let color: Color
@@ -621,34 +703,107 @@ struct BulkActionCard: View {
     
     var body: some View {
         Button(action: action) {
-            VStack(spacing: RingDesignSystem.Spacing.md) {
+            HStack {
                 Image(systemName: icon)
-                    .font(.system(size: 32, weight: .medium))
+                    .font(RingDesignSystem.Typography.subheadline)
                     .foregroundColor(color)
+                    .frame(width: 24)
                 
-                VStack(spacing: RingDesignSystem.Spacing.xs) {
+                VStack(alignment: .leading, spacing: RingDesignSystem.Spacing.xs) {
                     Text(title)
                         .font(RingDesignSystem.Typography.subheadline)
-                        .fontWeight(.semibold)
                         .foregroundColor(RingDesignSystem.Colors.Foreground.primary)
-                        .multilineTextAlignment(.center)
                     
                     Text(subtitle)
                         .font(RingDesignSystem.Typography.caption1)
                         .foregroundColor(RingDesignSystem.Colors.Foreground.secondary)
-                        .multilineTextAlignment(.center)
                 }
+                
+                Spacer()
+                
+                Image(systemName: "chevron.right")
+                    .font(RingDesignSystem.Typography.caption2)
+                    .foregroundColor(RingDesignSystem.Colors.Foreground.tertiary)
             }
-            .frame(maxWidth: .infinity, minHeight: 120)
-            .padding(RingDesignSystem.Spacing.md)
-            .liquidGlass(cornerRadius: RingDesignSystem.CornerRadius.lg)
-            .overlay(
-                RoundedRectangle(cornerRadius: RingDesignSystem.CornerRadius.lg)
-                    .stroke(color.opacity(0.3), lineWidth: 1)
-            )
         }
         .onTapWithFeedback(haptic: .medium) {
             // Action handled in closure
+        }
+    }
+}
+
+struct AnalyticsRow: View {
+    let title: String
+    let value: String
+    let icon: String
+    let color: Color
+    
+    var body: some View {
+        HStack {
+            Image(systemName: icon)
+                .foregroundColor(color)
+                .frame(width: 24)
+            
+            Text(title)
+            
+            Spacer()
+            
+            Text(value)
+                .foregroundColor(RingDesignSystem.Colors.Foreground.secondary)
+        }
+    }
+}
+
+struct AboutView: View {
+    @Environment(\.dismiss) var dismiss
+    
+    var body: some View {
+        NavigationView {
+            VStack(spacing: RingDesignSystem.Spacing.xl) {
+                // App Icon
+                ZStack {
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                colors: [RingDesignSystem.Colors.ringBlue, RingDesignSystem.Colors.ringBlue.opacity(0.8)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 120, height: 120)
+                    
+                    Image(systemName: "shield.lefthalf.filled.badge.checkmark")
+                        .font(.system(size: 48, weight: .medium))
+                        .foregroundColor(.white)
+                }
+                
+                VStack(spacing: RingDesignSystem.Spacing.md) {
+                    Text("Ring Smart Home")
+                        .font(RingDesignSystem.Typography.largeTitle)
+                        .fontWeight(.bold)
+                    
+                    Text("Version 1.0.0 (Build 1)")
+                        .font(RingDesignSystem.Typography.subheadline)
+                        .foregroundColor(RingDesignSystem.Colors.Foreground.secondary)
+                    
+                    Text("CarPlay Integration for Ring Smart Home Security")
+                        .font(RingDesignSystem.Typography.body)
+                        .foregroundColor(RingDesignSystem.Colors.Foreground.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                
+                Spacer()
+            }
+            .padding(RingDesignSystem.Spacing.xl)
+            .navigationTitle("About")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
         }
     }
 }

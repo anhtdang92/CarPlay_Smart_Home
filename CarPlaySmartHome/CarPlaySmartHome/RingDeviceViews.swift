@@ -11,6 +11,8 @@ struct EnhancedRingDeviceRow: View {
     @State private var showingSnapshot = false
     @State private var capturedSnapshot: RingSnapshot?
     @Environment(\.colorScheme) var colorScheme
+    let isFavorite: Bool
+    let onFavoriteToggle: () -> Void
     
     var body: some View {
         Button {
@@ -53,6 +55,16 @@ struct EnhancedRingDeviceRow: View {
                     
                     Spacer()
                     
+                    // Favorite Button
+                    Button {
+                        onFavoriteToggle()
+                    } label: {
+                        Image(systemName: isFavorite ? "heart.fill" : "heart")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundColor(isFavorite ? RingDesignSystem.Colors.ringRed : RingDesignSystem.Colors.Foreground.tertiary)
+                    }
+                    .frame(minWidth: RingDesignSystem.TouchTarget.minimumSize, minHeight: RingDesignSystem.TouchTarget.minimumSize)
+                    
                     if isLoading {
                         ProgressView()
                             .scaleEffect(0.8)
@@ -92,7 +104,12 @@ struct EnhancedRingDeviceRow: View {
             y: 2
         )
         .scaleEffect(showingActions ? 0.98 : 1.0)
-        .animation(RingDesignSystem.Animations.quick, value: showingActions)
+        .animation(RingDesignSystem.Animations.current, value: showingActions)
+        .frame(minHeight: RingDesignSystem.TouchTarget.minimumSize)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(device.name), \(device.deviceType.rawValue)")
+        .accessibilityValue("Status: \(device.status.description)")
+        .accessibilityHint("Double tap to view device actions")
     }
     
     private var deviceIcon: some View {
@@ -366,6 +383,31 @@ struct EnhancedRingDeviceRow: View {
                 RingDesignSystem.Haptics.success()
             }
         }
+    }
+    
+    // MARK: - Loading Skeleton
+    
+    private var loadingSkeleton: some View {
+        HStack(spacing: RingDesignSystem.Spacing.md) {
+            RoundedRectangle(cornerRadius: RingDesignSystem.CornerRadius.md)
+                .fill(RingDesignSystem.Colors.Fill.secondary)
+                .frame(width: 60, height: 60)
+                .shimmer(active: true)
+            
+            VStack(alignment: .leading, spacing: RingDesignSystem.Spacing.xs) {
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(RingDesignSystem.Colors.Fill.secondary)
+                    .frame(height: 16)
+                    .shimmer(active: true)
+                
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(RingDesignSystem.Colors.Fill.tertiary)
+                    .frame(height: 12)
+                    .shimmer(active: true)
+            }
+        }
+        .padding(RingDesignSystem.Spacing.md)
+        .frame(minHeight: RingDesignSystem.TouchTarget.minimumSize)
     }
 }
 
@@ -870,6 +912,646 @@ struct DetailRow: View {
                 .font(RingDesignSystem.Typography.caption1)
                 .fontWeight(.medium)
                 .foregroundColor(RingDesignSystem.Colors.Foreground.primary)
+        }
+    }
+}
+
+// MARK: - Ring Device Home View
+
+struct RingDeviceHomeView: View {
+    @ObservedObject var smartHomeManager: SmartHomeManager
+    @State private var searchText = ""
+    @State private var selectedDeviceType: DeviceType?
+    @State private var showingAddDevice = false
+    @State private var isLoading = false
+    @State private var showingAdvancedFilters = false
+    @State private var selectedGrouping: DeviceGrouping = .none
+    @State private var showingFavoritesOnly = false
+    @AppStorage("favoriteDevices") private var favoriteDevices: Set<String> = []
+    
+    enum DeviceGrouping: String, CaseIterable {
+        case none = "None"
+        case type = "By Type"
+        case location = "By Location"
+        case status = "By Status"
+        
+        var icon: String {
+            switch self {
+            case .none: return "list.bullet"
+            case .type: return "folder"
+            case .location: return "mappin.and.ellipse"
+            case .status: return "circle.fill"
+            }
+        }
+    }
+    
+    var body: some View {
+        NavigationView {
+            ZStack {
+                RingDesignSystem.Colors.Background.primary.ignoresSafeArea()
+                
+                VStack(spacing: 0) {
+                    // Search and Filter Section
+                    searchAndFilterSection
+                    
+                    // Device List
+                    if smartHomeManager.isLoading {
+                        loadingView
+                    } else if filteredDevices.isEmpty {
+                        emptyStateView
+                    } else {
+                        deviceList
+                    }
+                }
+            }
+            .navigationTitle("Devices")
+            .navigationBarTitleDisplayMode(.large)
+            .searchable(text: $searchText, prompt: "Search devices...")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Menu {
+                        Button("Add Device") {
+                            showingAddDevice = true
+                        }
+                        
+                        Divider()
+                        
+                        Button("Advanced Filters") {
+                            showingAdvancedFilters = true
+                        }
+                        
+                        Button("Group by \(selectedGrouping.rawValue)") {
+                            // Cycle through grouping options
+                            let currentIndex = DeviceGrouping.allCases.firstIndex(of: selectedGrouping) ?? 0
+                            let nextIndex = (currentIndex + 1) % DeviceGrouping.allCases.count
+                            selectedGrouping = DeviceGrouping.allCases[nextIndex]
+                            RingDesignSystem.Haptics.selection()
+                        }
+                        
+                        Button(showingFavoritesOnly ? "Show All" : "Favorites Only") {
+                            showingFavoritesOnly.toggle()
+                            RingDesignSystem.Haptics.selection()
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
+                            .foregroundColor(RingDesignSystem.Colors.ringBlue)
+                    }
+                    .frame(minWidth: RingDesignSystem.TouchTarget.minimumSize, minHeight: RingDesignSystem.TouchTarget.minimumSize)
+                }
+            }
+            .refreshable {
+                await refreshDevices()
+            }
+            .sheet(isPresented: $showingAdvancedFilters) {
+                AdvancedFiltersSheet(
+                    selectedDeviceType: $selectedDeviceType,
+                    selectedGrouping: $selectedGrouping,
+                    showingFavoritesOnly: $showingFavoritesOnly
+                )
+            }
+        }
+    }
+    
+    private var searchAndFilterSection: some View {
+        VStack(spacing: RingDesignSystem.Spacing.sm) {
+            // Quick Actions Row
+            quickActionsRow
+            
+            // Active Filters Row
+            if hasActiveFilters {
+                activeFiltersRow
+            }
+            
+            // Device Type Filter
+            if !searchText.isEmpty || selectedDeviceType != nil {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: RingDesignSystem.Spacing.sm) {
+                        FilterChip(
+                            title: "All Types",
+                            isSelected: selectedDeviceType == nil
+                        ) {
+                            selectedDeviceType = nil
+                            RingDesignSystem.Haptics.light()
+                        }
+                        
+                        ForEach(DeviceType.allCases, id: \.self) { type in
+                            FilterChip(
+                                title: type.rawValue.capitalized,
+                                isSelected: selectedDeviceType == type
+                            ) {
+                                selectedDeviceType = type
+                                RingDesignSystem.Haptics.light()
+                            }
+                        }
+                    }
+                    .padding(.horizontal, RingDesignSystem.Spacing.md)
+                }
+            }
+            
+            // Device Stats
+            deviceStatsRow
+        }
+        .padding(.vertical, RingDesignSystem.Spacing.sm)
+        .background(
+            RingDesignSystem.Colors.Background.secondary
+                .ignoresSafeArea(edges: .horizontal)
+        )
+    }
+    
+    private var quickActionsRow: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: RingDesignSystem.Spacing.md) {
+                QuickActionButton(
+                    title: "All Cameras",
+                    icon: "video.fill",
+                    color: RingDesignSystem.Colors.ringBlue
+                ) {
+                    selectedDeviceType = .camera
+                    RingDesignSystem.Haptics.navigation()
+                }
+                
+                QuickActionButton(
+                    title: "Live View",
+                    icon: "eye.fill",
+                    color: RingDesignSystem.Colors.ringGreen
+                ) {
+                    // Open live view
+                    RingDesignSystem.Haptics.navigation()
+                }
+                
+                QuickActionButton(
+                    title: "Favorites",
+                    icon: "heart.fill",
+                    color: RingDesignSystem.Colors.ringRed
+                ) {
+                    showingFavoritesOnly.toggle()
+                    RingDesignSystem.Haptics.selection()
+                }
+                
+                QuickActionButton(
+                    title: "Group",
+                    icon: selectedGrouping.icon,
+                    color: RingDesignSystem.Colors.ringPurple
+                ) {
+                    // Cycle through grouping
+                    let currentIndex = DeviceGrouping.allCases.firstIndex(of: selectedGrouping) ?? 0
+                    let nextIndex = (currentIndex + 1) % DeviceGrouping.allCases.count
+                    selectedGrouping = DeviceGrouping.allCases[nextIndex]
+                    RingDesignSystem.Haptics.selection()
+                }
+            }
+            .padding(.horizontal, RingDesignSystem.Spacing.md)
+        }
+    }
+    
+    private var activeFiltersRow: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: RingDesignSystem.Spacing.sm) {
+                if selectedDeviceType != nil {
+                    ActiveFilterChip(
+                        title: selectedDeviceType!.rawValue,
+                        onRemove: {
+                            selectedDeviceType = nil
+                            RingDesignSystem.Haptics.light()
+                        }
+                    )
+                }
+                
+                if selectedGrouping != .none {
+                    ActiveFilterChip(
+                        title: "Grouped by \(selectedGrouping.rawValue)",
+                        onRemove: {
+                            selectedGrouping = .none
+                            RingDesignSystem.Haptics.light()
+                        }
+                    )
+                }
+                
+                if showingFavoritesOnly {
+                    ActiveFilterChip(
+                        title: "Favorites Only",
+                        onRemove: {
+                            showingFavoritesOnly = false
+                            RingDesignSystem.Haptics.light()
+                        }
+                    )
+                }
+                
+                if hasActiveFilters {
+                    Button("Clear All") {
+                        selectedDeviceType = nil
+                        selectedGrouping = .none
+                        showingFavoritesOnly = false
+                        RingDesignSystem.Haptics.medium()
+                    }
+                    .font(RingDesignSystem.Typography.caption1)
+                    .foregroundColor(RingDesignSystem.Colors.ringBlue)
+                    .frame(minHeight: RingDesignSystem.TouchTarget.minimumSize)
+                }
+            }
+            .padding(.horizontal, RingDesignSystem.Spacing.md)
+        }
+    }
+    
+    private var deviceList: some View {
+        ScrollView {
+            LazyVStack(spacing: RingDesignSystem.Spacing.sm) {
+                if selectedGrouping == .none {
+                    // Simple list
+                    ForEach(filteredDevices, id: \.id) { device in
+                        EnhancedRingDeviceRow(
+                            device: device,
+                            smartHomeManager: smartHomeManager,
+                            isFavorite: favoriteDevices.contains(device.id.uuidString),
+                            onFavoriteToggle: {
+                                toggleFavorite(for: device)
+                            }
+                        )
+                        .id(device.id)
+                    }
+                } else {
+                    // Grouped list
+                    ForEach(groupedDevices.keys.sorted(), id: \.self) { groupKey in
+                        if let devices = groupedDevices[groupKey] {
+                            DeviceGroupSection(
+                                title: groupKey,
+                                devices: devices,
+                                smartHomeManager: smartHomeManager,
+                                favoriteDevices: favoriteDevices,
+                                onFavoriteToggle: { device in
+                                    toggleFavorite(for: device)
+                                }
+                            )
+                        }
+                    }
+                }
+            }
+            .padding(.horizontal, RingDesignSystem.Spacing.md)
+            .padding(.bottom, RingDesignSystem.Spacing.xxxl)
+        }
+    }
+    
+    private var hasActiveFilters: Bool {
+        selectedDeviceType != nil || selectedGrouping != .none || showingFavoritesOnly
+    }
+    
+    private var filteredDevices: [SmartDevice] {
+        var devices = smartHomeManager.getDevices()
+        
+        if showingFavoritesOnly {
+            devices = devices.filter { favoriteDevices.contains($0.id.uuidString) }
+        }
+        
+        if let selectedType = selectedDeviceType {
+            devices = devices.filter { $0.deviceType == selectedType }
+        }
+        
+        if !searchText.isEmpty {
+            devices = devices.filter { device in
+                device.name.localizedCaseInsensitiveContains(searchText) ||
+                device.deviceType.rawValue.localizedCaseInsensitiveContains(searchText) ||
+                (device.location?.localizedCaseInsensitiveContains(searchText) ?? false)
+            }
+        }
+        
+        return devices.sorted { $0.name < $1.name }
+    }
+    
+    private var groupedDevices: [String: [SmartDevice]] {
+        let devices = filteredDevices
+        
+        switch selectedGrouping {
+        case .none:
+            return [:]
+        case .type:
+            return Dictionary(grouping: devices) { $0.deviceType.rawValue }
+        case .location:
+            return Dictionary(grouping: devices) { $0.location ?? "Unknown Location" }
+        case .status:
+            return Dictionary(grouping: devices) { $0.status.description }
+        }
+    }
+    
+    private func toggleFavorite(for device: SmartDevice) {
+        let deviceId = device.id.uuidString
+        if favoriteDevices.contains(deviceId) {
+            favoriteDevices.remove(deviceId)
+            RingDesignSystem.Haptics.light()
+        } else {
+            favoriteDevices.insert(deviceId)
+            RingDesignSystem.Haptics.success()
+        }
+    }
+    
+    private func refreshDevices() async {
+        isLoading = true
+        smartHomeManager.refreshDevices()
+        
+        // Simulate network delay
+        try? await Task.sleep(nanoseconds: 1_000_000_000)
+        isLoading = false
+    }
+    
+    private var deviceStatsRow: some View {
+        HStack(spacing: RingDesignSystem.Spacing.lg) {
+            DeviceStat(
+                title: "Total",
+                count: smartHomeManager.getDevices().count,
+                color: RingDesignSystem.Colors.ringBlue
+            )
+            
+            DeviceStat(
+                title: "Online",
+                count: smartHomeManager.getOnlineDevices().count,
+                color: RingDesignSystem.Colors.ringGreen
+            )
+            
+            DeviceStat(
+                title: "Offline",
+                count: smartHomeManager.getOfflineDevices().count,
+                color: RingDesignSystem.Colors.ringRed
+            )
+            
+            Spacer()
+        }
+        .padding(.horizontal, RingDesignSystem.Spacing.md)
+    }
+    
+    private var loadingView: some View {
+        VStack(spacing: RingDesignSystem.Spacing.lg) {
+            ProgressView()
+                .progressViewStyle(CircularProgressViewStyle(tint: RingDesignSystem.Colors.ringBlue))
+                .scaleEffect(1.2)
+            
+            Text("Loading devices...")
+                .font(RingDesignSystem.Typography.subheadline)
+                .foregroundColor(RingDesignSystem.Colors.Foreground.secondary)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+    
+    private var emptyStateView: some View {
+        VStack(spacing: RingDesignSystem.Spacing.lg) {
+            Image(systemName: "video.slash")
+                .font(.system(size: 64))
+                .foregroundColor(RingDesignSystem.Colors.Foreground.tertiary)
+            
+            VStack(spacing: RingDesignSystem.Spacing.sm) {
+                Text("No Devices Found")
+                    .font(RingDesignSystem.Typography.title2)
+                    .foregroundColor(RingDesignSystem.Colors.Foreground.primary)
+                
+                Text(searchText.isEmpty ? 
+                     "Add your first Ring device to get started" :
+                     "No devices match your search")
+                    .font(RingDesignSystem.Typography.body)
+                    .foregroundColor(RingDesignSystem.Colors.Foreground.secondary)
+                    .multilineTextAlignment(.center)
+            }
+            
+            Button("Add Device") {
+                showingAddDevice = true
+            }
+            .frame(minWidth: RingDesignSystem.TouchTarget.minimumSize, minHeight: RingDesignSystem.TouchTarget.minimumSize)
+            .padding(.horizontal, RingDesignSystem.Spacing.md)
+            .padding(.vertical, RingDesignSystem.Spacing.sm)
+            .background(RingDesignSystem.Colors.ringBlue)
+            .foregroundColor(.white)
+            .clipShape(RoundedRectangle(cornerRadius: RingDesignSystem.CornerRadius.md))
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(RingDesignSystem.Spacing.xl)
+    }
+}
+
+// MARK: - Supporting Components
+
+struct DeviceStat: View {
+    let title: String
+    let count: Int
+    let color: Color
+    
+    var body: some View {
+        VStack(spacing: RingDesignSystem.Spacing.xxs) {
+            Text("\(count)")
+                .font(RingDesignSystem.Typography.headline)
+                .fontWeight(.bold)
+                .foregroundColor(color)
+            
+            Text(title)
+                .font(RingDesignSystem.Typography.caption2)
+                .foregroundColor(RingDesignSystem.Colors.Foreground.secondary)
+        }
+    }
+}
+
+struct FilterChip: View {
+    let title: String
+    let isSelected: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(RingDesignSystem.Typography.caption1)
+                .fontWeight(.medium)
+                .foregroundColor(isSelected ? .white : RingDesignSystem.Colors.Foreground.primary)
+                .padding(.horizontal, RingDesignSystem.Spacing.md)
+                .padding(.vertical, RingDesignSystem.Spacing.sm)
+                .background(
+                    RoundedRectangle(cornerRadius: RingDesignSystem.CornerRadius.md)
+                        .fill(isSelected ? RingDesignSystem.Colors.ringBlue : RingDesignSystem.Colors.Fill.secondary)
+                )
+        }
+        .frame(minWidth: RingDesignSystem.TouchTarget.minimumSize, minHeight: RingDesignSystem.TouchTarget.minimumSize)
+        .accessibilityLabel(title)
+        .accessibilityValue(isSelected ? "Selected" : "Not selected")
+    }
+}
+
+struct QuickActionButton: View {
+    let title: String
+    let icon: String
+    let color: Color
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: RingDesignSystem.Spacing.sm) {
+                Image(systemName: icon)
+                    .font(.system(size: 24, weight: .medium))
+                    .foregroundColor(color)
+                
+                Text(title)
+                    .font(RingDesignSystem.Typography.caption1)
+                    .fontWeight(.medium)
+                    .foregroundColor(RingDesignSystem.Colors.Foreground.primary)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+            }
+            .frame(maxWidth: .infinity, minHeight: 80)
+            .padding(RingDesignSystem.Spacing.sm)
+            .background(
+                RoundedRectangle(cornerRadius: RingDesignSystem.CornerRadius.md)
+                    .fill(color.opacity(0.1))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: RingDesignSystem.CornerRadius.md)
+                            .stroke(color.opacity(0.3), lineWidth: 1)
+                    )
+            )
+        }
+        .onTapWithFeedback(haptic: .medium) {
+            // Action handled in closure
+        }
+    }
+}
+
+struct ActiveFilterChip: View {
+    let title: String
+    let onRemove: () -> Void
+    
+    var body: some View {
+        HStack(spacing: RingDesignSystem.Spacing.sm) {
+            Text(title)
+                .font(RingDesignSystem.Typography.caption1)
+                .fontWeight(.medium)
+                .foregroundColor(RingDesignSystem.Colors.Foreground.primary)
+            
+            Button(action: onRemove) {
+                Text("Remove")
+                    .font(RingDesignSystem.Typography.caption1)
+                    .foregroundColor(RingDesignSystem.Colors.ringBlue)
+            }
+        }
+        .padding(RingDesignSystem.Spacing.sm)
+        .background(
+            RoundedRectangle(cornerRadius: RingDesignSystem.CornerRadius.md)
+                .fill(RingDesignSystem.Colors.Fill.secondary)
+        )
+    }
+}
+
+struct DeviceGroupSection: View {
+    let title: String
+    let devices: [SmartDevice]
+    let smartHomeManager: SmartHomeManager
+    let favoriteDevices: Set<String>
+    let onFavoriteToggle: (SmartDevice) -> Void
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: RingDesignSystem.Spacing.md) {
+            Text(title)
+                .font(RingDesignSystem.Typography.headline)
+                .foregroundColor(RingDesignSystem.Colors.Foreground.primary)
+            
+            ScrollView {
+                LazyVStack(spacing: RingDesignSystem.Spacing.sm) {
+                    ForEach(devices, id: \.id) { device in
+                        EnhancedRingDeviceRow(
+                            device: device,
+                            smartHomeManager: smartHomeManager,
+                            isFavorite: favoriteDevices.contains(device.id.uuidString),
+                            onFavoriteToggle: {
+                                onFavoriteToggle(device)
+                            }
+                        )
+                        .id(device.id)
+                    }
+                }
+            }
+        }
+        .padding(RingDesignSystem.Spacing.md)
+        .liquidGlass(cornerRadius: RingDesignSystem.CornerRadius.lg)
+    }
+}
+
+struct AdvancedFiltersSheet: View {
+    @Binding var selectedDeviceType: DeviceType?
+    @Binding var selectedGrouping: DeviceGrouping
+    @Binding var showingFavoritesOnly: Bool
+    
+    var body: some View {
+        NavigationView {
+            ScrollView {
+                VStack(spacing: RingDesignSystem.Spacing.lg) {
+                    // Device Type Filter
+                    deviceTypeFilter
+                    
+                    // Grouping Filter
+                    groupingFilter
+                    
+                    // Favorites Filter
+                    favoritesFilter
+                }
+                .padding(RingDesignSystem.Spacing.md)
+            }
+            .background(RingDesignSystem.Colors.Background.primary.ignoresSafeArea())
+            .navigationTitle("Advanced Filters")
+            .navigationBarTitleDisplayMode(.large)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
+                        // Handle done action
+                    }
+                    .foregroundColor(RingDesignSystem.Colors.ringBlue)
+                }
+            }
+        }
+    }
+    
+    private var deviceTypeFilter: some View {
+        VStack(alignment: .leading, spacing: RingDesignSystem.Spacing.md) {
+            Text("Device Type")
+                .font(RingDesignSystem.Typography.headline)
+                .foregroundColor(RingDesignSystem.Colors.Foreground.primary)
+            
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: RingDesignSystem.Spacing.sm) {
+                    ForEach(DeviceType.allCases, id: \.self) { type in
+                        FilterChip(
+                            title: type.rawValue.capitalized,
+                            isSelected: selectedDeviceType == type
+                        ) {
+                            selectedDeviceType = type
+                            RingDesignSystem.Haptics.light()
+                        }
+                    }
+                }
+                .padding(.horizontal, RingDesignSystem.Spacing.md)
+            }
+        }
+    }
+    
+    private var groupingFilter: some View {
+        VStack(alignment: .leading, spacing: RingDesignSystem.Spacing.md) {
+            Text("Grouping")
+                .font(RingDesignSystem.Typography.headline)
+                .foregroundColor(RingDesignSystem.Colors.Foreground.primary)
+            
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: RingDesignSystem.Spacing.sm) {
+                    ForEach(DeviceGrouping.allCases, id: \.rawValue) { grouping in
+                        FilterChip(
+                            title: grouping.rawValue,
+                            isSelected: selectedGrouping == grouping
+                        ) {
+                            selectedGrouping = grouping
+                            RingDesignSystem.Haptics.light()
+                        }
+                    }
+                }
+                .padding(.horizontal, RingDesignSystem.Spacing.md)
+            }
+        }
+    }
+    
+    private var favoritesFilter: some View {
+        VStack(alignment: .leading, spacing: RingDesignSystem.Spacing.md) {
+            Text("Favorites")
+                .font(RingDesignSystem.Typography.headline)
+                .foregroundColor(RingDesignSystem.Colors.Foreground.primary)
+            
+            Toggle("Show only favorites", isOn: $showingFavoritesOnly)
         }
     }
 }

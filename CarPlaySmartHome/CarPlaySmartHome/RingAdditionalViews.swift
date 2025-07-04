@@ -92,6 +92,9 @@ struct MotionAlertsView: View {
     
     private var filterSection: some View {
         VStack(spacing: RingDesignSystem.Spacing.sm) {
+            // Quick Actions Row
+            quickActionsRow
+            
             // Timeframe Picker
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: RingDesignSystem.Spacing.sm) {
@@ -116,6 +119,45 @@ struct MotionAlertsView: View {
             RingDesignSystem.Colors.Background.secondary
                 .ignoresSafeArea(edges: .horizontal)
         )
+    }
+    
+    private var quickActionsRow: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: RingDesignSystem.Spacing.md) {
+                QuickActionButton(
+                    title: "All Cameras",
+                    icon: "video.fill",
+                    color: RingDesignSystem.Colors.ringBlue
+                ) {
+                    // Navigate to all cameras
+                }
+                
+                QuickActionButton(
+                    title: "Live View",
+                    icon: "eye.fill",
+                    color: RingDesignSystem.Colors.ringGreen
+                ) {
+                    // Open live view
+                }
+                
+                QuickActionButton(
+                    title: "Arm System",
+                    icon: "lock.shield.fill",
+                    color: RingDesignSystem.Colors.ringOrange
+                ) {
+                    // Arm security system
+                }
+                
+                QuickActionButton(
+                    title: "Settings",
+                    icon: "gear",
+                    color: RingDesignSystem.Colors.ringPurple
+                ) {
+                    // Open settings
+                }
+            }
+            .padding(.horizontal, RingDesignSystem.Spacing.md)
+        }
     }
     
     private var alertStatsRow: some View {
@@ -184,7 +226,12 @@ struct MotionAlertsView: View {
             Button("Refresh Alerts") {
                 Task { await refreshAlerts() }
             }
-            .ringButton(style: .secondary, size: .medium)
+            .frame(minWidth: RingDesignSystem.TouchTarget.minimumSize, minHeight: RingDesignSystem.TouchTarget.minimumSize)
+            .padding(.horizontal, RingDesignSystem.Spacing.md)
+            .padding(.vertical, RingDesignSystem.Spacing.sm)
+            .background(RingDesignSystem.Colors.ringBlue)
+            .foregroundColor(.white)
+            .clipShape(RoundedRectangle(cornerRadius: RingDesignSystem.CornerRadius.md))
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(RingDesignSystem.Spacing.xl)
@@ -209,24 +256,25 @@ struct MotionAlertsView: View {
     }
     
     private var groupedAlerts: [String: [MotionAlert]] {
-        Dictionary(grouping: filteredAlerts) { alert in
-            DateFormatter.dayFormatter.string(from: alert.timestamp)
+        let formatter = DateFormatter.dayFormatter
+        return Dictionary(grouping: filteredAlerts) { alert in
+            formatter.string(from: alert.timestamp)
         }
     }
     
+    private func refreshAlerts() async {
+        // Refresh alerts from the manager
+        smartHomeManager.refreshDevices()
+    }
+    
     private func clearOldAlerts() {
-        RingDesignSystem.Haptics.medium()
-        smartHomeManager.clearOldAlerts(olderThan: 7)
+        // Clear alerts older than 7 days
+        let cutoffDate = Date().addingTimeInterval(-7 * 24 * 3600)
+        // This would be implemented in SmartHomeManager
     }
     
     private func exportAlerts() {
-        RingDesignSystem.Haptics.light()
-        // Export functionality would go here
-    }
-    
-    private func refreshAlerts() async {
-        RingDesignSystem.Haptics.light()
-        // Refresh functionality would go here
+        // Export alerts functionality
     }
 }
 
@@ -632,115 +680,48 @@ struct AlertDetailView: View {
 
 struct AlertFilterSheet: View {
     @Binding var selectedAlertType: MotionAlert.AlertType?
-    @Binding var selectedTimeframe: MotionAlertsView.AlertTimeframe
+    @Binding var selectedTimeframe: AlertTimeframe
     @Environment(\.dismiss) var dismiss
     
     var body: some View {
         NavigationView {
-            VStack(spacing: RingDesignSystem.Spacing.lg) {
-                // Alert Type Filter
-                VStack(alignment: .leading, spacing: RingDesignSystem.Spacing.md) {
-                    Text("Alert Type")
-                        .font(RingDesignSystem.Typography.headline)
-                        .foregroundColor(RingDesignSystem.Colors.Foreground.primary)
+            List {
+                Section("Alert Type") {
+                    Button("All Types") {
+                        selectedAlertType = nil
+                        dismiss()
+                    }
+                    .foregroundColor(selectedAlertType == nil ? RingDesignSystem.Colors.ringBlue : RingDesignSystem.Colors.Foreground.primary)
                     
-                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: RingDesignSystem.Spacing.sm) {
-                        // All Types Option
-                        FilterTypeButton(
-                            title: "All Types",
-                            icon: "list.bullet",
-                            color: RingDesignSystem.Colors.Foreground.secondary,
-                            isSelected: selectedAlertType == nil
-                        ) {
-                            selectedAlertType = nil
+                    ForEach(MotionAlert.AlertType.allCases, id: \.self) { type in
+                        Button(type.rawValue.capitalized) {
+                            selectedAlertType = type
+                            dismiss()
                         }
-                        
-                        // Individual Alert Types
-                        ForEach(MotionAlert.AlertType.allCases, id: \.self) { alertType in
-                            FilterTypeButton(
-                                title: alertType.rawValue,
-                                icon: alertType.iconName,
-                                color: alertType.color,
-                                isSelected: selectedAlertType == alertType
-                            ) {
-                                selectedAlertType = alertType
-                            }
-                        }
+                        .foregroundColor(selectedAlertType == type ? RingDesignSystem.Colors.ringBlue : RingDesignSystem.Colors.Foreground.primary)
                     }
                 }
-                .padding(RingDesignSystem.Spacing.md)
-                .liquidGlass(cornerRadius: RingDesignSystem.CornerRadius.lg)
                 
-                Spacer()
-                
-                // Apply Button
-                Button("Apply Filters") {
-                    dismiss()
-                    RingDesignSystem.Haptics.success()
+                Section("Timeframe") {
+                    ForEach(AlertTimeframe.allCases, id: \.self) { timeframe in
+                        Button(timeframe.rawValue) {
+                            selectedTimeframe = timeframe
+                            dismiss()
+                        }
+                        .foregroundColor(selectedTimeframe == timeframe ? RingDesignSystem.Colors.ringBlue : RingDesignSystem.Colors.Foreground.primary)
+                    }
                 }
-                .ringButton(style: .primary, size: .large)
-                .padding(.horizontal, RingDesignSystem.Spacing.md)
             }
-            .padding(RingDesignSystem.Spacing.md)
-            .background(RingDesignSystem.Colors.Background.primary.ignoresSafeArea())
             .navigationTitle("Filter Alerts")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
                         dismiss()
                     }
-                    .foregroundColor(RingDesignSystem.Colors.Foreground.secondary)
-                }
-                
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Reset") {
-                        selectedAlertType = nil
-                        selectedTimeframe = .today
-                        RingDesignSystem.Haptics.light()
-                    }
-                    .foregroundColor(RingDesignSystem.Colors.ringBlue)
                 }
             }
         }
-    }
-}
-
-struct FilterTypeButton: View {
-    let title: String
-    let icon: String
-    let color: Color
-    let isSelected: Bool
-    let action: () -> Void
-    
-    var body: some View {
-        Button(action: action) {
-            VStack(spacing: RingDesignSystem.Spacing.sm) {
-                Image(systemName: icon)
-                    .font(.system(size: 20, weight: .medium))
-                    .foregroundColor(isSelected ? .white : color)
-                
-                Text(title)
-                    .font(RingDesignSystem.Typography.caption1)
-                    .fontWeight(.medium)
-                    .foregroundColor(isSelected ? .white : RingDesignSystem.Colors.Foreground.primary)
-                    .lineLimit(1)
-            }
-            .frame(maxWidth: .infinity, minHeight: 70)
-            .padding(RingDesignSystem.Spacing.sm)
-            .background(
-                RoundedRectangle(cornerRadius: RingDesignSystem.CornerRadius.md)
-                    .fill(isSelected ? color : color.opacity(0.1))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: RingDesignSystem.CornerRadius.md)
-                            .stroke(color.opacity(isSelected ? 0 : 0.3), lineWidth: 1)
-                    )
-            )
-        }
-        .onTapWithFeedback(haptic: .selection) {
-            // Action handled in closure
-        }
-        .animation(RingDesignSystem.Animations.quick, value: isSelected)
     }
 }
 
@@ -779,13 +760,14 @@ struct EnhancedDashboardView: View {
     var body: some View {
         NavigationView {
             ScrollView {
-                LazyVStack(spacing: RingDesignSystem.Spacing.lg) {
-                    // Weather and Time Header
-                    if showingWeather {
-                        weatherHeader
-                    }
+                VStack(spacing: RingDesignSystem.Spacing.lg) {
+                    // Weather Header
+                    weatherHeader
                     
-                    // Quick Stats
+                    // System Health Section
+                    systemHealthSection
+                    
+                    // Quick Stats Grid
                     quickStatsGrid
                     
                     // Search and Filters
@@ -794,32 +776,21 @@ struct EnhancedDashboardView: View {
                     // Device Grid
                     deviceGridSection
                     
-                    // Recent Activity
-                    recentActivitySection
-                    
                     // Quick Actions
                     quickActionsSection
                 }
                 .padding(RingDesignSystem.Spacing.md)
             }
-            .background(backgroundGradient.ignoresSafeArea())
+            .background(RingDesignSystem.Colors.Background.primary.ignoresSafeArea())
             .navigationTitle("Dashboard")
             .navigationBarTitleDisplayMode(.large)
-            .searchable(text: $searchText, prompt: "Search devices...")
             .refreshable {
                 await refreshData()
             }
+            .onAppear {
+                smartHomeManager.updateSystemHealth()
+            }
         }
-    }
-    
-    private var backgroundGradient: some View {
-        LinearGradient(
-            colors: colorScheme == .dark ? 
-            [Color.black, Color(red: 0.05, green: 0.05, blue: 0.1)] :
-            [Color(red: 0.95, green: 0.97, blue: 1.0), Color.white],
-            startPoint: .topLeading,
-            endPoint: .bottomTrailing
-        )
     }
     
     private var weatherHeader: some View {
@@ -859,43 +830,160 @@ struct EnhancedDashboardView: View {
         .liquidGlass(cornerRadius: RingDesignSystem.CornerRadius.lg)
     }
     
-    private var quickStatsGrid: some View {
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: RingDesignSystem.Spacing.md) {
-            StatCard(
-                title: "Devices Online",
-                value: "\(smartHomeManager.getOnlineDevices().count)",
-                subtitle: "of \(smartHomeManager.getDevices().count) total",
+    private var systemHealthSection: some View {
+        VStack(alignment: .leading, spacing: RingDesignSystem.Spacing.md) {
+            HStack {
+                Text("System Health")
+                    .font(RingDesignSystem.Typography.headline)
+                    .foregroundColor(RingDesignSystem.Colors.Foreground.primary)
+                
+                Spacer()
+                
+                Button("View Details") {
+                    // Navigate to system health details
+                    RingDesignSystem.Haptics.navigation()
+                }
+                .font(RingDesignSystem.Typography.subheadline)
+                .foregroundColor(RingDesignSystem.Colors.ringBlue)
+            }
+            
+            // Health Score Card
+            healthScoreCard
+            
+            // Performance Metrics
+            performanceMetricsRow
+            
+            // System Alerts
+            if !smartHomeManager.getSystemAlerts().isEmpty {
+                systemAlertsSection
+            }
+        }
+        .padding(RingDesignSystem.Spacing.md)
+        .liquidGlass(cornerRadius: RingDesignSystem.CornerRadius.lg)
+    }
+    
+    private var healthScoreCard: some View {
+        HStack(spacing: RingDesignSystem.Spacing.lg) {
+            // Health Score Circle
+            ZStack {
+                Circle()
+                    .stroke(
+                        RingDesignSystem.Colors.Fill.tertiary,
+                        lineWidth: 8
+                    )
+                    .frame(width: 80, height: 80)
+                
+                Circle()
+                    .trim(from: 0, to: CGFloat(smartHomeManager.systemHealth.score) / 100)
+                    .stroke(
+                        healthScoreColor,
+                        style: StrokeStyle(lineWidth: 8, lineCap: .round)
+                    )
+                    .frame(width: 80, height: 80)
+                    .rotationEffect(.degrees(-90))
+                    .animation(RingDesignSystem.Animations.gentle, value: smartHomeManager.systemHealth.score)
+                
+                VStack(spacing: 2) {
+                    Text("\(smartHomeManager.systemHealth.score)")
+                        .font(RingDesignSystem.Typography.title2)
+                        .fontWeight(.bold)
+                        .foregroundColor(healthScoreColor)
+                    
+                    Text("Score")
+                        .font(RingDesignSystem.Typography.caption1)
+                        .foregroundColor(RingDesignSystem.Colors.Foreground.secondary)
+                }
+            }
+            
+            VStack(alignment: .leading, spacing: RingDesignSystem.Spacing.sm) {
+                Text(healthStatusText)
+                    .font(RingDesignSystem.Typography.headline)
+                    .foregroundColor(RingDesignSystem.Colors.Foreground.primary)
+                
+                Text(healthStatusDescription)
+                    .font(RingDesignSystem.Typography.body)
+                    .foregroundColor(RingDesignSystem.Colors.Foreground.secondary)
+                    .lineLimit(2)
+                
+                if !smartHomeManager.systemHealth.issues.isEmpty {
+                    Text("\(smartHomeManager.systemHealth.issues.count) issue(s) detected")
+                        .font(RingDesignSystem.Typography.caption1)
+                        .foregroundColor(RingDesignSystem.Colors.Alert.warning)
+                }
+            }
+            
+            Spacer()
+        }
+    }
+    
+    private var performanceMetricsRow: some View {
+        HStack(spacing: RingDesignSystem.Spacing.lg) {
+            PerformanceMetric(
+                title: "Response Time",
+                value: String(format: "%.1fs", smartHomeManager.performanceMetrics.averageResponseTime),
+                icon: "clock",
+                color: smartHomeManager.performanceMetrics.averageResponseTime < 1.0 ? 
+                    RingDesignSystem.Colors.ringGreen : RingDesignSystem.Colors.ringOrange
+            )
+            
+            PerformanceMetric(
+                title: "Online Rate",
+                value: String(format: "%.0f%%", smartHomeManager.performanceMetrics.deviceOnlineRate * 100),
                 icon: "wifi",
-                color: RingDesignSystem.Colors.ringGreen,
-                trend: "+2"
+                color: smartHomeManager.performanceMetrics.deviceOnlineRate > 0.9 ? 
+                    RingDesignSystem.Colors.ringGreen : RingDesignSystem.Colors.ringOrange
             )
             
-            StatCard(
-                title: "Motion Alerts",
-                value: "\(smartHomeManager.getTotalActiveAlerts())",
-                subtitle: "in last 24h",
-                icon: "sensor.tag.radiowaves.forward.fill",
-                color: RingDesignSystem.Colors.ringOrange,
-                trend: "-5"
-            )
-            
-            StatCard(
+            PerformanceMetric(
                 title: "Battery Health",
-                value: "\(smartHomeManager.getDevicesWithGoodBattery().count)",
-                subtitle: "devices above 50%",
+                value: "\(smartHomeManager.performanceMetrics.batteryHealthScore)%",
                 icon: "battery.100",
-                color: RingDesignSystem.Colors.ringBlue,
-                trend: nil
+                color: smartHomeManager.performanceMetrics.batteryHealthScore > 80 ? 
+                    RingDesignSystem.Colors.ringGreen : RingDesignSystem.Colors.ringOrange
             )
+        }
+    }
+    
+    private var systemAlertsSection: some View {
+        VStack(alignment: .leading, spacing: RingDesignSystem.Spacing.sm) {
+            Text("System Alerts")
+                .font(RingDesignSystem.Typography.subheadline)
+                .fontWeight(.semibold)
+                .foregroundColor(RingDesignSystem.Colors.Foreground.primary)
             
-            StatCard(
-                title: "System Status",
-                value: "Healthy",
-                subtitle: "All systems operational",
-                icon: "checkmark.shield.fill",
-                color: RingDesignSystem.Colors.ringGreen,
-                trend: nil
-            )
+            ForEach(smartHomeManager.getSystemAlerts(), id: \.timestamp) { alert in
+                SystemAlertRow(alert: alert)
+            }
+        }
+    }
+    
+    private var healthScoreColor: Color {
+        switch smartHomeManager.systemHealth.score {
+        case 90...100: return RingDesignSystem.Colors.ringGreen
+        case 75..<90: return RingDesignSystem.Colors.ringBlue
+        case 60..<75: return RingDesignSystem.Colors.ringOrange
+        case 40..<60: return RingDesignSystem.Colors.ringRed
+        default: return RingDesignSystem.Colors.Alert.critical
+        }
+    }
+    
+    private var healthStatusText: String {
+        switch smartHomeManager.systemHealth.score {
+        case 90...100: return "Excellent"
+        case 75..<90: return "Good"
+        case 60..<75: return "Fair"
+        case 40..<60: return "Poor"
+        default: return "Critical"
+        }
+    }
+    
+    private var healthStatusDescription: String {
+        switch smartHomeManager.systemHealth.score {
+        case 90...100: return "All systems operating optimally"
+        case 75..<90: return "Minor issues detected"
+        case 60..<75: return "Some systems need attention"
+        case 40..<60: return "Multiple issues require action"
+        default: return "System requires immediate attention"
         }
     }
     
@@ -973,28 +1061,6 @@ struct EnhancedDashboardView: View {
                 }
             }
         }
-    }
-    
-    private var recentActivitySection: some View {
-        VStack(alignment: .leading, spacing: RingDesignSystem.Spacing.md) {
-            Text("Recent Activity")
-                .font(RingDesignSystem.Typography.headline)
-                .foregroundColor(RingDesignSystem.Colors.Foreground.primary)
-            
-            VStack(spacing: RingDesignSystem.Spacing.sm) {
-                ForEach(0..<3, id: \.self) { index in
-                    ActivityRow(
-                        title: "Motion detected",
-                        subtitle: "Front Door Camera",
-                        time: "\(index + 1) minute\(index == 0 ? "" : "s") ago",
-                        icon: "sensor.tag.radiowaves.forward.fill",
-                        color: RingDesignSystem.Colors.ringOrange
-                    )
-                }
-            }
-        }
-        .padding(RingDesignSystem.Spacing.md)
-        .liquidGlass(cornerRadius: RingDesignSystem.CornerRadius.lg)
     }
     
     private var quickActionsSection: some View {
@@ -1334,417 +1400,255 @@ extension SmartHomeManager {
     }
 }
 
-// MARK: - Advanced Notification System
+// MARK: - Notification Center
 
 struct NotificationCenter: View {
     @ObservedObject var smartHomeManager: SmartHomeManager
-    @State private var notifications: [SmartNotification] = []
-    @State private var showingAllNotifications = false
+    @State private var selectedTimeframe: AlertTimeframe = .today
+    @State private var searchText = ""
+    @State private var selectedAlertType: MotionAlert.AlertType?
+    @State private var showingFilterSheet = false
     
     var body: some View {
         NavigationView {
-            VStack(spacing: RingDesignSystem.Spacing.md) {
-                // Notification Summary
-                notificationSummary
+            ZStack {
+                RingDesignSystem.Colors.Background.primary.ignoresSafeArea()
                 
-                // Recent Notifications
-                recentNotifications
-                
-                Spacer()
+                VStack(spacing: 0) {
+                    // Filter Section
+                    filterSection
+                    
+                    // Content
+                    if filteredAlerts.isEmpty {
+                        emptyAlertsView
+                    } else {
+                        alertsList
+                    }
+                }
             }
-            .padding(RingDesignSystem.Spacing.md)
-            .background(RingDesignSystem.Colors.Background.primary.ignoresSafeArea())
-            .navigationTitle("Notifications")
+            .navigationTitle("Alerts")
             .navigationBarTitleDisplayMode(.large)
-            .sheet(isPresented: $showingAllNotifications) {
-                AllNotificationsView(notifications: notifications)
-            }
-            .onAppear {
-                loadNotifications()
-            }
-        }
-    }
-    
-    private var notificationSummary: some View {
-        VStack(spacing: RingDesignSystem.Spacing.md) {
-            HStack {
-                Text("Today")
-                    .font(RingDesignSystem.Typography.headline)
-                    .foregroundColor(RingDesignSystem.Colors.Foreground.primary)
-                
-                Spacer()
-                
-                Button("View All") {
-                    showingAllNotifications = true
-                }
-                .font(RingDesignSystem.Typography.subheadline)
-                .foregroundColor(RingDesignSystem.Colors.ringBlue)
-            }
-            
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: RingDesignSystem.Spacing.md) {
-                NotificationSummaryCard(
-                    title: "Motion",
-                    count: notifications.filter { $0.type == .motion }.count,
-                    icon: "sensor.tag.radiowaves.forward.fill",
-                    color: RingDesignSystem.Colors.ringOrange
-                )
-                
-                NotificationSummaryCard(
-                    title: "Person",
-                    count: notifications.filter { $0.type == .person }.count,
-                    icon: "person.fill",
-                    color: RingDesignSystem.Colors.ringBlue
-                )
-                
-                NotificationSummaryCard(
-                    title: "System",
-                    count: notifications.filter { $0.type == .system }.count,
-                    icon: "gear",
-                    color: RingDesignSystem.Colors.ringPurple
-                )
-            }
-        }
-        .padding(RingDesignSystem.Spacing.md)
-        .liquidGlass(cornerRadius: RingDesignSystem.CornerRadius.lg)
-    }
-    
-    private var recentNotifications: some View {
-        VStack(alignment: .leading, spacing: RingDesignSystem.Spacing.md) {
-            Text("Recent")
-                .font(RingDesignSystem.Typography.headline)
-                .foregroundColor(RingDesignSystem.Colors.Foreground.primary)
-            
-            VStack(spacing: RingDesignSystem.Spacing.sm) {
-                ForEach(notifications.prefix(5), id: \.id) { notification in
-                    AdvancedNotificationRow(notification: notification)
-                }
-            }
-        }
-        .padding(RingDesignSystem.Spacing.md)
-        .liquidGlass(cornerRadius: RingDesignSystem.CornerRadius.lg)
-    }
-    
-    private func loadNotifications() {
-        notifications = [
-            SmartNotification(
-                id: UUID(),
-                title: "Motion Detected",
-                message: "Front door camera detected movement",
-                type: .motion,
-                timestamp: Date().addingTimeInterval(-300),
-                deviceName: "Front Door Camera",
-                priority: .high,
-                isRead: false
-            ),
-            SmartNotification(
-                id: UUID(),
-                title: "Person Detected",
-                message: "Backyard camera identified a person",
-                type: .person,
-                timestamp: Date().addingTimeInterval(-600),
-                deviceName: "Backyard Camera",
-                priority: .critical,
-                isRead: false
-            ),
-            SmartNotification(
-                id: UUID(),
-                title: "Battery Low",
-                message: "Kitchen sensor battery is below 20%",
-                type: .system,
-                timestamp: Date().addingTimeInterval(-1800),
-                deviceName: "Kitchen Sensor",
-                priority: .medium,
-                isRead: true
-            )
-        ]
-    }
-}
-
-struct AdvancedNotificationRow: View {
-    let notification: SmartNotification
-    @State private var showingDetails = false
-    
-    var body: some View {
-        Button {
-            showingDetails = true
-            RingDesignSystem.Haptics.light()
-        } label: {
-            HStack(spacing: RingDesignSystem.Spacing.sm) {
-                // Priority indicator
-                Circle()
-                    .fill(notification.priority.color)
-                    .frame(width: 8, height: 8)
-                
-                // Icon
-                Image(systemName: notification.type.icon)
-                    .font(.title3)
-                    .foregroundColor(notification.type.color)
-                    .frame(width: 32)
-                
-                // Content
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack {
-                        Text(notification.title)
-                            .font(RingDesignSystem.Typography.subheadline)
-                            .fontWeight(.medium)
-                            .foregroundColor(RingDesignSystem.Colors.Foreground.primary)
-                        
-                        if !notification.isRead {
-                            Circle()
-                                .fill(RingDesignSystem.Colors.ringBlue)
-                                .frame(width: 6, height: 6)
+            .searchable(text: $searchText, prompt: "Search alerts...")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Menu {
+                        Button("Filter by Type") {
+                            showingFilterSheet = true
                         }
                         
-                        Spacer()
+                        Divider()
                         
-                        Text(timeAgoString(from: notification.timestamp))
-                            .font(RingDesignSystem.Typography.caption2)
-                            .foregroundColor(RingDesignSystem.Colors.Foreground.tertiary)
-                    }
-                    
-                    Text(notification.message)
-                        .font(RingDesignSystem.Typography.caption1)
-                        .foregroundColor(RingDesignSystem.Colors.Foreground.secondary)
-                        .lineLimit(1)
-                    
-                    Text(notification.deviceName)
-                        .font(RingDesignSystem.Typography.caption2)
-                        .foregroundColor(notification.type.color)
-                }
-            }
-            .padding(RingDesignSystem.Spacing.sm)
-            .liquidGlass(cornerRadius: RingDesignSystem.CornerRadius.sm)
-            .opacity(notification.isRead ? 0.7 : 1.0)
-        }
-        .buttonStyle(PlainButtonStyle())
-        .sheet(isPresented: $showingDetails) {
-            NotificationDetailView(notification: notification)
-        }
-    }
-}
-
-struct NotificationSummaryCard: View {
-    let title: String
-    let count: Int
-    let icon: String
-    let color: Color
-    
-    var body: some View {
-        VStack(spacing: RingDesignSystem.Spacing.sm) {
-            Image(systemName: icon)
-                .font(.title2)
-                .foregroundColor(color)
-            
-            Text("\(count)")
-                .font(RingDesignSystem.Typography.title2)
-                .fontWeight(.bold)
-                .foregroundColor(RingDesignSystem.Colors.Foreground.primary)
-            
-            Text(title)
-                .font(RingDesignSystem.Typography.caption1)
-                .foregroundColor(RingDesignSystem.Colors.Foreground.secondary)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(RingDesignSystem.Spacing.md)
-        .liquidGlass(cornerRadius: RingDesignSystem.CornerRadius.md)
-    }
-}
-
-// MARK: - Interactive Map View
-
-struct DeviceMapView: View {
-    @ObservedObject var smartHomeManager: SmartHomeManager
-    @State private var selectedDevice: SmartDevice?
-    @State private var showingDeviceDetails = false
-    
-    var body: some View {
-        NavigationView {
-            ZStack {
-                // Map background (simulated)
-                mapBackground
-                
-                // Device markers
-                deviceMarkers
-                
-                // Selected device overlay
-                if let selectedDevice = selectedDevice {
-                    deviceOverlay(device: selectedDevice)
-                }
-            }
-            .navigationTitle("Device Map")
-            .navigationBarTitleDisplayMode(.large)
-            .sheet(isPresented: $showingDeviceDetails) {
-                if let device = selectedDevice {
-                    DeviceDetailView(device: device)
-                }
-            }
-        }
-    }
-    
-    private var mapBackground: some View {
-        Rectangle()
-            .fill(
-                LinearGradient(
-                    colors: [
-                        RingDesignSystem.Colors.Background.secondary,
-                        RingDesignSystem.Colors.Background.primary
-                    ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
-            .overlay(
-                // Simulated map grid
-                Path { path in
-                    for i in 0...10 {
-                        let x = CGFloat(i) * 40
-                        path.move(to: CGPoint(x: x, y: 0))
-                        path.addLine(to: CGPoint(x: x, y: 400))
+                        Button("Clear Old Alerts") {
+                            clearOldAlerts()
+                        }
                         
-                        let y = CGFloat(i) * 40
-                        path.move(to: CGPoint(x: 0, y: y))
-                        path.addLine(to: CGPoint(x: 400, y: y))
-                    }
-                }
-                .stroke(RingDesignSystem.Colors.Separator.primary.opacity(0.3), lineWidth: 0.5)
-            )
-    }
-    
-    private var deviceMarkers: some View {
-        ZStack {
-            ForEach(smartHomeManager.getDevices(), id: \.id) { device in
-                DeviceMarker(
-                    device: device,
-                    isSelected: selectedDevice?.id == device.id
-                ) {
-                    withAnimation(RingDesignSystem.Animations.gentle) {
-                        selectedDevice = selectedDevice?.id == device.id ? nil : device
-                    }
-                    RingDesignSystem.Haptics.light()
-                }
-            }
-        }
-    }
-    
-    private func deviceOverlay(device: SmartDevice) -> some View {
-        VStack {
-            Spacer()
-            
-            VStack(spacing: RingDesignSystem.Spacing.md) {
-                HStack {
-                    VStack(alignment: .leading, spacing: RingDesignSystem.Spacing.xs) {
-                        Text(device.name)
-                            .font(RingDesignSystem.Typography.headline)
-                            .foregroundColor(RingDesignSystem.Colors.Foreground.primary)
-                        
-                        Text(device.deviceType.rawValue.capitalized)
-                            .font(RingDesignSystem.Typography.subheadline)
-                            .foregroundColor(RingDesignSystem.Colors.Foreground.secondary)
-                    }
-                    
-                    Spacer()
-                    
-                    Button {
-                        showingDeviceDetails = true
+                        Button("Export Alerts") {
+                            exportAlerts()
+                        }
                     } label: {
-                        Image(systemName: "info.circle")
-                            .font(.title2)
-                            .foregroundColor(RingDesignSystem.Colors.ringBlue)
+                        Image(systemName: "ellipsis.circle")
+                            .foregroundColor(RingDesignSystem.Colors.Foreground.primary)
                     }
-                }
-                
-                HStack(spacing: RingDesignSystem.Spacing.md) {
-                    DeviceStatusBadge(status: device.status)
-                    
-                    if let batteryLevel = device.batteryLevel {
-                        BatteryIndicator(level: batteryLevel)
-                    }
-                    
-                    Spacer()
-                    
-                    Button("View Live") {
-                        // Open live stream
-                        RingDesignSystem.Haptics.medium()
-                    }
-                    .font(RingDesignSystem.Typography.subheadline)
-                    .foregroundColor(.white)
-                    .padding(.horizontal, RingDesignSystem.Spacing.md)
-                    .padding(.vertical, RingDesignSystem.Spacing.sm)
-                    .background(RingDesignSystem.Colors.ringBlue)
-                    .clipShape(RoundedRectangle(cornerRadius: RingDesignSystem.CornerRadius.sm))
+                    .frame(minWidth: RingDesignSystem.TouchTarget.minimumSize, minHeight: RingDesignSystem.TouchTarget.minimumSize)
                 }
             }
-            .padding(RingDesignSystem.Spacing.md)
-            .liquidGlass(cornerRadius: RingDesignSystem.CornerRadius.lg)
+            .sheet(isPresented: $showingFilterSheet) {
+                AlertFilterSheet(
+                    selectedAlertType: $selectedAlertType,
+                    selectedTimeframe: $selectedTimeframe
+                )
+            }
+            .refreshable {
+                await refreshAlerts()
+            }
+        }
+    }
+    
+    private var filterSection: some View {
+        VStack(spacing: RingDesignSystem.Spacing.sm) {
+            // Quick Actions Row
+            quickActionsRow
+            
+            // Timeframe Picker
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: RingDesignSystem.Spacing.sm) {
+                    ForEach(AlertTimeframe.allCases, id: \.self) { timeframe in
+                        TimeframeChip(
+                            timeframe: timeframe,
+                            isSelected: selectedTimeframe == timeframe
+                        ) {
+                            selectedTimeframe = timeframe
+                            RingDesignSystem.Haptics.selection()
+                        }
+                    }
+                }
+                .padding(.horizontal, RingDesignSystem.Spacing.md)
+            }
+            
+            // Alert Stats Row
+            alertStatsRow
+        }
+        .padding(.vertical, RingDesignSystem.Spacing.sm)
+        .background(
+            RingDesignSystem.Colors.Background.secondary
+                .ignoresSafeArea(edges: .horizontal)
+        )
+    }
+    
+    private var quickActionsRow: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: RingDesignSystem.Spacing.md) {
+                QuickActionButton(
+                    title: "All Cameras",
+                    icon: "video.fill",
+                    color: RingDesignSystem.Colors.ringBlue
+                ) {
+                    // Navigate to all cameras
+                }
+                
+                QuickActionButton(
+                    title: "Live View",
+                    icon: "eye.fill",
+                    color: RingDesignSystem.Colors.ringGreen
+                ) {
+                    // Open live view
+                }
+                
+                QuickActionButton(
+                    title: "Arm System",
+                    icon: "lock.shield.fill",
+                    color: RingDesignSystem.Colors.ringOrange
+                ) {
+                    // Arm security system
+                }
+                
+                QuickActionButton(
+                    title: "Settings",
+                    icon: "gear",
+                    color: RingDesignSystem.Colors.ringPurple
+                ) {
+                    // Open settings
+                }
+            }
             .padding(.horizontal, RingDesignSystem.Spacing.md)
         }
-        .transition(.move(edge: .bottom).combined(with: .opacity))
     }
-}
-
-struct DeviceMarker: View {
-    let device: SmartDevice
-    let isSelected: Bool
-    let action: () -> Void
     
-    var body: some View {
-        Button(action: action) {
-            ZStack {
-                // Marker background
-                Circle()
-                    .fill(
-                        LinearGradient(
-                            colors: device.deviceType.gradientColors,
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
+    private var alertStatsRow: some View {
+        HStack(spacing: RingDesignSystem.Spacing.lg) {
+            AlertStat(
+                title: "Total",
+                count: filteredAlerts.count,
+                color: RingDesignSystem.Colors.ringBlue
+            )
+            
+            AlertStat(
+                title: "High Confidence",
+                count: filteredAlerts.filter { $0.confidence > 0.8 }.count,
+                color: RingDesignSystem.Colors.ringGreen
+            )
+            
+            AlertStat(
+                title: "With Video",
+                count: filteredAlerts.filter { $0.hasVideo }.count,
+                color: RingDesignSystem.Colors.ringPurple
+            )
+            
+            Spacer()
+        }
+        .padding(.horizontal, RingDesignSystem.Spacing.md)
+    }
+    
+    private var alertsList: some View {
+        ScrollView {
+            LazyVStack(spacing: RingDesignSystem.Spacing.sm) {
+                ForEach(groupedAlerts.keys.sorted(by: >), id: \.self) { date in
+                    if let alerts = groupedAlerts[date] {
+                        AlertSection(
+                            date: date,
+                            alerts: alerts,
+                            smartHomeManager: smartHomeManager
                         )
-                    )
-                    .frame(width: isSelected ? 50 : 40, height: isSelected ? 50 : 40)
-                    .shadow(
-                        color: device.deviceType.accentColor.opacity(0.3),
-                        radius: isSelected ? 12 : 8,
-                        x: 0,
-                        y: isSelected ? 6 : 4
-                    )
+                    }
+                }
+            }
+            .padding(.horizontal, RingDesignSystem.Spacing.md)
+            .padding(.bottom, RingDesignSystem.Spacing.xxxl)
+        }
+    }
+    
+    private var emptyAlertsView: some View {
+        VStack(spacing: RingDesignSystem.Spacing.lg) {
+            Image(systemName: "bell.slash.circle")
+                .font(.system(size: 64))
+                .foregroundColor(RingDesignSystem.Colors.Foreground.tertiary)
+                .pulse(active: false)
+            
+            VStack(spacing: RingDesignSystem.Spacing.sm) {
+                Text("No Motion Alerts")
+                    .font(RingDesignSystem.Typography.title2)
+                    .foregroundColor(RingDesignSystem.Colors.Foreground.primary)
                 
-                // Device icon
-                Image(systemName: device.deviceType.iconName)
-                    .font(.system(size: isSelected ? 20 : 16, weight: .medium))
-                    .foregroundColor(.white)
-                
-                // Status indicator
-                Circle()
-                    .fill(device.status.color)
-                    .frame(width: 8, height: 8)
-                    .overlay(
-                        Circle()
-                            .stroke(.white, lineWidth: 2)
-                    )
-                    .offset(x: isSelected ? 15 : 12, y: isSelected ? -15 : -12)
+                Text(searchText.isEmpty ? 
+                     "No motion detected in the selected timeframe" :
+                     "No alerts match your search")
+                    .font(RingDesignSystem.Typography.body)
+                    .foregroundColor(RingDesignSystem.Colors.Foreground.secondary)
+                    .multilineTextAlignment(.center)
+            }
+            
+            Button("Refresh Alerts") {
+                Task { await refreshAlerts() }
+            }
+            .frame(minWidth: RingDesignSystem.TouchTarget.minimumSize, minHeight: RingDesignSystem.TouchTarget.minimumSize)
+            .padding(.horizontal, RingDesignSystem.Spacing.md)
+            .padding(.vertical, RingDesignSystem.Spacing.sm)
+            .background(RingDesignSystem.Colors.ringBlue)
+            .foregroundColor(.white)
+            .clipShape(RoundedRectangle(cornerRadius: RingDesignSystem.CornerRadius.md))
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(RingDesignSystem.Spacing.xl)
+    }
+    
+    private var filteredAlerts: [MotionAlert] {
+        let cutoffTime = Date().addingTimeInterval(-selectedTimeframe.timeInterval)
+        var alerts = smartHomeManager.recentMotionAlerts.filter { $0.timestamp > cutoffTime }
+        
+        if !searchText.isEmpty {
+            alerts = alerts.filter { alert in
+                alert.description.localizedCaseInsensitiveContains(searchText) ||
+                alert.alertType.rawValue.localizedCaseInsensitiveContains(searchText)
             }
         }
-        .buttonStyle(PlainButtonStyle())
-        .scaleEffect(isSelected ? 1.2 : 1.0)
-        .animation(RingDesignSystem.Animations.bouncy, value: isSelected)
+        
+        if let selectedType = selectedAlertType {
+            alerts = alerts.filter { $0.alertType == selectedType }
+        }
+        
+        return alerts.sorted { $0.timestamp > $1.timestamp }
     }
-}
-
-// MARK: - Helper Functions and Extensions
-
-func timeAgoString(from date: Date) -> String {
-    let interval = Date().timeIntervalSince(date)
     
-    if interval < 60 {
-        return "Just now"
-    } else if interval < 3600 {
-        let minutes = Int(interval / 60)
-        return "\(minutes)m ago"
-    } else if interval < 86400 {
-        let hours = Int(interval / 3600)
-        return "\(hours)h ago"
-    } else {
-        let days = Int(interval / 86400)
-        return "\(days)d ago"
+    private var groupedAlerts: [String: [MotionAlert]] {
+        let formatter = DateFormatter.dayFormatter
+        return Dictionary(grouping: filteredAlerts) { alert in
+            formatter.string(from: alert.timestamp)
+        }
+    }
+    
+    private func refreshAlerts() async {
+        // Refresh alerts from the manager
+        smartHomeManager.refreshDevices()
+    }
+    
+    private func clearOldAlerts() {
+        // Clear alerts older than 7 days
+        let cutoffDate = Date().addingTimeInterval(-7 * 24 * 3600)
+        // This would be implemented in SmartHomeManager
+    }
+    
+    private func exportAlerts() {
+        // Export alerts functionality
     }
 }
 
@@ -2140,5 +2044,137 @@ struct DeviceDetailView: View {
                 }
             }
         }
+    }
+}
+
+// MARK: - Quick Action Button
+
+struct QuickActionButton: View {
+    let title: String
+    let icon: String
+    let color: Color
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: {
+            RingDesignSystem.Haptics.light()
+            action()
+        }) {
+            VStack(spacing: RingDesignSystem.Spacing.xs) {
+                Image(systemName: icon)
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundColor(color)
+                
+                Text(title)
+                    .font(RingDesignSystem.Typography.caption1)
+                    .foregroundColor(RingDesignSystem.Colors.Foreground.secondary)
+                    .lineLimit(1)
+            }
+            .frame(width: 80, height: 60)
+            .background(
+                RoundedRectangle(cornerRadius: RingDesignSystem.CornerRadius.md)
+                    .fill(RingDesignSystem.Colors.Fill.secondary)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: RingDesignSystem.CornerRadius.md)
+                            .stroke(color.opacity(0.3), lineWidth: 1)
+                    )
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
+        .frame(minWidth: RingDesignSystem.TouchTarget.minimumSize, minHeight: RingDesignSystem.TouchTarget.minimumSize)
+        .accessibilityLabel(title)
+        .accessibilityHint("Double tap to \(title.lowercased())")
+    }
+}
+
+// MARK: - System Health Components
+
+struct PerformanceMetric: View {
+    let title: String
+    let value: String
+    let icon: String
+    let color: Color
+    
+    var body: some View {
+        VStack(spacing: RingDesignSystem.Spacing.xs) {
+            Image(systemName: icon)
+                .font(.system(size: 16, weight: .medium))
+                .foregroundColor(color)
+            
+            Text(value)
+                .font(RingDesignSystem.Typography.caption1)
+                .fontWeight(.semibold)
+                .foregroundColor(RingDesignSystem.Colors.Foreground.primary)
+            
+            Text(title)
+                .font(RingDesignSystem.Typography.caption2)
+                .foregroundColor(RingDesignSystem.Colors.Foreground.secondary)
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(RingDesignSystem.Spacing.sm)
+        .background(
+            RoundedRectangle(cornerRadius: RingDesignSystem.CornerRadius.sm)
+                .fill(color.opacity(0.1))
+        )
+    }
+}
+
+struct SystemAlertRow: View {
+    let alert: SystemAlert
+    
+    var body: some View {
+        HStack(spacing: RingDesignSystem.Spacing.sm) {
+            Image(systemName: alertIcon)
+                .font(.system(size: 16, weight: .medium))
+                .foregroundColor(alertColor)
+            
+            VStack(alignment: .leading, spacing: RingDesignSystem.Spacing.xxs) {
+                Text(alert.title)
+                    .font(RingDesignSystem.Typography.caption1)
+                    .fontWeight(.medium)
+                    .foregroundColor(RingDesignSystem.Colors.Foreground.primary)
+                
+                Text(alert.message)
+                    .font(RingDesignSystem.Typography.caption2)
+                    .foregroundColor(RingDesignSystem.Colors.Foreground.secondary)
+                    .lineLimit(1)
+            }
+            
+            Spacer()
+            
+            Text(timeAgoString(from: alert.timestamp))
+                .font(RingDesignSystem.Typography.caption2)
+                .foregroundColor(RingDesignSystem.Colors.Foreground.tertiary)
+        }
+        .padding(RingDesignSystem.Spacing.sm)
+        .background(
+            RoundedRectangle(cornerRadius: RingDesignSystem.CornerRadius.sm)
+                .fill(alertColor.opacity(0.1))
+        )
+    }
+    
+    private var alertIcon: String {
+        switch alert.type {
+        case .info: return "info.circle.fill"
+        case .warning: return "exclamationmark.triangle.fill"
+        case .error: return "xmark.circle.fill"
+        case .critical: return "exclamationmark.octagon.fill"
+        }
+    }
+    
+    private var alertColor: Color {
+        switch alert.type {
+        case .info: return RingDesignSystem.Colors.ringBlue
+        case .warning: return RingDesignSystem.Colors.ringOrange
+        case .error: return RingDesignSystem.Colors.ringRed
+        case .critical: return RingDesignSystem.Colors.Alert.critical
+        }
+    }
+    
+    private func timeAgoString(from date: Date) -> String {
+        let formatter = RelativeDateTimeFormatter()
+        formatter.unitsStyle = .abbreviated
+        return formatter.localizedString(for: date, relativeTo: Date())
     }
 }

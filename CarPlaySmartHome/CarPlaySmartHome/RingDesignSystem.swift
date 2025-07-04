@@ -123,16 +123,27 @@ struct RingDesignSystem {
         
         // MARK: - Text Styles
         static let largeTitle = Font.system(.largeTitle, design: .rounded, weight: .bold)
+            .scaledFont(for: .largeTitle)
         static let title1 = Font.system(.title, design: .rounded, weight: .semibold)
+            .scaledFont(for: .title)
         static let title2 = Font.system(.title2, design: .rounded, weight: .semibold)
+            .scaledFont(for: .title2)
         static let title3 = Font.system(.title3, design: .rounded, weight: .medium)
+            .scaledFont(for: .title3)
         static let headline = Font.system(.headline, design: .rounded, weight: .semibold)
+            .scaledFont(for: .headline)
         static let subheadline = Font.system(.subheadline, design: .rounded, weight: .medium)
+            .scaledFont(for: .subheadline)
         static let body = Font.system(.body, design: .default, weight: .regular)
+            .scaledFont(for: .body)
         static let callout = Font.system(.callout, design: .default, weight: .regular)
+            .scaledFont(for: .callout)
         static let footnote = Font.system(.footnote, design: .default, weight: .regular)
+            .scaledFont(for: .footnote)
         static let caption1 = Font.system(.caption, design: .default, weight: .regular)
+            .scaledFont(for: .caption)
         static let caption2 = Font.system(.caption2, design: .default, weight: .regular)
+            .scaledFont(for: .caption2)
         
         // MARK: - Custom Fonts
         static func customFont(size: CGFloat, weight: Weight = .regular, design: Font.Design = .default) -> Font {
@@ -205,9 +216,29 @@ struct RingDesignSystem {
     struct Animations {
         static let quick = Animation.easeInOut(duration: 0.2)
         static let gentle = Animation.easeInOut(duration: 0.3)
-        static let smooth = Animation.easeInOut(duration: 0.5)
-        static let bouncy = Animation.spring(response: 0.6, dampingFraction: 0.8)
-        static let dramatic = Animation.spring(response: 0.8, dampingFraction: 0.6)
+        static let slow = Animation.easeInOut(duration: 0.5)
+        static let reducedMotion = Animation.easeInOut(duration: 0.1)
+        
+        static var current: Animation {
+            return UIAccessibility.isReduceMotionEnabled ? reducedMotion : gentle
+        }
+    }
+    
+    // MARK: - Touch Target Guidelines
+    
+    struct TouchTarget {
+        static let minimumSize: CGFloat = 44
+        static let recommendedSize: CGFloat = 48
+    }
+    
+    // MARK: - Accessibility
+    
+    struct Accessibility {
+        static let minimumContrastRatio: CGFloat = 4.5
+        
+        static func scaledFont(for textStyle: UIFont.TextStyle) -> Font {
+            return Font(textStyle).scaledFont(for: textStyle)
+        }
     }
     
     // MARK: - Haptic Feedback
@@ -228,6 +259,11 @@ struct RingDesignSystem {
             impactFeedback.impactOccurred()
         }
         
+        static func selection() {
+            let selectionFeedback = UISelectionFeedbackGenerator()
+            selectionFeedback.selectionChanged()
+        }
+        
         static func success() {
             let notificationFeedback = UINotificationFeedbackGenerator()
             notificationFeedback.notificationOccurred(.success)
@@ -242,6 +278,46 @@ struct RingDesignSystem {
             let notificationFeedback = UINotificationFeedbackGenerator()
             notificationFeedback.notificationOccurred(.error)
         }
+        
+        // Contextual haptics for different interactions
+        static func deviceToggle() {
+            medium()
+        }
+        
+        static func alertReceived() {
+            heavy()
+        }
+        
+        static func navigation() {
+            light()
+        }
+        
+        static func criticalAction() {
+            heavy()
+        }
+    }
+    
+    // MARK: - Dark Mode Optimizations
+    
+    struct DarkMode {
+        static let enhancedBackground = Color(UIColor.systemBackground)
+        static let enhancedSecondaryBackground = Color(UIColor.secondarySystemBackground)
+        static let enhancedTertiaryBackground = Color(UIColor.tertiarySystemBackground)
+        
+        static let enhancedPrimaryText = Color(UIColor.label)
+        static let enhancedSecondaryText = Color(UIColor.secondaryLabel)
+        static let enhancedTertiaryText = Color(UIColor.tertiaryLabel)
+        
+        static let enhancedSeparator = Color(UIColor.separator)
+        static let enhancedFill = Color(UIColor.systemFill)
+        
+        // Enhanced liquid glass for dark mode
+        static let enhancedLiquidGlass = Color.white.opacity(0.15)
+        static let enhancedLiquidGlassThick = Color.white.opacity(0.25)
+        
+        // Enhanced shadows for dark mode
+        static let enhancedShadow = Color.black.opacity(0.4)
+        static let enhancedShadowStrong = Color.black.opacity(0.6)
     }
 }
 

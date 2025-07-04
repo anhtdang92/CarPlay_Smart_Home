@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import UserNotifications
 
 enum DeviceStatus: CustomStringConvertible {
     case on, off, open, closed, unknown
@@ -62,6 +63,230 @@ class SmartHomeManager: ObservableObject {
     @Published private(set) var isLoading = false
     @Published private(set) var lastError: RingAPIError?
     @Published private(set) var deviceStatuses: [UUID: RingDeviceStatus] = [:]
+
+    // MARK: - System Health & Performance
+    
+    @Published private(set) var systemHealth: SystemHealth = .unknown
+    @Published private(set) var performanceMetrics: PerformanceMetrics = PerformanceMetrics()
+    
+    struct SystemHealth {
+        enum Status {
+            case excellent, good, fair, poor, critical
+        }
+        
+        let status: Status
+        let score: Int // 0-100
+        let issues: [String]
+        let lastUpdated: Date
+        
+        static let unknown = SystemHealth(status: .unknown, score: 0, issues: [], lastUpdated: Date())
+    }
+    
+    struct PerformanceMetrics {
+        var averageResponseTime: TimeInterval = 0
+        var deviceOnlineRate: Double = 0
+        var batteryHealthScore: Int = 0
+        var networkLatency: TimeInterval = 0
+        var lastUpdated: Date = Date()
+    }
+    
+    // MARK: - Analytics & User Behavior Tracking
+    
+    @Published private(set) var userAnalytics: UserAnalytics = UserAnalytics()
+    
+    struct UserAnalytics {
+        var sessionStartTime: Date = Date()
+        var totalSessions: Int = 0
+        var averageSessionDuration: TimeInterval = 0
+        var mostUsedFeatures: [String: Int] = [:]
+        var deviceInteractions: [String: Int] = [:]
+        var errorOccurrences: [String: Int] = [:]
+        var lastUpdated: Date = Date()
+    }
+    
+    func trackUserAction(_ action: String, context: String? = nil) {
+        let key = context != nil ? "\(action)_\(context!)" : action
+        userAnalytics.mostUsedFeatures[key, default: 0] += 1
+        userAnalytics.lastUpdated = Date()
+        
+        // Send to analytics service (implement as needed)
+        print("📊 Analytics: \(action) - \(context ?? "no context")")
+    }
+    
+    func trackDeviceInteraction(_ deviceId: UUID, action: String) {
+        let key = "\(deviceId.uuidString)_\(action)"
+        userAnalytics.deviceInteractions[key, default: 0] += 1
+        userAnalytics.lastUpdated = Date()
+    }
+    
+    func trackError(_ error: Error, context: String) {
+        let errorKey = "\(context)_\(error.localizedDescription)"
+        userAnalytics.errorOccurrences[errorKey, default: 0] += 1
+        userAnalytics.lastUpdated = Date()
+    }
+    
+    // MARK: - Push Notification Preferences
+    
+    @Published var notificationPreferences: NotificationPreferences = NotificationPreferences()
+    
+    struct NotificationPreferences: Codable {
+        var motionAlerts: Bool = true
+        var doorbellRings: Bool = true
+        var systemAlerts: Bool = true
+        var batteryWarnings: Bool = true
+        var quietHours: QuietHours = QuietHours()
+        var deviceSpecificAlerts: [String: Bool] = [:]
+        
+        struct QuietHours: Codable {
+            var enabled: Bool = false
+            var startTime: Date = Calendar.current.date(from: DateComponents(hour: 22, minute: 0)) ?? Date()
+            var endTime: Date = Calendar.current.date(from: DateComponents(hour: 7, minute: 0)) ?? Date()
+        }
+    }
+    
+    func updateNotificationPreferences(_ preferences: NotificationPreferences) {
+        notificationPreferences = preferences
+        saveNotificationPreferences()
+        
+        // Update system notification settings
+        updateSystemNotificationSettings()
+    }
+    
+    private func saveNotificationPreferences() {
+        if let encoded = try? JSONEncoder().encode(notificationPreferences) {
+            UserDefaults.standard.set(encoded, forKey: "notificationPreferences")
+        }
+    }
+    
+    private func loadNotificationPreferences() {
+        if let data = UserDefaults.standard.data(forKey: "notificationPreferences"),
+           let preferences = try? JSONDecoder().decode(NotificationPreferences.self, from: data) {
+            notificationPreferences = preferences
+        }
+    }
+    
+    private func updateSystemNotificationSettings() {
+        // Request notification permissions if needed
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    self.trackError(error, context: "notification_permission")
+                }
+            }
+        }
+    }
+    
+    // MARK: - Data Backup & Restore
+    
+    func createBackup() -> BackupData {
+        let backup = BackupData(
+            devices: devices,
+            notificationPreferences: notificationPreferences,
+            userAnalytics: userAnalytics,
+            systemHealth: systemHealth,
+            performanceMetrics: performanceMetrics,
+            timestamp: Date(),
+            version: "1.0.0"
+        )
+        
+        // Save backup to local storage
+        saveBackupToLocal(backup)
+        
+        return backup
+    }
+    
+    func restoreFromBackup(_ backup: BackupData) -> Bool {
+        do {
+            // Validate backup version compatibility
+            guard backup.version == "1.0.0" else {
+                throw BackupError.incompatibleVersion
+            }
+            
+            // Restore data
+            devices = backup.devices
+            notificationPreferences = backup.notificationPreferences
+            userAnalytics = backup.userAnalytics
+            systemHealth = backup.systemHealth
+            performanceMetrics = backup.performanceMetrics
+            
+            // Update UI
+            updateSystemHealth()
+            
+            trackUserAction("backup_restored", context: "success")
+            return true
+            
+        } catch {
+            trackError(error, context: "backup_restore")
+            return false
+        }
+    }
+    
+    private func saveBackupToLocal(_ backup: BackupData) {
+        if let encoded = try? JSONEncoder().encode(backup) {
+            UserDefaults.standard.set(encoded, forKey: "localBackup")
+        }
+    }
+    
+    func getLocalBackup() -> BackupData? {
+        guard let data = UserDefaults.standard.data(forKey: "localBackup"),
+              let backup = try? JSONDecoder().decode(BackupData.self, from: data) else {
+            return nil
+        }
+        return backup
+    }
+    
+    // MARK: - Device Setup Wizard
+    
+    func startDeviceSetup() -> DeviceSetupWizard {
+        return DeviceSetupWizard(smartHomeManager: self)
+    }
+    
+    func addDevice(_ device: SmartDevice) {
+        devices.append(device)
+        trackUserAction("device_added", context: device.deviceType.rawValue)
+        updateSystemHealth()
+    }
+    
+    func removeDevice(_ deviceId: UUID) {
+        devices.removeAll { $0.id == deviceId }
+        deviceStatuses.removeValue(forKey: deviceId)
+        trackUserAction("device_removed")
+        updateSystemHealth()
+    }
+    
+    // MARK: - Performance Monitoring
+    
+    func startPerformanceMonitoring() {
+        // Monitor app launch time
+        let launchTime = Date().timeIntervalSince(launchStartTime)
+        trackUserAction("app_launch_time", context: String(format: "%.2f", launchTime))
+        
+        // Monitor memory usage
+        let memoryUsage = getMemoryUsage()
+        trackUserAction("memory_usage", context: String(format: "%.1f", memoryUsage))
+    }
+    
+    private func getMemoryUsage() -> Double {
+        var info = mach_task_basic_info()
+        var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info>.size)/4
+        
+        let kerr: kern_return_t = withUnsafeMutablePointer(to: &info) {
+            $0.withMemoryRebound(to: integer_t.self, capacity: 1) {
+                task_info(mach_task_self_,
+                         task_flavor_t(MACH_TASK_BASIC_INFO),
+                         $0,
+                         &count)
+            }
+        }
+        
+        if kerr == KERN_SUCCESS {
+            return Double(info.resident_size) / 1024.0 / 1024.0 // Convert to MB
+        } else {
+            return 0.0
+        }
+    }
+    
+    private var launchStartTime: Date = Date()
 
     private init() {
         setupNotificationObservers()
@@ -381,19 +606,27 @@ class SmartHomeManager: ObservableObject {
         getDeviceStatus(for: deviceId) { _ in }
     }
 
-    // MARK: - Utility Methods
+    // MARK: - Device Filtering and Statistics
     
-    func getDevicesWithLowBattery(threshold: Int = 20) -> [SmartDevice] {
-        return devices.filter { device in
-            guard let batteryLevel = device.batteryLevel else { return false }
-            return batteryLevel <= threshold
-        }
+    func getOnlineDevices() -> [SmartDevice] {
+        return devices.filter { $0.status == .on }
     }
     
     func getOfflineDevices() -> [SmartDevice] {
+        return devices.filter { $0.status == .off }
+    }
+    
+    func getDevicesWithLowBattery() -> [SmartDevice] {
         return devices.filter { device in
-            guard let status = deviceStatuses[device.id] else { return false }
-            return !status.isOnline
+            guard let batteryLevel = device.batteryLevel else { return false }
+            return batteryLevel <= 20
+        }
+    }
+    
+    func getDevicesWithGoodBattery() -> [SmartDevice] {
+        return devices.filter { device in
+            guard let batteryLevel = device.batteryLevel else { return false }
+            return batteryLevel > 50
         }
     }
     
@@ -405,17 +638,7 @@ class SmartHomeManager: ObservableObject {
     }
     
     func getTotalActiveAlerts() -> Int {
-        let oneHourAgo = Date().addingTimeInterval(-3600)
-        return recentMotionAlerts.filter { $0.timestamp > oneHourAgo }.count
-    }
-    
-    func getAlertsForDevice(_ deviceId: UUID) -> [MotionAlert] {
-        return recentMotionAlerts.filter { $0.deviceId == deviceId }
-    }
-    
-    func clearOldAlerts(olderThan days: Int = 7) {
-        let cutoffDate = Date().addingTimeInterval(-Double(days * 86400))
-        recentMotionAlerts = recentMotionAlerts.filter { $0.timestamp > cutoffDate }
+        return recentMotionAlerts.count
     }
 
     // MARK: - Bulk Operations
@@ -512,5 +735,244 @@ class SmartHomeManager: ObservableObject {
         default:
             print("No default action for device type: \(device.deviceType)")
         }
+    }
+
+    // MARK: - System Health & Performance
+    
+    func updateSystemHealth() {
+        let devices = getDevices()
+        let onlineDevices = getOnlineDevices()
+        let lowBatteryDevices = getDevicesWithLowBattery()
+        
+        // Calculate health score
+        let onlineRate = devices.isEmpty ? 0 : Double(onlineDevices.count) / Double(devices.count)
+        let batteryHealth = devices.isEmpty ? 100 : max(0, 100 - (lowBatteryDevices.count * 10))
+        
+        let totalScore = Int((onlineRate * 60) + (Double(batteryHealth) * 0.4))
+        
+        // Determine status
+        let status: SystemHealth.Status
+        let issues: [String]
+        
+        switch totalScore {
+        case 90...100:
+            status = .excellent
+            issues = []
+        case 75..<90:
+            status = .good
+            issues = lowBatteryDevices.isEmpty ? [] : ["Some devices have low battery"]
+        case 60..<75:
+            status = .fair
+            issues = ["Multiple devices offline", "Low battery warnings"]
+        case 40..<60:
+            status = .poor
+            issues = ["System performance degraded", "Multiple connectivity issues"]
+        default:
+            status = .critical
+            issues = ["System requires immediate attention", "Multiple critical issues"]
+        }
+        
+        systemHealth = SystemHealth(
+            status: status,
+            score: totalScore,
+            issues: issues,
+            lastUpdated: Date()
+        )
+        
+        // Update performance metrics
+        updatePerformanceMetrics()
+    }
+    
+    private func updatePerformanceMetrics() {
+        let devices = getDevices()
+        let onlineDevices = getOnlineDevices()
+        let lowBatteryDevices = getDevicesWithLowBattery()
+        
+        performanceMetrics = PerformanceMetrics(
+            averageResponseTime: 0.5, // Simulated
+            deviceOnlineRate: devices.isEmpty ? 0 : Double(onlineDevices.count) / Double(devices.count),
+            batteryHealthScore: devices.isEmpty ? 100 : max(0, 100 - (lowBatteryDevices.count * 10)),
+            networkLatency: 0.2, // Simulated
+            lastUpdated: Date()
+        )
+    }
+    
+    // MARK: - Advanced Device Management
+    
+    func getDevicesByLocation() -> [String: [SmartDevice]] {
+        return Dictionary(grouping: devices) { $0.location ?? "Unknown Location" }
+    }
+    
+    func getDevicesByType() -> [DeviceType: [SmartDevice]] {
+        return Dictionary(grouping: devices) { $0.deviceType }
+    }
+    
+    func getDevicesByStatus() -> [DeviceStatus: [SmartDevice]] {
+        return Dictionary(grouping: devices) { $0.status }
+    }
+    
+    func getDevicesNeedingAttention() -> [SmartDevice] {
+        return devices.filter { device in
+            // Offline devices
+            device.status == .off ||
+            // Low battery devices
+            (device.batteryLevel != nil && device.batteryLevel! <= 20) ||
+            // Devices not seen recently
+            (device.lastSeen != nil && device.lastSeen! < Date().addingTimeInterval(-24 * 3600))
+        }
+    }
+    
+    func getSystemAlerts() -> [SystemAlert] {
+        var alerts: [SystemAlert] = []
+        
+        let offlineDevices = getOfflineDevices()
+        if !offlineDevices.isEmpty {
+            alerts.append(SystemAlert(
+                type: .warning,
+                title: "Offline Devices",
+                message: "\(offlineDevices.count) device(s) are currently offline",
+                timestamp: Date()
+            ))
+        }
+        
+        let lowBatteryDevices = getDevicesWithLowBattery()
+        if !lowBatteryDevices.isEmpty {
+            alerts.append(SystemAlert(
+                type: .warning,
+                title: "Low Battery",
+                message: "\(lowBatteryDevices.count) device(s) have low battery",
+                timestamp: Date()
+            ))
+        }
+        
+        return alerts
+    }
+    
+    // MARK: - Data Export & Backup
+    
+    func exportDeviceData() -> String {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = .prettyPrinted
+        
+        do {
+            let data = try encoder.encode(devices)
+            return String(data: data, encoding: .utf8) ?? "Export failed"
+        } catch {
+            return "Export failed: \(error.localizedDescription)"
+        }
+    }
+    
+    func getSystemReport() -> SystemReport {
+        return SystemReport(
+            totalDevices: devices.count,
+            onlineDevices: getOnlineDevices().count,
+            offlineDevices: getOfflineDevices().count,
+            lowBatteryDevices: getDevicesWithLowBattery().count,
+            systemHealth: systemHealth,
+            performanceMetrics: performanceMetrics,
+            lastUpdated: Date()
+        )
+    }
+}
+
+// MARK: - Supporting Types
+
+struct SystemAlert {
+    enum AlertType {
+        case info, warning, error, critical
+    }
+    
+    let type: AlertType
+    let title: String
+    let message: String
+    let timestamp: Date
+}
+
+struct SystemReport {
+    let totalDevices: Int
+    let onlineDevices: Int
+    let offlineDevices: Int
+    let lowBatteryDevices: Int
+    let systemHealth: SmartHomeManager.SystemHealth
+    let performanceMetrics: SmartHomeManager.PerformanceMetrics
+    let lastUpdated: Date
+}
+
+struct BackupData: Codable {
+    let devices: [SmartDevice]
+    let notificationPreferences: SmartHomeManager.NotificationPreferences
+    let userAnalytics: SmartHomeManager.UserAnalytics
+    let systemHealth: SmartHomeManager.SystemHealth
+    let performanceMetrics: SmartHomeManager.PerformanceMetrics
+    let timestamp: Date
+    let version: String
+}
+
+enum BackupError: Error, LocalizedError {
+    case incompatibleVersion
+    case corruptedData
+    case restoreFailed
+    
+    var errorDescription: String? {
+        switch self {
+        case .incompatibleVersion:
+            return "Backup version is not compatible with current app version"
+        case .corruptedData:
+            return "Backup data is corrupted or invalid"
+        case .restoreFailed:
+            return "Failed to restore backup data"
+        }
+    }
+}
+
+class DeviceSetupWizard: ObservableObject {
+    @Published var currentStep: SetupStep = .welcome
+    @Published var setupData: SetupData = SetupData()
+    private let smartHomeManager: SmartHomeManager
+    
+    enum SetupStep: Int, CaseIterable {
+        case welcome = 0
+        case deviceType
+        case deviceLocation
+        case deviceName
+        case connectivity
+        case confirmation
+        case complete
+    }
+    
+    struct SetupData {
+        var deviceType: DeviceType?
+        var location: String = ""
+        var name: String = ""
+        var isConnected: Bool = false
+    }
+    
+    init(smartHomeManager: SmartHomeManager) {
+        self.smartHomeManager = smartHomeManager
+    }
+    
+    func nextStep() {
+        guard currentStep.rawValue < SetupStep.allCases.count - 1 else { return }
+        currentStep = SetupStep.allCases[currentStep.rawValue + 1]
+    }
+    
+    func previousStep() {
+        guard currentStep.rawValue > 0 else { return }
+        currentStep = SetupStep.allCases[currentStep.rawValue - 1]
+    }
+    
+    func completeSetup() {
+        guard let deviceType = setupData.deviceType else { return }
+        
+        let newDevice = SmartDevice(
+            id: UUID(),
+            name: setupData.name.isEmpty ? "New \(deviceType.rawValue)" : setupData.name,
+            status: .off,
+            deviceType: deviceType,
+            location: setupData.location.isEmpty ? nil : setupData.location
+        )
+        
+        smartHomeManager.addDevice(newDevice)
+        currentStep = .complete
     }
 } 

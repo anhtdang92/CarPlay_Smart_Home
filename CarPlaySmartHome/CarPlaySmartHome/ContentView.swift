@@ -4,6 +4,7 @@ struct ContentView: View {
     @StateObject private var authManager = AuthenticationManager.shared
     @StateObject private var smartHomeManager = SmartHomeManager.shared
     @Environment(\.colorScheme) var colorScheme
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
 
     var body: some View {
         ZStack {
@@ -11,19 +12,22 @@ struct ContentView: View {
             backgroundGradient
                 .ignoresSafeArea()
             
-            if authManager.isAuthenticated {
+            if !hasCompletedOnboarding {
+                OnboardingView(hasCompletedOnboarding: $hasCompletedOnboarding)
+            } else if authManager.isAuthenticated {
                 MainTabView(smartHomeManager: smartHomeManager)
             } else {
                 LoginView(authManager: authManager)
             }
         }
         .animation(RingDesignSystem.Animations.gentle, value: authManager.isAuthenticated)
+        .animation(RingDesignSystem.Animations.gentle, value: hasCompletedOnboarding)
     }
     
     private var backgroundGradient: some View {
         LinearGradient(
             colors: colorScheme == .dark ? 
-            [Color.black, Color(red: 0.05, green: 0.05, blue: 0.1)] :
+            [RingDesignSystem.DarkMode.enhancedBackground, Color(red: 0.05, green: 0.05, blue: 0.1)] :
             [Color(red: 0.95, green: 0.97, blue: 1.0), Color.white],
             startPoint: .topLeading,
             endPoint: .bottomTrailing
@@ -36,13 +40,14 @@ struct ContentView: View {
 struct MainTabView: View {
     @ObservedObject var smartHomeManager: SmartHomeManager
     @State private var selectedTab = 0
+    @State private var animationEnabled = true
     
     var body: some View {
         TabView(selection: $selectedTab) {
             EnhancedDashboardView(smartHomeManager: smartHomeManager)
                 .tabItem {
                     Image(systemName: "house.fill")
-                    Text("Dashboard")
+                    Text("Home")
                 }
                 .tag(0)
             
@@ -60,28 +65,17 @@ struct MainTabView: View {
                 }
                 .tag(2)
             
-            AdvancedAnalyticsView(smartHomeManager: smartHomeManager)
-                .tabItem {
-                    Image(systemName: "chart.bar.fill")
-                    Text("Analytics")
-                }
-                .tag(3)
-            
-            DeviceMapView(smartHomeManager: smartHomeManager)
-                .tabItem {
-                    Image(systemName: "map.fill")
-                    Text("Map")
-                }
-                .tag(4)
-            
             SettingsView(smartHomeManager: smartHomeManager)
                 .tabItem {
                     Image(systemName: "gear")
                     Text("Settings")
                 }
-                .tag(5)
+                .tag(3)
         }
         .accentColor(RingDesignSystem.Colors.ringBlue)
+        .onReceive(NotificationCenter.default.publisher(for: UIAccessibility.reduceMotionStatusDidChangeNotification)) { _ in
+            animationEnabled = !UIAccessibility.isReduceMotionEnabled
+        }
     }
 }
 
@@ -179,13 +173,35 @@ struct LoginView: View {
     }
     
     private func errorSection(message: String) -> some View {
-        HStack(spacing: RingDesignSystem.Spacing.sm) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundColor(RingDesignSystem.Colors.Alert.critical)
+        VStack(spacing: RingDesignSystem.Spacing.sm) {
+            HStack(spacing: RingDesignSystem.Spacing.sm) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundColor(RingDesignSystem.Colors.Alert.critical)
+                
+                Text("Connection Issue")
+                    .font(RingDesignSystem.Typography.headline)
+                    .foregroundColor(RingDesignSystem.Colors.Alert.critical)
+            }
             
             Text(message)
-                .font(RingDesignSystem.Typography.footnote)
-                .foregroundColor(RingDesignSystem.Colors.Alert.critical)
+                .font(RingDesignSystem.Typography.body)
+                .foregroundColor(RingDesignSystem.Colors.Foreground.secondary)
+                .multilineTextAlignment(.center)
+            
+            Button("Try Again") {
+                errorMessage = nil
+                if message.contains("Ring") {
+                    signInWithRing()
+                } else {
+                    signInGeneric()
+                }
+            }
+            .frame(minWidth: RingDesignSystem.TouchTarget.minimumSize, minHeight: RingDesignSystem.TouchTarget.minimumSize)
+            .padding(.horizontal, RingDesignSystem.Spacing.md)
+            .padding(.vertical, RingDesignSystem.Spacing.sm)
+            .background(RingDesignSystem.Colors.ringBlue)
+            .foregroundColor(.white)
+            .clipShape(RoundedRectangle(cornerRadius: RingDesignSystem.CornerRadius.md))
         }
         .padding(RingDesignSystem.Spacing.md)
         .liquidGlass(cornerRadius: RingDesignSystem.CornerRadius.md)
@@ -285,6 +301,7 @@ struct LoginView: View {
     private func signInWithRing() {
         isSigningIn = true
         errorMessage = nil
+        RingDesignSystem.Haptics.medium()
         
         RingAPIManager.shared.signInWithRing { result in
             DispatchQueue.main.async {
@@ -292,9 +309,11 @@ struct LoginView: View {
                 
                 switch result {
                 case .success:
+                    RingDesignSystem.Haptics.success()
                     // Success - view will automatically switch
                     break
                 case .failure(let error):
+                    RingDesignSystem.Haptics.error()
                     errorMessage = "Ring sign-in failed: \(error.localizedDescription)"
                 }
             }
@@ -304,11 +323,15 @@ struct LoginView: View {
     private func signInGeneric() {
         isSigningIn = true
         errorMessage = nil
+        RingDesignSystem.Haptics.medium()
         
         authManager.signIn { success in
             DispatchQueue.main.async {
                 isSigningIn = false
-                if !success {
+                if success {
+                    RingDesignSystem.Haptics.success()
+                } else {
+                    RingDesignSystem.Haptics.error()
                     errorMessage = "Sign-in failed. Please try again."
                 }
             }
@@ -321,6 +344,204 @@ struct LoginView: View {
 extension Color {
     var gradientColors: [Color] {
         return [self, self.opacity(0.7)]
+    }
+}
+
+// MARK: - Onboarding View
+
+struct OnboardingView: View {
+    @Binding var hasCompletedOnboarding: Bool
+    @State private var currentPage = 0
+    @Environment(\.colorScheme) var colorScheme
+    
+    private let onboardingPages = [
+        OnboardingPage(
+            title: "Welcome to Ring Smart Home",
+            subtitle: "Control your home security from anywhere with CarPlay integration",
+            icon: "shield.lefthalf.filled.badge.checkmark",
+            color: RingDesignSystem.Colors.ringBlue
+        ),
+        OnboardingPage(
+            title: "Smart Device Control",
+            subtitle: "Monitor cameras, doorbells, and sensors with real-time alerts",
+            icon: "video.fill",
+            color: RingDesignSystem.Colors.ringGreen
+        ),
+        OnboardingPage(
+            title: "CarPlay Integration",
+            subtitle: "Access your home security while driving with voice commands",
+            icon: "car.fill",
+            color: RingDesignSystem.Colors.ringOrange
+        ),
+        OnboardingPage(
+            title: "Privacy & Security",
+            subtitle: "Your data is encrypted and secure. You're in control.",
+            icon: "lock.shield.fill",
+            color: RingDesignSystem.Colors.ringPurple
+        )
+    ]
+    
+    var body: some View {
+        GeometryReader { geometry in
+            VStack(spacing: 0) {
+                // Page Content
+                TabView(selection: $currentPage) {
+                    ForEach(0..<onboardingPages.count, id: \.self) { index in
+                        OnboardingPageView(page: onboardingPages[index])
+                            .tag(index)
+                    }
+                }
+                .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+                .animation(RingDesignSystem.Animations.gentle, value: currentPage)
+                
+                // Bottom Section
+                VStack(spacing: RingDesignSystem.Spacing.lg) {
+                    // Page Indicators
+                    pageIndicators
+                    
+                    // Action Buttons
+                    actionButtons
+                }
+                .padding(.horizontal, RingDesignSystem.Spacing.xl)
+                .padding(.bottom, geometry.safeAreaInsets.bottom + RingDesignSystem.Spacing.xl)
+            }
+        }
+    }
+    
+    private var pageIndicators: some View {
+        HStack(spacing: RingDesignSystem.Spacing.sm) {
+            ForEach(0..<onboardingPages.count, id: \.self) { index in
+                Circle()
+                    .fill(index == currentPage ? 
+                          onboardingPages[index].color : 
+                          RingDesignSystem.Colors.Foreground.tertiary)
+                    .frame(width: index == currentPage ? 12 : 8, height: index == currentPage ? 12 : 8)
+                    .animation(RingDesignSystem.Animations.quick, value: currentPage)
+            }
+        }
+    }
+    
+    private var actionButtons: some View {
+        VStack(spacing: RingDesignSystem.Spacing.md) {
+            if currentPage == onboardingPages.count - 1 {
+                // Get Started Button
+                Button {
+                    RingDesignSystem.Haptics.success()
+                    withAnimation(RingDesignSystem.Animations.gentle) {
+                        hasCompletedOnboarding = true
+                    }
+                } label: {
+                    Text("Get Started")
+                        .font(RingDesignSystem.Typography.headline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .frame(minHeight: RingDesignSystem.TouchTarget.minimumSize)
+                        .background(
+                            LinearGradient(
+                                colors: [RingDesignSystem.Colors.ringBlue, RingDesignSystem.Colors.ringBlue.opacity(0.8)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .clipShape(RoundedRectangle(cornerRadius: RingDesignSystem.CornerRadius.lg))
+                        .shadow(color: RingDesignSystem.Colors.ringBlue.opacity(0.3), radius: 8, x: 0, y: 4)
+                }
+            } else {
+                // Next Button
+                Button {
+                    RingDesignSystem.Haptics.navigation()
+                    withAnimation(RingDesignSystem.Animations.gentle) {
+                        currentPage += 1
+                    }
+                } label: {
+                    Text("Next")
+                        .font(RingDesignSystem.Typography.headline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(RingDesignSystem.Colors.ringBlue)
+                        .frame(maxWidth: .infinity)
+                        .frame(minHeight: RingDesignSystem.TouchTarget.minimumSize)
+                        .background(
+                            RoundedRectangle(cornerRadius: RingDesignSystem.CornerRadius.lg)
+                                .fill(RingDesignSystem.Colors.Fill.secondary)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: RingDesignSystem.CornerRadius.lg)
+                                        .stroke(RingDesignSystem.Colors.ringBlue.opacity(0.3), lineWidth: 1)
+                                )
+                        )
+                }
+                
+                // Skip Button
+                Button {
+                    RingDesignSystem.Haptics.navigation()
+                    withAnimation(RingDesignSystem.Animations.gentle) {
+                        hasCompletedOnboarding = true
+                    }
+                } label: {
+                    Text("Skip")
+                        .font(RingDesignSystem.Typography.subheadline)
+                        .foregroundColor(RingDesignSystem.Colors.Foreground.secondary)
+                }
+                .frame(minHeight: RingDesignSystem.TouchTarget.minimumSize)
+            }
+        }
+    }
+}
+
+struct OnboardingPage {
+    let title: String
+    let subtitle: String
+    let icon: String
+    let color: Color
+}
+
+struct OnboardingPageView: View {
+    let page: OnboardingPage
+    @Environment(\.colorScheme) var colorScheme
+    
+    var body: some View {
+        VStack(spacing: RingDesignSystem.Spacing.xxl) {
+            Spacer()
+            
+            // Icon
+            ZStack {
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            colors: page.color.gradientColors,
+                            center: .center,
+                            startRadius: 30,
+                            endRadius: 80
+                        )
+                    )
+                    .frame(width: 160, height: 160)
+                    .liquidGlass(style: .regular, cornerRadius: 80)
+                
+                Image(systemName: page.icon)
+                    .font(.system(size: 64, weight: .medium))
+                    .foregroundColor(.white)
+                    .shadow(color: .black.opacity(0.3), radius: 4, x: 0, y: 2)
+            }
+            .pulse(active: true)
+            
+            // Content
+            VStack(spacing: RingDesignSystem.Spacing.lg) {
+                Text(page.title)
+                    .font(RingDesignSystem.Typography.largeTitle)
+                    .foregroundColor(RingDesignSystem.Colors.Foreground.primary)
+                    .multilineTextAlignment(.center)
+                
+                Text(page.subtitle)
+                    .font(RingDesignSystem.Typography.body)
+                    .foregroundColor(RingDesignSystem.Colors.Foreground.secondary)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(nil)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(.horizontal, RingDesignSystem.Spacing.xl)
+            
+            Spacer()
+        }
     }
 }
 
