@@ -1122,6 +1122,11 @@ class SmartHomeManager: ObservableObject {
             totalRequests: Int.random(in: 1000...5000)
         )
     }
+
+    // MARK: - Alerts for Device
+    func getAlertsForDevice(_ id: UUID) -> [MotionAlert] {
+        return recentMotionAlerts.filter { $0.deviceId == id }
+    }
 }
 
 // MARK: - Supporting Models

@@ -69,7 +69,7 @@ class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
             text: "Recent Motion Alerts", 
             detailText: alertsCount > 0 ? "\(alertsCount) active alerts" : "No recent activity"
         )
-        motionAlertsItem.handler = { [weak self] item, completion in
+        motionAlertsItem.handler = { [weak self] (item: CPListItem, completion: @escaping () -> Void) in
             self?.showMotionAlertsTemplate()
             completion()
         }
@@ -77,7 +77,7 @@ class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
 
         // Add quick actions section
         let quickActionsItem = CPListItem(text: "Quick Actions", detailText: "Bulk device controls")
-        quickActionsItem.handler = { [weak self] item, completion in
+        quickActionsItem.handler = { [weak self] (item: CPListItem, completion: @escaping () -> Void) in
             self?.showQuickActionsSheet()
             completion()
         }
@@ -146,7 +146,7 @@ class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
         }
         
         let item = CPListItem(text: statusText, detailText: detailText)
-        item.handler = { [weak self] _, completion in
+        item.handler = { [weak self] (_: CPListItem, completion: @escaping () -> Void) in
             self?.showSystemStatusTemplate()
             completion()
         }
@@ -169,7 +169,7 @@ class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
         detailComponents.append(device.status.description)
         
         let item = CPListItem(text: device.name, detailText: detailComponents.joined(separator: " • "))
-        item.handler = { [weak self] item, completion in
+        item.handler = { [weak self] (item: CPListItem, completion: @escaping () -> Void) in
             self?.showDeviceActionSheet(for: device)
             completion()
         }
@@ -624,7 +624,7 @@ class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
         NotificationCenter.default.addObserver(
             forName: .ringMotionAlert,
             object: nil,
-            queue: .main
+            queue: OperationQueue.main
         ) { [weak self] _ in
             // Refresh the main template when new motion alerts arrive
             self?.updateRootTemplate()
