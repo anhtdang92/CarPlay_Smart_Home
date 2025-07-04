@@ -556,4 +556,573 @@ extension View {
     }
     .padding()
     .themeAwareBackground()
+}
+
+// MARK: - Modern Theme System
+struct RingThemeSystem: View {
+    @StateObject private var themeManager = ThemeManager()
+    @Environment(\.colorScheme) var colorScheme
+    @State private var showThemeMenu = false
+    @State private var animateTheme = false
+    
+    var body: some View {
+        ZStack {
+            // Liquid glass background
+            LiquidGlassBackground()
+            
+            VStack(spacing: RingDesignSystem.Spacing.xl) {
+                // Theme header
+                ThemeHeader()
+                    .offset(y: animateTheme ? 0 : -30)
+                    .opacity(animateTheme ? 1 : 0)
+                
+                // Theme switcher
+                ModernThemeSwitcher(themeManager: themeManager)
+                    .offset(y: animateTheme ? 0 : 30)
+                    .opacity(animateTheme ? 1 : 0)
+                
+                // Theme options
+                ThemeOptionsGrid(themeManager: themeManager)
+                    .offset(y: animateTheme ? 0 : 50)
+                    .opacity(animateTheme ? 1 : 0)
+                
+                Spacer()
+            }
+            .padding()
+        }
+        .onAppear {
+            withAnimation(.spring(response: 0.8, dampingFraction: 0.8).delay(0.2)) {
+                animateTheme = true
+            }
+        }
+    }
+}
+
+// MARK: - Theme Header
+struct ThemeHeader: View {
+    @Environment(\.colorScheme) var colorScheme
+    @State private var animateIcon = false
+    
+    var body: some View {
+        VStack(spacing: RingDesignSystem.Spacing.md) {
+            // Animated theme icon
+            ZStack {
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            colors: colorScheme == .dark ? 
+                                [.blue, .purple, .pink] :
+                                [.blue, .cyan, .green],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 80, height: 80)
+                    .shadow(
+                        color: .blue.opacity(0.4),
+                        radius: 20,
+                        x: 0,
+                        y: 10
+                    )
+                
+                Image(systemName: "paintbrush.fill")
+                    .font(.system(size: 32, weight: .bold))
+                    .foregroundColor(.white)
+                    .rotationEffect(.degrees(animateIcon ? 360 : 0))
+            }
+            
+            VStack(spacing: RingDesignSystem.Spacing.sm) {
+                AnimatedGradientText(
+                    text: "Theme Settings",
+                    colors: colorScheme == .dark ? 
+                        [.white, .blue, .purple] :
+                        [.black, .blue, .cyan]
+                )
+                .font(RingDesignSystem.Typography.title1)
+                
+                Text("Customize your smart home experience")
+                    .font(RingDesignSystem.Typography.subheadline)
+                    .foregroundColor(.secondary)
+            }
+        }
+        .onAppear {
+            withAnimation(.linear(duration: 4.0).repeatForever(autoreverses: false)) {
+                animateIcon = true
+            }
+        }
+    }
+}
+
+// MARK: - Modern Theme Switcher
+struct ModernThemeSwitcher: View {
+    @ObservedObject var themeManager: ThemeManager
+    @Environment(\.colorScheme) var colorScheme
+    @State private var animateSwitch = false
+    
+    var body: some View {
+        LiquidGlassCard(intensity: 0.15) {
+            VStack(spacing: RingDesignSystem.Spacing.lg) {
+                HStack {
+                    VStack(alignment: .leading, spacing: RingDesignSystem.Spacing.sm) {
+                        Text("App Theme")
+                            .font(RingDesignSystem.Typography.headline)
+                            .fontWeight(.semibold)
+                        
+                        Text("Switch between light and dark modes")
+                            .font(RingDesignSystem.Typography.footnote)
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    Spacer()
+                    
+                    // Modern toggle switch
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 25)
+                            .fill(
+                                LinearGradient(
+                                    colors: colorScheme == .dark ? 
+                                        [.gray.opacity(0.3), .gray.opacity(0.1)] :
+                                        [.gray.opacity(0.2), .gray.opacity(0.1)],
+                                    startPoint: .top,
+                                    endPoint: .bottom
+                                )
+                            )
+                            .frame(width: 60, height: 32)
+                        
+                        Circle()
+                            .fill(.white)
+                            .frame(width: 28, height: 28)
+                            .shadow(
+                                color: .black.opacity(0.2),
+                                radius: 4,
+                                x: 0,
+                                y: 2
+                            )
+                            .offset(x: colorScheme == .dark ? 14 : -14)
+                            .scaleEffect(animateSwitch ? 1.1 : 1.0)
+                    }
+                    .onTapGesture {
+                        withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                            themeManager.toggleTheme()
+                        }
+                        HapticFeedback.impact(style: .light)
+                    }
+                }
+                
+                // Theme preview
+                HStack(spacing: RingDesignSystem.Spacing.md) {
+                    ThemePreviewCard(
+                        title: "Light",
+                        icon: "sun.max.fill",
+                        color: .orange,
+                        isActive: colorScheme == .light
+                    )
+                    
+                    ThemePreviewCard(
+                        title: "Dark",
+                        icon: "moon.fill",
+                        color: .purple,
+                        isActive: colorScheme == .dark
+                    )
+                }
+            }
+        }
+        .onAppear {
+            withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
+                animateSwitch = true
+            }
+        }
+    }
+}
+
+struct ThemePreviewCard: View {
+    let title: String
+    let icon: String
+    let color: Color
+    let isActive: Bool
+    
+    @State private var animate = false
+    
+    var body: some View {
+        VStack(spacing: RingDesignSystem.Spacing.sm) {
+            ZStack {
+                Circle()
+                    .fill(color.opacity(isActive ? 0.3 : 0.1))
+                    .frame(width: 50, height: 50)
+                    .scaleEffect(animate ? 1.1 : 1.0)
+                
+                Image(systemName: icon)
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundColor(color)
+                    .rotationEffect(.degrees(animate ? 360 : 0))
+            }
+            
+            Text(title)
+                .font(RingDesignSystem.Typography.caption1)
+                .fontWeight(.medium)
+                .foregroundColor(isActive ? color : .secondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, RingDesignSystem.Spacing.md)
+        .background(
+            RoundedRectangle(cornerRadius: RingDesignSystem.CornerRadius.md)
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: RingDesignSystem.CornerRadius.md)
+                        .stroke(
+                            isActive ? color.opacity(0.5) : Color.clear,
+                            lineWidth: 2
+                        )
+                )
+        )
+        .onAppear {
+            if isActive {
+                withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
+                    animate = true
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Theme Options Grid
+struct ThemeOptionsGrid: View {
+    @ObservedObject var themeManager: ThemeManager
+    @State private var animateGrid = false
+    
+    private let themeOptions = [
+        ThemeOption(
+            title: "Classic",
+            description: "Traditional iOS design",
+            icon: "iphone",
+            colors: [.blue, .gray]
+        ),
+        ThemeOption(
+            title: "Vibrant",
+            description: "Bold and colorful",
+            icon: "paintpalette.fill",
+            colors: [.purple, .pink, .orange]
+        ),
+        ThemeOption(
+            title: "Minimal",
+            description: "Clean and simple",
+            icon: "circle.grid.2x2",
+            colors: [.gray, .black]
+        ),
+        ThemeOption(
+            title: "Nature",
+            description: "Earth-inspired tones",
+            icon: "leaf.fill",
+            colors: [.green, .brown]
+        ),
+        ThemeOption(
+            title: "Ocean",
+            description: "Deep blue themes",
+            icon: "drop.fill",
+            colors: [.blue, .cyan]
+        ),
+        ThemeOption(
+            title: "Sunset",
+            description: "Warm gradients",
+            icon: "sunset.fill",
+            colors: [.orange, .red, .pink]
+        )
+    ]
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: RingDesignSystem.Spacing.md) {
+            Text("Theme Presets")
+                .font(RingDesignSystem.Typography.title3)
+                .fontWeight(.semibold)
+            
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: RingDesignSystem.Spacing.md), count: 2), spacing: RingDesignSystem.Spacing.md) {
+                ForEach(Array(themeOptions.enumerated()), id: \.offset) { index, option in
+                    ThemeOptionCard(option: option)
+                        .offset(y: animateGrid ? 0 : 50)
+                        .opacity(animateGrid ? 1 : 0)
+                        .animation(
+                            .spring(response: 0.6, dampingFraction: 0.8)
+                            .delay(Double(index) * 0.1),
+                            value: animateGrid
+                        )
+                }
+            }
+        }
+        .onAppear {
+            withAnimation(.spring(response: 0.8, dampingFraction: 0.8).delay(0.3)) {
+                animateGrid = true
+            }
+        }
+    }
+}
+
+struct ThemeOption: Identifiable {
+    let id = UUID()
+    let title: String
+    let description: String
+    let icon: String
+    let colors: [Color]
+}
+
+struct ThemeOptionCard: View {
+    let option: ThemeOption
+    @State private var isPressed = false
+    @State private var animate = false
+    
+    var body: some View {
+        Button(action: {
+            // Apply theme
+            HapticFeedback.impact(style: .light)
+        }) {
+            VStack(spacing: RingDesignSystem.Spacing.md) {
+                // Gradient icon background
+                ZStack {
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                colors: option.colors,
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .frame(width: 60, height: 60)
+                        .scaleEffect(animate ? 1.1 : 1.0)
+                    
+                    Image(systemName: option.icon)
+                        .font(.system(size: 24, weight: .semibold))
+                        .foregroundColor(.white)
+                        .rotationEffect(.degrees(animate ? 360 : 0))
+                }
+                
+                VStack(spacing: RingDesignSystem.Spacing.xs) {
+                    Text(option.title)
+                        .font(RingDesignSystem.Typography.subheadline)
+                        .fontWeight(.semibold)
+                    
+                    Text(option.description)
+                        .font(RingDesignSystem.Typography.caption1)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, RingDesignSystem.Spacing.lg)
+            .background(
+                RoundedRectangle(cornerRadius: RingDesignSystem.CornerRadius.lg)
+                    .fill(.ultraThinMaterial)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: RingDesignSystem.CornerRadius.lg)
+                            .stroke(
+                                LinearGradient(
+                                    colors: option.colors,
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                ).opacity(0.3),
+                                lineWidth: 1
+                            )
+                    )
+            )
+            .scaleEffect(isPressed ? 0.95 : 1.0)
+        }
+        .buttonStyle(PlainButtonStyle())
+        .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
+            withAnimation(.easeInOut(duration: 0.1)) {
+                isPressed = pressing
+            }
+        }, perform: {})
+        .onAppear {
+            withAnimation(.easeInOut(duration: 3.0).repeatForever(autoreverses: true)) {
+                animate = true
+            }
+        }
+    }
+}
+
+// MARK: - Advanced Theme Components
+struct AdvancedThemeSwitcher: View {
+    @ObservedObject var themeManager: ThemeManager
+    @Environment(\.colorScheme) var colorScheme
+    @State private var dragOffset = CGSize.zero
+    @State private var isDragging = false
+    
+    var body: some View {
+        VStack(spacing: RingDesignSystem.Spacing.lg) {
+            // Theme indicator
+            HStack {
+                ThemeIndicator(
+                    icon: "sun.max.fill",
+                    color: .orange,
+                    isActive: colorScheme == .light
+                )
+                
+                Spacer()
+                
+                // Draggable theme switch
+                ZStack {
+                    // Background track
+                    RoundedRectangle(cornerRadius: 30)
+                        .fill(
+                            LinearGradient(
+                                colors: colorScheme == .dark ? 
+                                    [.gray.opacity(0.4), .gray.opacity(0.2)] :
+                                    [.gray.opacity(0.3), .gray.opacity(0.1)],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                        .frame(width: 80, height: 40)
+                    
+                    // Draggable thumb
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                colors: [.white, .gray.opacity(0.1)],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
+                        .frame(width: 36, height: 36)
+                        .shadow(
+                            color: .black.opacity(0.2),
+                            radius: 6,
+                            x: 0,
+                            y: 3
+                        )
+                        .offset(x: colorScheme == .dark ? 22 : -22)
+                        .offset(dragOffset)
+                        .gesture(
+                            DragGesture()
+                                .onChanged { value in
+                                    isDragging = true
+                                    dragOffset = value.translation
+                                }
+                                .onEnded { value in
+                                    isDragging = false
+                                    withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                                        dragOffset = .zero
+                                        themeManager.toggleTheme()
+                                    }
+                                    HapticFeedback.impact(style: .medium)
+                                }
+                        )
+                        .scaleEffect(isDragging ? 1.1 : 1.0)
+                }
+                
+                Spacer()
+                
+                ThemeIndicator(
+                    icon: "moon.fill",
+                    color: .purple,
+                    isActive: colorScheme == .dark
+                )
+            }
+            
+            // Theme description
+            Text(colorScheme == .dark ? "Dark mode active" : "Light mode active")
+                .font(RingDesignSystem.Typography.caption1)
+                .foregroundColor(.secondary)
+        }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: RingDesignSystem.CornerRadius.lg)
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: RingDesignSystem.CornerRadius.lg)
+                        .stroke(Color.primary.opacity(0.1), lineWidth: 1)
+                )
+        )
+    }
+}
+
+struct ThemeIndicator: View {
+    let icon: String
+    let color: Color
+    let isActive: Bool
+    
+    @State private var animate = false
+    
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(color.opacity(isActive ? 0.3 : 0.1))
+                .frame(width: 40, height: 40)
+                .scaleEffect(animate ? 1.2 : 1.0)
+            
+            Image(systemName: icon)
+                .font(.system(size: 16, weight: .semibold))
+                .foregroundColor(color)
+                .rotationEffect(.degrees(animate ? 360 : 0))
+        }
+        .onAppear {
+            if isActive {
+                withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
+                    animate = true
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Theme Preview
+struct ThemePreview: View {
+    @Environment(\.colorScheme) var colorScheme
+    
+    var body: some View {
+        VStack(spacing: RingDesignSystem.Spacing.md) {
+            // Preview header
+            HStack {
+                Text("Preview")
+                    .font(RingDesignSystem.Typography.headline)
+                    .fontWeight(.semibold)
+                
+                Spacer()
+                
+                Text(colorScheme == .dark ? "Dark" : "Light")
+                    .font(RingDesignSystem.Typography.caption1)
+                    .padding(.horizontal, RingDesignSystem.Spacing.sm)
+                    .padding(.vertical, RingDesignSystem.Spacing.xs)
+                    .background(
+                        Capsule()
+                            .fill(colorScheme == .dark ? .purple.opacity(0.3) : .orange.opacity(0.3))
+                    )
+            }
+            
+            // Preview content
+            HStack(spacing: RingDesignSystem.Spacing.md) {
+                // Sample card
+                VStack(alignment: .leading, spacing: RingDesignSystem.Spacing.sm) {
+                    Circle()
+                        .fill(.blue)
+                        .frame(width: 40, height: 40)
+                    
+                    Text("Sample Card")
+                        .font(RingDesignSystem.Typography.subheadline)
+                        .fontWeight(.medium)
+                    
+                    Text("This is how content will look")
+                        .font(RingDesignSystem.Typography.caption1)
+                        .foregroundColor(.secondary)
+                }
+                .padding()
+                .background(
+                    RoundedRectangle(cornerRadius: RingDesignSystem.CornerRadius.md)
+                        .fill(.ultraThinMaterial)
+                )
+                
+                // Sample button
+                Button("Sample") {}
+                    .modernButton(.primary)
+            }
+        }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: RingDesignSystem.CornerRadius.lg)
+                .fill(.ultraThinMaterial)
+        )
+    }
+}
+
+#Preview {
+    RingThemeSystem()
+        .preferredColorScheme(.dark)
 } 

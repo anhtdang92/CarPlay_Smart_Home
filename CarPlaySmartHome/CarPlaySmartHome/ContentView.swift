@@ -3,6 +3,7 @@ import SwiftUI
 struct ContentView: View {
     @StateObject private var authManager = AuthenticationManager.shared
     @StateObject private var smartHomeManager = SmartHomeManager.shared
+    @StateObject private var themeManager = ThemeManager()
     @Environment(\.colorScheme) var colorScheme
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @State private var selectedTab = 0
@@ -56,6 +57,7 @@ struct ContentView: View {
     @State private var showParticles = false
     @State private var morphingState = false
     @State private var showPremiumMode = false
+    @State private var showThemeSettings = false
     
     enum AnimationSpeed: String, CaseIterable {
         case slow = "Slow"
@@ -77,153 +79,23 @@ struct ContentView: View {
                 // Premium mode with ultra-premium components
                 RingPremiumComponents(smartHomeManager: smartHomeManager)
             } else {
-                // Standard advanced mode
+                // Standard advanced mode with liquid glass
                 ZStack {
-                    // Animated gradient background with morphing effect
-                    LinearGradient(
-                        colors: morphingState ? 
-                            [.blue.opacity(0.8), .purple.opacity(0.6), .pink.opacity(0.4)] :
-                            [.purple.opacity(0.6), .blue.opacity(0.8), .cyan.opacity(0.4)],
-                        startPoint: animateBackground ? .topLeading : .bottomTrailing,
-                        endPoint: animateBackground ? .bottomTrailing : .topLeading
-                    )
-                    .ignoresSafeArea()
-                    .onAppear {
-                        withAnimation(.easeInOut(duration: 8.0).repeatForever(autoreverses: true)) {
-                            animateBackground = true
-                        }
-                        withAnimation(.easeInOut(duration: 12.0).repeatForever(autoreverses: true)) {
-                            morphingState = true
-                        }
-                    }
-                    
-                    // Floating particles
-                    if showParticles {
-                        ForEach(0..<20) { index in
-                            FloatingBubble(
-                                color: [.blue, .purple, .pink, .cyan].randomElement()!,
-                                size: CGFloat.random(in: 4...12)
-                            )
-                            .offset(
-                                x: CGFloat.random(in: -200...200),
-                                y: CGFloat.random(in: -400...400)
-                            )
-                        }
-                    }
+                    // Liquid glass background
+                    LiquidGlassBackground()
                     
                     VStack(spacing: 0) {
-                        // Enhanced header with animated gradient text
-                        VStack(spacing: 16) {
-                            HStack {
-                                AnimatedGradientText("Smart Home", colors: [.white, .blue, .purple])
-                                    .font(.largeTitle)
-                                    .fontWeight(.bold)
-                                
-                                Spacer()
-                                
-                                // Premium mode toggle
-                                Button(action: {
-                                    withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
-                                        showPremiumMode.toggle()
-                                    }
-                                    HapticFeedback.impact(style: .medium)
-                                }) {
-                                    Image(systemName: showPremiumMode ? "sparkles" : "crown")
-                                        .font(.title2)
-                                        .foregroundColor(showPremiumMode ? .yellow : .white)
-                                        .frame(width: 44, height: 44)
-                                        .background(
-                                            Circle()
-                                                .fill(.ultraThinMaterial)
-                                                .overlay(
-                                                    Circle()
-                                                        .stroke(showPremiumMode ? .yellow : .clear, lineWidth: 2)
-                                                )
-                                        )
-                                }
-                                
-                                // Magnetic notification button
-                                MagneticButton(
-                                    icon: "bell.fill",
-                                    color: .orange
-                                ) {
-                                    // Notification action
-                                }
-                            }
-                            
-                            // Enhanced status overview with glowing cards
-                            HStack(spacing: 12) {
-                                GlowingCard(glowColor: .green, intensity: 0.4) {
-                                    VStack(spacing: 8) {
-                                        AnimatedIcon(icon: "checkmark.circle.fill", color: .green, animationType: .pulse)
-                                        Text("\(smartHomeManager.devices.filter { $0.status == .online }.count)")
-                                            .font(.ringTitle)
-                                            .fontWeight(.bold)
-                                        Text("Online")
-                                            .font(.ringCaption)
-                                            .foregroundColor(.secondary)
-                                    }
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 12)
-                                }
-                                
-                                GlowingCard(glowColor: .orange, intensity: 0.3) {
-                                    VStack(spacing: 8) {
-                                        AnimatedIcon(icon: "exclamationmark.triangle.fill", color: .orange, animationType: .shake)
-                                        Text("\(smartHomeManager.devices.filter { $0.status == .offline }.count)")
-                                            .font(.ringTitle)
-                                            .fontWeight(.bold)
-                                        Text("Offline")
-                                            .font(.ringCaption)
-                                            .foregroundColor(.secondary)
-                                    }
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 12)
-                                }
-                                
-                                GlowingCard(glowColor: .blue, intensity: 0.4) {
-                                    VStack(spacing: 8) {
-                                        AnimatedIcon(icon: "bolt.fill", color: .blue, animationType: .bounce)
-                                        Text("\(smartHomeManager.activeAutomations)")
-                                            .font(.ringTitle)
-                                            .fontWeight(.bold)
-                                        Text("Active")
-                                            .font(.ringCaption)
-                                            .foregroundColor(.secondary)
-                                    }
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, 12)
-                                }
-                            }
-                        }
-                        .padding()
-                        .background(.ultraThinMaterial)
-                        .advancedShadow(AdvancedShadow.soft)
+                        // Enhanced header with liquid glass effects
+                        LiquidGlassHeader()
+                            .offset(y: animateBackground ? 0 : -20)
+                            .opacity(animateBackground ? 1 : 0)
                         
                         // Enhanced tab navigation with morphing effects
-                        HStack(spacing: 0) {
-                            ForEach(Array(tabItems.enumerated()), id: \.offset) { index, item in
-                                MorphingButton(
-                                    title: item.title,
-                                    icon: item.icon
-                                ) {
-                                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                                        selectedTab = index
-                                    }
-                                    HapticFeedback.impact(style: .light)
-                                }
-                                .background(
-                                    selectedTab == index ?
-                                    Color.white.opacity(0.2) :
-                                    Color.clear
-                                )
-                                .cornerRadius(selectedTab == index ? 12 : 0)
-                            }
-                        }
-                        .padding(.horizontal)
-                        .padding(.top, 8)
+                        LiquidGlassTabNavigation(selectedTab: $selectedTab)
+                            .offset(y: animateBackground ? 0 : 20)
+                            .opacity(animateBackground ? 1 : 0)
                         
-                        // Tab content with enhanced animations
+                        // Enhanced tab content with 3D transitions
                         TabView(selection: $selectedTab) {
                             // Home Tab
                             RingDeviceHomeView(smartHomeManager: smartHomeManager)
@@ -258,10 +130,10 @@ struct ContentView: View {
                                 ))
                         }
                         .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
-                        .animation(.spring(response: 0.6, dampingFraction: 0.8), value: selectedTab)
+                        .animation(.spring(response: 0.8, dampingFraction: 0.8), value: selectedTab)
                     }
                     
-                    // Enhanced floating action menu
+                    // Enhanced floating action menu with liquid glass
                     VStack {
                         Spacer()
                         HStack {
@@ -269,72 +141,61 @@ struct ContentView: View {
                             
                             VStack(spacing: 16) {
                                 if showFloatingMenu {
-                                    // Quick actions with ripple effects
+                                    // Quick actions with liquid glass effects
                                     VStack(spacing: 12) {
-                                        RippleButton(
+                                        LiquidGlassActionButton(
                                             title: "All On",
-                                            icon: "power"
+                                            icon: "power",
+                                            color: .green
                                         ) {
                                             smartHomeManager.turnAllDevicesOn()
                                         }
                                         
-                                        RippleButton(
+                                        LiquidGlassActionButton(
                                             title: "All Off",
-                                            icon: "poweroff"
+                                            icon: "poweroff",
+                                            color: .red
                                         ) {
                                             smartHomeManager.turnAllDevicesOff()
                                         }
                                         
-                                        RippleButton(
+                                        LiquidGlassActionButton(
                                             title: "Away Mode",
-                                            icon: "house"
+                                            icon: "house",
+                                            color: .orange
                                         ) {
                                             smartHomeManager.setAwayMode()
                                         }
                                         
-                                        RippleButton(
+                                        LiquidGlassActionButton(
                                             title: "Night Mode",
-                                            icon: "moon.fill"
+                                            icon: "moon.fill",
+                                            color: .purple
                                         ) {
                                             smartHomeManager.setNightMode()
+                                        }
+                                        
+                                        LiquidGlassActionButton(
+                                            title: "Theme",
+                                            icon: "paintbrush.fill",
+                                            color: .blue
+                                        ) {
+                                            showThemeSettings = true
                                         }
                                     }
                                     .transition(.scale.combined(with: .opacity))
                                 }
                                 
-                                // Main floating action button with liquid effect
-                                Button(action: {
-                                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                                        showFloatingMenu.toggle()
+                                // Main floating action button with liquid glass effect
+                                LiquidGlassFloatingButton(
+                                    icon: showFloatingMenu ? "xmark" : "plus",
+                                    action: {
+                                        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                                            showFloatingMenu.toggle()
+                                        }
+                                        HapticFeedback.impact(style: .medium)
                                     }
-                                    HapticFeedback.impact(style: .medium)
-                                }) {
-                                    Image(systemName: showFloatingMenu ? "xmark" : "plus")
-                                        .font(.title2)
-                                        .fontWeight(.semibold)
-                                        .foregroundColor(.white)
-                                        .frame(width: 60, height: 60)
-                                        .background(
-                                            Circle()
-                                                .fill(
-                                                    LinearGradient(
-                                                        colors: [.blue, .purple, .pink],
-                                                        startPoint: .topLeading,
-                                                        endPoint: .bottomTrailing
-                                                    )
-                                                )
-                                                .shadow(
-                                                    color: .blue.opacity(0.4),
-                                                    radius: showFloatingMenu ? 15 : 10,
-                                                    x: 0,
-                                                    y: showFloatingMenu ? 8 : 5
-                                                )
-                                        )
-                                        .rotationEffect(.degrees(showFloatingMenu ? 45 : 0))
-                                        .scaleEffect(showFloatingMenu ? 1.1 : 1.0)
-                                }
-                                .buttonStyle(PlainButtonStyle())
-                                .liquidEffect()
+                                )
                             }
                             .padding(.trailing, 20)
                             .padding(.bottom, 20)
@@ -344,6 +205,18 @@ struct ContentView: View {
             }
         }
         .onAppear {
+            // Show background animations after a delay
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                withAnimation(.spring(response: 0.8, dampingFraction: 0.8)) {
+                    animateBackground = true
+                }
+            }
+            
+            // Continuous background animations
+            withAnimation(.easeInOut(duration: 8.0).repeatForever(autoreverses: true)) {
+                morphingState = true
+            }
+            
             // Show particles after a delay
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
                 withAnimation(.easeInOut(duration: 1.0)) {
@@ -452,7 +325,10 @@ struct ContentView: View {
         .sheet(isPresented: $showingPushNotifications) {
             PushNotificationPreferencesView()
         }
-        .preferredColorScheme(isDarkMode ? .dark : .light)
+        .sheet(isPresented: $showThemeSettings) {
+            RingThemeSystem()
+        }
+        .preferredColorScheme(themeManager.isDarkMode ? .dark : .light)
     }
     
     private let tabItems = [
@@ -1056,6 +932,435 @@ struct SecondaryButtonStyle: ButtonStyle {
             )
             .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
             .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
+    }
+}
+
+// MARK: - Liquid Glass Header
+struct LiquidGlassHeader: View {
+    @Environment(\.colorScheme) var colorScheme
+    @State private var animateTitle = false
+    @State private var pulseGlow = false
+    
+    var body: some View {
+        VStack(spacing: RingDesignSystem.Spacing.lg) {
+            HStack {
+                // Animated title with liquid glass effect
+                VStack(alignment: .leading, spacing: RingDesignSystem.Spacing.sm) {
+                    AnimatedGradientText(
+                        text: "Smart Home",
+                        colors: colorScheme == .dark ? 
+                            [.white, .blue, .purple] :
+                            [.black, .blue, .cyan]
+                    )
+                    .font(RingDesignSystem.Typography.largeTitle)
+                    .fontWeight(.bold)
+                    .offset(x: animateTitle ? 0 : -20)
+                    .opacity(animateTitle ? 1 : 0)
+                    
+                    Text("Liquid Glass Experience")
+                        .font(RingDesignSystem.Typography.subheadline)
+                        .foregroundColor(.secondary)
+                        .offset(x: animateTitle ? 0 : -20)
+                        .opacity(animateTitle ? 1 : 0)
+                }
+                
+                Spacer()
+                
+                // Premium mode toggle with liquid glass
+                LiquidGlassToggleButton(
+                    icon: "crown.fill",
+                    isActive: false,
+                    action: {}
+                )
+            }
+            
+            // Enhanced status overview with liquid glass cards
+            HStack(spacing: RingDesignSystem.Spacing.md) {
+                LiquidGlassStatusCard(
+                    title: "Online",
+                    value: "12",
+                    icon: "checkmark.circle.fill",
+                    color: .green,
+                    glow: pulseGlow
+                )
+                
+                LiquidGlassStatusCard(
+                    title: "Offline",
+                    value: "3",
+                    icon: "exclamationmark.triangle.fill",
+                    color: .orange,
+                    glow: pulseGlow
+                )
+                
+                LiquidGlassStatusCard(
+                    title: "Active",
+                    value: "8",
+                    icon: "bolt.fill",
+                    color: .blue,
+                    glow: pulseGlow
+                )
+            }
+        }
+        .padding(RingDesignSystem.Spacing.lg)
+        .background(
+            RoundedRectangle(cornerRadius: RingDesignSystem.CornerRadius.xl)
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: RingDesignSystem.CornerRadius.xl)
+                        .stroke(
+                            colorScheme == .dark ? 
+                                Color.white.opacity(0.1) : 
+                                Color.black.opacity(0.1),
+                            lineWidth: 1
+                        )
+                )
+        )
+        .shadow(
+            color: colorScheme == .dark ? 
+                Color.black.opacity(0.3) : 
+                Color.black.opacity(0.1),
+            radius: 20,
+            x: 0,
+            y: 10
+        )
+        .onAppear {
+            withAnimation(.spring(response: 0.8, dampingFraction: 0.8).delay(0.2)) {
+                animateTitle = true
+            }
+            withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
+                pulseGlow = true
+            }
+        }
+    }
+}
+
+// MARK: - Liquid Glass Tab Navigation
+struct LiquidGlassTabNavigation: View {
+    @Binding var selectedTab: Int
+    @Environment(\.colorScheme) var colorScheme
+    @State private var animateTabs = false
+    
+    private let tabs = [
+        ("Home", "house.fill", .blue),
+        ("Devices", "lightbulb.fill", .green),
+        ("Automation", "gearshape.fill", .orange),
+        ("Settings", "person.fill", .purple)
+    ]
+    
+    var body: some View {
+        HStack(spacing: 0) {
+            ForEach(Array(tabs.enumerated()), id: \.offset) { index, tab in
+                LiquidGlassTabButton(
+                    title: tab.0,
+                    icon: tab.1,
+                    color: tab.2,
+                    isSelected: selectedTab == index
+                ) {
+                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                        selectedTab = index
+                    }
+                    HapticFeedback.impact(style: .light)
+                }
+                .offset(y: animateTabs ? 0 : 20)
+                .opacity(animateTabs ? 1 : 0)
+                .animation(
+                    .spring(response: 0.6, dampingFraction: 0.8)
+                    .delay(Double(index) * 0.1),
+                    value: animateTabs
+                )
+            }
+        }
+        .padding(.horizontal, RingDesignSystem.Spacing.lg)
+        .padding(.vertical, RingDesignSystem.Spacing.md)
+        .background(
+            RoundedRectangle(cornerRadius: RingDesignSystem.CornerRadius.lg)
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: RingDesignSystem.CornerRadius.lg)
+                        .stroke(
+                            colorScheme == .dark ? 
+                                Color.white.opacity(0.1) : 
+                                Color.black.opacity(0.1),
+                            lineWidth: 1
+                        )
+                )
+        )
+        .shadow(
+            color: colorScheme == .dark ? 
+                Color.black.opacity(0.2) : 
+                Color.black.opacity(0.1),
+            radius: 15,
+            x: 0,
+            y: 8
+        )
+        .onAppear {
+            withAnimation(.spring(response: 0.8, dampingFraction: 0.8).delay(0.3)) {
+                animateTabs = true
+            }
+        }
+    }
+}
+
+// MARK: - Liquid Glass Components
+struct LiquidGlassStatusCard: View {
+    let title: String
+    let value: String
+    let icon: String
+    let color: Color
+    let glow: Bool
+    
+    @State private var animate = false
+    
+    var body: some View {
+        VStack(spacing: RingDesignSystem.Spacing.sm) {
+            ZStack {
+                Circle()
+                    .fill(color.opacity(0.2))
+                    .frame(width: 50, height: 50)
+                    .scaleEffect(animate ? 1.1 : 1.0)
+                
+                Image(systemName: icon)
+                    .font(.system(size: 20, weight: .semibold))
+                    .foregroundColor(color)
+                    .rotationEffect(.degrees(animate ? 360 : 0))
+            }
+            
+            VStack(spacing: 2) {
+                Text(value)
+                    .font(RingDesignSystem.Typography.title3)
+                    .fontWeight(.bold)
+                
+                Text(title)
+                    .font(RingDesignSystem.Typography.caption1)
+                    .foregroundColor(.secondary)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, RingDesignSystem.Spacing.md)
+        .background(
+            RoundedRectangle(cornerRadius: RingDesignSystem.CornerRadius.md)
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: RingDesignSystem.CornerRadius.md)
+                        .stroke(
+                            color.opacity(glow ? 0.5 : 0.2),
+                            lineWidth: glow ? 2 : 1
+                        )
+                )
+        )
+        .shadow(
+            color: color.opacity(glow ? 0.3 : 0.1),
+            radius: glow ? 10 : 5,
+            x: 0,
+            y: glow ? 5 : 2
+        )
+        .onAppear {
+            withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
+                animate = true
+            }
+        }
+    }
+}
+
+struct LiquidGlassTabButton: View {
+    let title: String
+    let icon: String
+    let color: Color
+    let isSelected: Bool
+    let action: () -> Void
+    
+    @State private var animate = false
+    
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: RingDesignSystem.Spacing.sm) {
+                ZStack {
+                    Circle()
+                        .fill(isSelected ? color : .clear)
+                        .frame(width: 50, height: 50)
+                        .scaleEffect(animate ? 1.1 : 1.0)
+                    
+                    Image(systemName: icon)
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundColor(isSelected ? .white : .secondary)
+                        .rotationEffect(.degrees(animate ? 360 : 0))
+                }
+                
+                Text(title)
+                    .font(RingDesignSystem.Typography.caption1)
+                    .fontWeight(.medium)
+                    .foregroundColor(isSelected ? color : .secondary)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, RingDesignSystem.Spacing.md)
+        }
+        .buttonStyle(PlainButtonStyle())
+        .onAppear {
+            if isSelected {
+                withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
+                    animate = true
+                }
+            }
+        }
+        .onChange(of: isSelected) { newValue in
+            if newValue {
+                withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
+                    animate = true
+                }
+            } else {
+                animate = false
+            }
+        }
+    }
+}
+
+struct LiquidGlassActionButton: View {
+    let title: String
+    let icon: String
+    let color: Color
+    let action: () -> Void
+    
+    @State private var isPressed = false
+    
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: RingDesignSystem.Spacing.sm) {
+                Image(systemName: icon)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundColor(.white)
+                
+                Text(title)
+                    .font(RingDesignSystem.Typography.caption1)
+                    .fontWeight(.medium)
+                    .foregroundColor(.white)
+            }
+            .padding(.horizontal, RingDesignSystem.Spacing.md)
+            .padding(.vertical, RingDesignSystem.Spacing.sm)
+            .background(
+                RoundedRectangle(cornerRadius: RingDesignSystem.CornerRadius.md)
+                    .fill(
+                        LinearGradient(
+                            colors: [color, color.opacity(0.8)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: RingDesignSystem.CornerRadius.md)
+                            .stroke(.white.opacity(0.3), lineWidth: 1)
+                    )
+            )
+            .shadow(
+                color: color.opacity(0.4),
+                radius: isPressed ? 4 : 8,
+                x: 0,
+                y: isPressed ? 2 : 4
+            )
+            .scaleEffect(isPressed ? 0.95 : 1.0)
+        }
+        .buttonStyle(PlainButtonStyle())
+        .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
+            withAnimation(.easeInOut(duration: 0.1)) {
+                isPressed = pressing
+            }
+        }, perform: {})
+    }
+}
+
+struct LiquidGlassFloatingButton: View {
+    let icon: String
+    let action: () -> Void
+    @State private var isPressed = false
+    @State private var rotate = false
+    
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: icon)
+                .font(.system(size: 24, weight: .bold))
+                .foregroundColor(.white)
+                .frame(width: 60, height: 60)
+                .background(
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                colors: [.blue, .purple, .pink],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .overlay(
+                            Circle()
+                                .stroke(.white.opacity(0.3), lineWidth: 2)
+                        )
+                        .shadow(
+                            color: .blue.opacity(0.4),
+                            radius: isPressed ? 8 : 15,
+                            x: 0,
+                            y: isPressed ? 4 : 8
+                        )
+                )
+                .scaleEffect(isPressed ? 0.9 : 1.0)
+                .rotationEffect(.degrees(rotate ? 360 : 0))
+        }
+        .buttonStyle(PlainButtonStyle())
+        .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
+            withAnimation(.easeInOut(duration: 0.1)) {
+                isPressed = pressing
+            }
+        }, perform: {})
+        .onAppear {
+            withAnimation(.linear(duration: 4.0).repeatForever(autoreverses: false)) {
+                rotate = true
+            }
+        }
+    }
+}
+
+struct LiquidGlassToggleButton: View {
+    let icon: String
+    let isActive: Bool
+    let action: () -> Void
+    @State private var isPressed = false
+    @State private var glow = false
+    
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: icon)
+                .font(.system(size: 20, weight: .semibold))
+                .foregroundColor(isActive ? .yellow : .white)
+                .frame(width: 44, height: 44)
+                .background(
+                    Circle()
+                        .fill(.ultraThinMaterial)
+                        .overlay(
+                            Circle()
+                                .stroke(
+                                    isActive ? .yellow.opacity(0.5) : .clear,
+                                    lineWidth: glow ? 2 : 1
+                                )
+                        )
+                )
+                .shadow(
+                    color: isActive ? .yellow.opacity(0.3) : .clear,
+                    radius: glow ? 10 : 5,
+                    x: 0,
+                    y: glow ? 5 : 2
+                )
+                .scaleEffect(isPressed ? 0.9 : 1.0)
+        }
+        .buttonStyle(PlainButtonStyle())
+        .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
+            withAnimation(.easeInOut(duration: 0.1)) {
+                isPressed = pressing
+            }
+        }, perform: {})
+        .onAppear {
+            if isActive {
+                withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
+                    glow = true
+                }
+            }
+        }
     }
 }
 

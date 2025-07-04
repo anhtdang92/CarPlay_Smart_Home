@@ -2382,3 +2382,669 @@ struct MorphingEffectModifier: ViewModifier {
             }
     }
 }
+
+// MARK: - Enhanced Design System with Apple's Liquid Glass
+struct RingDesignSystem {
+    // MARK: - Color Schemes
+    struct Colors {
+        // Primary Colors
+        static let primary = Color("PrimaryColor")
+        static let secondary = Color("SecondaryColor")
+        static let accent = Color("AccentColor")
+        
+        // Background Colors
+        static let background = Color("BackgroundColor")
+        static let secondaryBackground = Color("SecondaryBackgroundColor")
+        static let tertiaryBackground = Color("TertiaryBackgroundColor")
+        
+        // Text Colors
+        static let primaryText = Color("PrimaryTextColor")
+        static let secondaryText = Color("SecondaryTextColor")
+        static let tertiaryText = Color("TertiaryTextColor")
+        
+        // Status Colors
+        static let success = Color("SuccessColor")
+        static let warning = Color("WarningColor")
+        static let error = Color("ErrorColor")
+        static let info = Color("InfoColor")
+        
+        // Gradient Colors
+        static let gradientStart = Color("GradientStartColor")
+        static let gradientEnd = Color("GradientEndColor")
+        static let gradientAccent = Color("GradientAccentColor")
+        
+        // Glass Colors
+        static let glassPrimary = Color("GlassPrimaryColor")
+        static let glassSecondary = Color("GlassSecondaryColor")
+        static let glassAccent = Color("GlassAccentColor")
+    }
+    
+    // MARK: - Typography
+    struct Typography {
+        static let largeTitle = Font.system(size: 34, weight: .bold, design: .rounded)
+        static let title1 = Font.system(size: 28, weight: .bold, design: .rounded)
+        static let title2 = Font.system(size: 22, weight: .semibold, design: .rounded)
+        static let title3 = Font.system(size: 20, weight: .semibold, design: .rounded)
+        static let headline = Font.system(size: 17, weight: .semibold, design: .rounded)
+        static let body = Font.system(size: 17, weight: .regular, design: .rounded)
+        static let callout = Font.system(size: 16, weight: .regular, design: .rounded)
+        static let subheadline = Font.system(size: 15, weight: .regular, design: .rounded)
+        static let footnote = Font.system(size: 13, weight: .regular, design: .rounded)
+        static let caption1 = Font.system(size: 12, weight: .regular, design: .rounded)
+        static let caption2 = Font.system(size: 11, weight: .regular, design: .rounded)
+    }
+    
+    // MARK: - Spacing
+    struct Spacing {
+        static let xs: CGFloat = 4
+        static let sm: CGFloat = 8
+        static let md: CGFloat = 16
+        static let lg: CGFloat = 24
+        static let xl: CGFloat = 32
+        static let xxl: CGFloat = 48
+    }
+    
+    // MARK: - Corner Radius
+    struct CornerRadius {
+        static let xs: CGFloat = 4
+        static let sm: CGFloat = 8
+        static let md: CGFloat = 12
+        static let lg: CGFloat = 16
+        static let xl: CGFloat = 20
+        static let xxl: CGFloat = 24
+        static let full: CGFloat = 999
+    }
+    
+    // MARK: - Shadows
+    struct Shadows {
+        static let small = Shadow(
+            color: .black.opacity(0.1),
+            radius: 4,
+            x: 0,
+            y: 2
+        )
+        
+        static let medium = Shadow(
+            color: .black.opacity(0.15),
+            radius: 8,
+            x: 0,
+            y: 4
+        )
+        
+        static let large = Shadow(
+            color: .black.opacity(0.2),
+            radius: 16,
+            x: 0,
+            y: 8
+        )
+        
+        static let extraLarge = Shadow(
+            color: .black.opacity(0.25),
+            radius: 24,
+            x: 0,
+            y: 12
+        )
+    }
+}
+
+// MARK: - Shadow Structure
+struct Shadow {
+    let color: Color
+    let radius: CGFloat
+    let x: CGFloat
+    let y: CGFloat
+}
+
+// MARK: - Liquid Glass Effects
+struct LiquidGlassBackground: View {
+    @Environment(\.colorScheme) var colorScheme
+    @State private var animate = false
+    
+    var body: some View {
+        ZStack {
+            // Base gradient
+            LinearGradient(
+                colors: colorScheme == .dark ? 
+                    [Color.black, Color.gray.opacity(0.3)] :
+                    [Color.white, Color.gray.opacity(0.1)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea()
+            
+            // Liquid glass orbs
+            ForEach(0..<6) { index in
+                LiquidGlassOrb(
+                    color: liquidGlassColors[index % liquidGlassColors.count],
+                    size: CGFloat.random(in: 60...120),
+                    delay: Double(index) * 0.5
+                )
+            }
+            
+            // Subtle mesh overlay
+            MeshOverlay()
+                .opacity(0.1)
+        }
+        .onAppear {
+            withAnimation(.easeInOut(duration: 8.0).repeatForever(autoreverses: true)) {
+                animate = true
+            }
+        }
+    }
+    
+    private var liquidGlassColors: [Color] {
+        colorScheme == .dark ? 
+            [.blue.opacity(0.3), .purple.opacity(0.3), .cyan.opacity(0.3)] :
+            [.blue.opacity(0.1), .purple.opacity(0.1), .cyan.opacity(0.1)]
+    }
+}
+
+struct LiquidGlassOrb: View {
+    let color: Color
+    let size: CGFloat
+    let delay: Double
+    
+    @State private var animate = false
+    @State private var position = CGSize.zero
+    
+    var body: some View {
+        Circle()
+            .fill(
+                RadialGradient(
+                    colors: [color, color.opacity(0.5), .clear],
+                    center: .center,
+                    startRadius: 0,
+                    endRadius: size / 2
+                )
+            )
+            .frame(width: size, height: size)
+            .blur(radius: 20)
+            .scaleEffect(animate ? 1.2 : 0.8)
+            .opacity(animate ? 0.6 : 0.3)
+            .offset(position)
+            .onAppear {
+                position = CGSize(
+                    width: CGFloat.random(in: -150...150),
+                    height: CGFloat.random(in: -300...300)
+                )
+                
+                withAnimation(
+                    .easeInOut(duration: 6.0)
+                    .repeatForever(autoreverses: true)
+                    .delay(delay)
+                ) {
+                    animate = true
+                    position = CGSize(
+                        width: CGFloat.random(in: -150...150),
+                        height: CGFloat.random(in: -300...300)
+                    )
+                }
+            }
+    }
+}
+
+struct MeshOverlay: View {
+    @State private var animate = false
+    
+    var body: some View {
+        Canvas { context, size in
+            for i in 0..<8 {
+                for j in 0..<8 {
+                    let x = size.width * Double(i) / 7
+                    let y = size.height * Double(j) / 7
+                    let radius = 30.0
+                    
+                    let color = Color(
+                        hue: (Double(i + j) / 16 + animate ? 0.5 : 0.0).truncatingRemainder(dividingBy: 1.0),
+                        saturation: 0.3,
+                        brightness: 0.8
+                    )
+                    
+                    context.fill(
+                        Path(ellipseIn: CGRect(x: x - radius, y: y - radius, width: radius * 2, height: radius * 2)),
+                        with: .color(color.opacity(0.1))
+                    )
+                }
+            }
+        }
+        .onAppear {
+            withAnimation(.easeInOut(duration: 10.0).repeatForever(autoreverses: true)) {
+                animate = true
+            }
+        }
+    }
+}
+
+// MARK: - Liquid Glass Card
+struct LiquidGlassCard<Content: View>: View {
+    @Environment(\.colorScheme) var colorScheme
+    let content: Content
+    let intensity: CGFloat
+    
+    init(intensity: CGFloat = 0.1, @ViewBuilder content: () -> Content) {
+        self.intensity = intensity
+        self.content = content()
+    }
+    
+    var body: some View {
+        content
+            .padding()
+            .background(
+                RoundedRectangle(cornerRadius: RingDesignSystem.CornerRadius.lg)
+                    .fill(.ultraThinMaterial)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: RingDesignSystem.CornerRadius.lg)
+                            .stroke(
+                                colorScheme == .dark ? 
+                                    Color.white.opacity(intensity) : 
+                                    Color.black.opacity(intensity),
+                                lineWidth: 1
+                            )
+                    )
+            )
+            .shadow(
+                color: colorScheme == .dark ? 
+                    Color.black.opacity(0.3) : 
+                    Color.black.opacity(0.1),
+                radius: 10,
+                x: 0,
+                y: 5
+            )
+    }
+}
+
+// MARK: - Modern Button Styles
+struct ModernButtonStyle: ButtonStyle {
+    @Environment(\.colorScheme) var colorScheme
+    let variant: ButtonVariant
+    
+    enum ButtonVariant {
+        case primary, secondary, ghost, danger
+    }
+    
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .padding(.horizontal, RingDesignSystem.Spacing.lg)
+            .padding(.vertical, RingDesignSystem.Spacing.md)
+            .background(
+                RoundedRectangle(cornerRadius: RingDesignSystem.CornerRadius.md)
+                    .fill(backgroundColor)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: RingDesignSystem.CornerRadius.md)
+                            .stroke(borderColor, lineWidth: 1)
+                    )
+            )
+            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
+            .shadow(
+                color: shadowColor,
+                radius: configuration.isPressed ? 2 : 4,
+                x: 0,
+                y: configuration.isPressed ? 1 : 2
+            )
+            .animation(.easeInOut(duration: 0.1), value: configuration.isPressed)
+    }
+    
+    private var backgroundColor: Color {
+        switch variant {
+        case .primary:
+            return colorScheme == .dark ? .blue : .blue
+        case .secondary:
+            return colorScheme == .dark ? .gray.opacity(0.3) : .gray.opacity(0.1)
+        case .ghost:
+            return .clear
+        case .danger:
+            return colorScheme == .dark ? .red.opacity(0.3) : .red.opacity(0.1)
+        }
+    }
+    
+    private var borderColor: Color {
+        switch variant {
+        case .primary:
+            return .blue.opacity(0.3)
+        case .secondary:
+            return colorScheme == .dark ? .white.opacity(0.2) : .black.opacity(0.1)
+        case .ghost:
+            return .clear
+        case .danger:
+            return .red.opacity(0.3)
+        }
+    }
+    
+    private var shadowColor: Color {
+        colorScheme == .dark ? .black.opacity(0.3) : .black.opacity(0.1)
+    }
+}
+
+// MARK: - Animated Gradient Text
+struct AnimatedGradientText: View {
+    let text: String
+    let colors: [Color]
+    @State private var animate = false
+    
+    var body: some View {
+        Text(text)
+            .foregroundStyle(
+                LinearGradient(
+                    colors: colors,
+                    startPoint: animate ? .topLeading : .bottomTrailing,
+                    endPoint: animate ? .bottomTrailing : .topLeading
+                )
+            )
+            .onAppear {
+                withAnimation(.easeInOut(duration: 3.0).repeatForever(autoreverses: true)) {
+                    animate = true
+                }
+            }
+    }
+}
+
+// MARK: - Floating Action Button
+struct FloatingActionButton: View {
+    let icon: String
+    let action: () -> Void
+    @State private var isPressed = false
+    
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: icon)
+                .font(.title2)
+                .fontWeight(.semibold)
+                .foregroundColor(.white)
+                .frame(width: 56, height: 56)
+                .background(
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                colors: [.blue, .purple],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .shadow(
+                            color: .blue.opacity(0.4),
+                            radius: isPressed ? 8 : 12,
+                            x: 0,
+                            y: isPressed ? 4 : 6
+                        )
+                )
+                .scaleEffect(isPressed ? 0.9 : 1.0)
+        }
+        .buttonStyle(PlainButtonStyle())
+        .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
+            withAnimation(.easeInOut(duration: 0.1)) {
+                isPressed = pressing
+            }
+        }, perform: {})
+    }
+}
+
+// MARK: - Modern Toggle
+struct ModernToggle: View {
+    @Binding var isOn: Bool
+    let color: Color
+    @State private var animate = false
+    
+    var body: some View {
+        Button(action: {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                isOn.toggle()
+            }
+            HapticFeedback.impact(style: .light)
+        }) {
+            ZStack {
+                // Background
+                RoundedRectangle(cornerRadius: 25)
+                    .fill(isOn ? color : .gray.opacity(0.3))
+                    .frame(width: 51, height: 31)
+                
+                // Thumb
+                Circle()
+                    .fill(.white)
+                    .frame(width: 27, height: 27)
+                    .offset(x: isOn ? 10 : -10)
+                    .shadow(color: .black.opacity(0.2), radius: 2, x: 0, y: 1)
+                    .scaleEffect(animate ? 1.1 : 1.0)
+            }
+        }
+        .buttonStyle(PlainButtonStyle())
+        .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
+            withAnimation(.easeInOut(duration: 0.1)) {
+                animate = pressing
+            }
+        }, perform: {})
+    }
+}
+
+// MARK: - Progress Ring
+struct ProgressRing: View {
+    let progress: Double
+    let color: Color
+    let size: CGFloat
+    @State private var animate = false
+    
+    var body: some View {
+        ZStack {
+            // Background ring
+            Circle()
+                .stroke(color.opacity(0.2), lineWidth: 8)
+                .frame(width: size, height: size)
+            
+            // Progress ring
+            Circle()
+                .trim(from: 0, to: animate ? progress : 0)
+                .stroke(
+                    color,
+                    style: StrokeStyle(lineWidth: 8, lineCap: .round)
+                )
+                .frame(width: size, height: size)
+                .rotationEffect(.degrees(-90))
+                .animation(.easeInOut(duration: 1.0), value: animate)
+        }
+        .onAppear {
+            animate = true
+        }
+    }
+}
+
+// MARK: - Shimmer Effect
+struct ShimmerEffect: View {
+    @State private var animate = false
+    
+    var body: some View {
+        LinearGradient(
+            colors: [
+                Color.gray.opacity(0.3),
+                Color.gray.opacity(0.1),
+                Color.gray.opacity(0.3)
+            ],
+            startPoint: animate ? .leading : .trailing,
+            endPoint: animate ? .trailing : .leading
+        )
+        .onAppear {
+            withAnimation(.linear(duration: 1.5).repeatForever(autoreverses: false)) {
+                animate = true
+            }
+        }
+    }
+}
+
+// MARK: - Confetti Effect
+struct ConfettiEffect: View {
+    @State private var animate = false
+    
+    var body: some View {
+        ZStack {
+            ForEach(0..<20) { index in
+                ConfettiPiece(
+                    color: [.blue, .purple, .pink, .orange, .green].randomElement()!,
+                    delay: Double(index) * 0.1
+                )
+            }
+        }
+        .onAppear {
+            animate = true
+        }
+    }
+}
+
+struct ConfettiPiece: View {
+    let color: Color
+    let delay: Double
+    
+    @State private var animate = false
+    @State private var position = CGSize.zero
+    
+    var body: some View {
+        Rectangle()
+            .fill(color)
+            .frame(width: 4, height: 8)
+            .rotationEffect(.degrees(animate ? 360 : 0))
+            .offset(position)
+            .onAppear {
+                position = CGSize(
+                    width: CGFloat.random(in: -100...100),
+                    height: -200
+                )
+                
+                withAnimation(
+                    .easeOut(duration: 2.0)
+                    .delay(delay)
+                ) {
+                    animate = true
+                    position = CGSize(
+                        width: CGFloat.random(in: -100...100),
+                        height: 400
+                    )
+                }
+            }
+    }
+}
+
+// MARK: - Morphing Button
+struct MorphingButton: View {
+    let title: String
+    let icon: String
+    let action: () -> Void
+    @State private var isPressed = false
+    
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: RingDesignSystem.Spacing.sm) {
+                Image(systemName: icon)
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(.primary)
+                
+                Text(title)
+                    .font(RingDesignSystem.Typography.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundColor(.primary)
+            }
+            .padding(.horizontal, RingDesignSystem.Spacing.md)
+            .padding(.vertical, RingDesignSystem.Spacing.sm)
+            .background(
+                RoundedRectangle(cornerRadius: RingDesignSystem.CornerRadius.md)
+                    .fill(.ultraThinMaterial)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: RingDesignSystem.CornerRadius.md)
+                            .stroke(Color.primary.opacity(0.2), lineWidth: 1)
+                    )
+            )
+            .scaleEffect(isPressed ? 0.95 : 1.0)
+        }
+        .buttonStyle(PlainButtonStyle())
+        .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity, pressing: { pressing in
+            withAnimation(.easeInOut(duration: 0.1)) {
+                isPressed = pressing
+            }
+        }, perform: {})
+    }
+}
+
+// MARK: - Theme Manager
+class ThemeManager: ObservableObject {
+    @Published var isDarkMode: Bool = true
+    
+    func toggleTheme() {
+        withAnimation(.easeInOut(duration: 0.3)) {
+            isDarkMode.toggle()
+        }
+    }
+}
+
+// MARK: - Haptic Feedback
+struct HapticFeedback {
+    static func impact(style: UIImpactFeedbackGenerator.FeedbackStyle) {
+        let impactFeedback = UIImpactFeedbackGenerator(style: style)
+        impactFeedback.impactOccurred()
+    }
+    
+    static func notification(type: UINotificationFeedbackGenerator.FeedbackType) {
+        let notificationFeedback = UINotificationFeedbackGenerator()
+        notificationFeedback.notificationOccurred(type)
+    }
+    
+    static func selection() {
+        let selectionFeedback = UISelectionFeedbackGenerator()
+        selectionFeedback.selectionChanged()
+    }
+}
+
+// MARK: - Extensions
+extension View {
+    func liquidGlassCard(intensity: CGFloat = 0.1) -> some View {
+        self.modifier(LiquidGlassCardModifier(intensity: intensity))
+    }
+    
+    func modernButton(_ variant: ModernButtonStyle.ButtonVariant) -> some View {
+        self.buttonStyle(ModernButtonStyle(variant: variant))
+    }
+    
+    func advancedShadow(_ shadow: Shadow) -> some View {
+        self.shadow(
+            color: shadow.color,
+            radius: shadow.radius,
+            x: shadow.x,
+            y: shadow.y
+        )
+    }
+}
+
+struct LiquidGlassCardModifier: ViewModifier {
+    let intensity: CGFloat
+    
+    func body(content: Content) -> some View {
+        LiquidGlassCard(intensity: intensity) {
+            content
+        }
+    }
+}
+
+// MARK: - Color Assets (for reference)
+extension Color {
+    static let ringPrimary = Color("RingPrimary")
+    static let ringSecondary = Color("RingSecondary")
+    static let ringAccent = Color("RingAccent")
+    static let ringBackground = Color("RingBackground")
+    static let ringSurface = Color("RingSurface")
+    static let ringText = Color("RingText")
+    static let ringTextSecondary = Color("RingTextSecondary")
+}
+
+#Preview {
+    VStack(spacing: 20) {
+        LiquidGlassCard {
+            Text("Liquid Glass Card")
+                .font(RingDesignSystem.Typography.headline)
+        }
+        
+        Button("Modern Button") {}
+            .modernButton(.primary)
+        
+        ModernToggle(isOn: .constant(true), color: .blue)
+        
+        ProgressRing(progress: 0.75, color: .blue, size: 60)
+    }
+    .padding()
+    .background(LiquidGlassBackground())
+    .preferredColorScheme(.dark)
+}
