@@ -605,6 +605,6 @@ struct UltraStatusCard: View {
 }
 
 #Preview {
-    RingUltraModernComponents(smartHomeManager: SmartHomeManager())
+    RingUltraModernComponents(smartHomeManager: SmartHomeManager.shared)
         .preferredColorScheme(.dark)
 } 

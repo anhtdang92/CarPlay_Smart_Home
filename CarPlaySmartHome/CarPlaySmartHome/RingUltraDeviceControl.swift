@@ -53,7 +53,7 @@ struct UltraSearchHeader: View {
     @Environment(\.colorScheme) var colorScheme
     @State private var animateSearch = false
     
-    private let categories: [DeviceCategory] = [.all, .lights, .switches, .sensors, .cameras, .thermostats]
+    private let categories: [DeviceCategory] = [.all, .lights, .sensors, .cameras, .thermostats]
     
     var body: some View {
         VStack(spacing: RingDesignSystem.Spacing.lg) {
@@ -497,8 +497,6 @@ struct UltraEmptyState: View {
             return "No devices yet"
         case .lights:
             return "No lights connected"
-        case .switches:
-            return "No switches connected"
         case .sensors:
             return "No sensors connected"
         case .cameras:
@@ -518,8 +516,6 @@ struct UltraEmptyState: View {
             return "Add your first smart device to get started"
         case .lights:
             return "Connect smart lights to control your home lighting"
-        case .switches:
-            return "Add smart switches to control your appliances"
         case .sensors:
             return "Install sensors to monitor your home environment"
         case .cameras:
@@ -531,6 +527,6 @@ struct UltraEmptyState: View {
 }
 
 #Preview {
-    RingUltraDeviceControl(smartHomeManager: SmartHomeManager())
+    RingUltraDeviceControl(smartHomeManager: SmartHomeManager.shared)
         .preferredColorScheme(.dark)
 } 

@@ -244,7 +244,7 @@ struct UltraCategorySelection: View {
     let onNext: () -> Void
     @State private var animateCategories = false
     
-    private let categories: [DeviceCategory] = [.lights, .switches, .sensors, .cameras, .thermostats]
+    private let categories: [DeviceCategory] = [.lights, .sensors, .cameras, .thermostats]
     
     var body: some View {
         VStack(spacing: RingDesignSystem.Spacing.xl) {
@@ -899,6 +899,6 @@ struct UltraNextButton: View {
 }
 
 #Preview {
-    UltraAddDeviceView(smartHomeManager: SmartHomeManager())
+    UltraAddDeviceView(smartHomeManager: SmartHomeManager.shared)
         .preferredColorScheme(.dark)
 } 
