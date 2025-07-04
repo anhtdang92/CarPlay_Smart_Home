@@ -55,6 +55,7 @@ struct ContentView: View {
     @State private var animateBackground = false
     @State private var showParticles = false
     @State private var morphingState = false
+    @State private var showPremiumMode = false
     
     enum AnimationSpeed: String, CaseIterable {
         case slow = "Slow"
@@ -72,244 +73,273 @@ struct ContentView: View {
     
     var body: some View {
         ZStack {
-            // Animated gradient background with morphing effect
-            LinearGradient(
-                colors: morphingState ? 
-                    [.blue.opacity(0.8), .purple.opacity(0.6), .pink.opacity(0.4)] :
-                    [.purple.opacity(0.6), .blue.opacity(0.8), .cyan.opacity(0.4)],
-                startPoint: animateBackground ? .topLeading : .bottomTrailing,
-                endPoint: animateBackground ? .bottomTrailing : .topLeading
-            )
-            .ignoresSafeArea()
-            .onAppear {
-                withAnimation(.easeInOut(duration: 8.0).repeatForever(autoreverses: true)) {
-                    animateBackground = true
-                }
-                withAnimation(.easeInOut(duration: 12.0).repeatForever(autoreverses: true)) {
-                    morphingState = true
-                }
-            }
-            
-            // Floating particles
-            if showParticles {
-                ForEach(0..<20) { index in
-                    FloatingBubble(
-                        color: [.blue, .purple, .pink, .cyan].randomElement()!,
-                        size: CGFloat.random(in: 4...12)
+            if showPremiumMode {
+                // Premium mode with ultra-premium components
+                RingPremiumComponents(smartHomeManager: smartHomeManager)
+            } else {
+                // Standard advanced mode
+                ZStack {
+                    // Animated gradient background with morphing effect
+                    LinearGradient(
+                        colors: morphingState ? 
+                            [.blue.opacity(0.8), .purple.opacity(0.6), .pink.opacity(0.4)] :
+                            [.purple.opacity(0.6), .blue.opacity(0.8), .cyan.opacity(0.4)],
+                        startPoint: animateBackground ? .topLeading : .bottomTrailing,
+                        endPoint: animateBackground ? .bottomTrailing : .topLeading
                     )
-                    .offset(
-                        x: CGFloat.random(in: -200...200),
-                        y: CGFloat.random(in: -400...400)
-                    )
-                }
-            }
-            
-            VStack(spacing: 0) {
-                // Enhanced header with animated gradient text
-                VStack(spacing: 16) {
-                    HStack {
-                        AnimatedGradientText("Smart Home", colors: [.white, .blue, .purple])
-                            .font(.largeTitle)
-                            .fontWeight(.bold)
-                        
-                        Spacer()
-                        
-                        // Magnetic notification button
-                        MagneticButton(
-                            icon: "bell.fill",
-                            color: .orange
-                        ) {
-                            // Notification action
+                    .ignoresSafeArea()
+                    .onAppear {
+                        withAnimation(.easeInOut(duration: 8.0).repeatForever(autoreverses: true)) {
+                            animateBackground = true
+                        }
+                        withAnimation(.easeInOut(duration: 12.0).repeatForever(autoreverses: true)) {
+                            morphingState = true
                         }
                     }
                     
-                    // Enhanced status overview with glowing cards
-                    HStack(spacing: 12) {
-                        GlowingCard(glowColor: .green, intensity: 0.4) {
-                            VStack(spacing: 8) {
-                                AnimatedIcon(icon: "checkmark.circle.fill", color: .green, animationType: .pulse)
-                                Text("\(smartHomeManager.devices.filter { $0.status == .online }.count)")
-                                    .font(.ringTitle)
-                                    .fontWeight(.bold)
-                                Text("Online")
-                                    .font(.ringCaption)
-                                    .foregroundColor(.secondary)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
-                        }
-                        
-                        GlowingCard(glowColor: .orange, intensity: 0.3) {
-                            VStack(spacing: 8) {
-                                AnimatedIcon(icon: "exclamationmark.triangle.fill", color: .orange, animationType: .shake)
-                                Text("\(smartHomeManager.devices.filter { $0.status == .offline }.count)")
-                                    .font(.ringTitle)
-                                    .fontWeight(.bold)
-                                Text("Offline")
-                                    .font(.ringCaption)
-                                    .foregroundColor(.secondary)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
-                        }
-                        
-                        GlowingCard(glowColor: .blue, intensity: 0.4) {
-                            VStack(spacing: 8) {
-                                AnimatedIcon(icon: "bolt.fill", color: .blue, animationType: .bounce)
-                                Text("\(smartHomeManager.activeAutomations)")
-                                    .font(.ringTitle)
-                                    .fontWeight(.bold)
-                                Text("Active")
-                                    .font(.ringCaption)
-                                    .foregroundColor(.secondary)
-                            }
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 12)
+                    // Floating particles
+                    if showParticles {
+                        ForEach(0..<20) { index in
+                            FloatingBubble(
+                                color: [.blue, .purple, .pink, .cyan].randomElement()!,
+                                size: CGFloat.random(in: 4...12)
+                            )
+                            .offset(
+                                x: CGFloat.random(in: -200...200),
+                                y: CGFloat.random(in: -400...400)
+                            )
                         }
                     }
-                }
-                .padding()
-                .background(.ultraThinMaterial)
-                .advancedShadow(AdvancedShadow.soft)
-                
-                // Enhanced tab navigation with morphing effects
-                HStack(spacing: 0) {
-                    ForEach(Array(tabItems.enumerated()), id: \.offset) { index, item in
-                        MorphingButton(
-                            title: item.title,
-                            icon: item.icon
-                        ) {
-                            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                                selectedTab = index
-                            }
-                            HapticFeedback.impact(style: .light)
-                        }
-                        .background(
-                            selectedTab == index ?
-                            Color.white.opacity(0.2) :
-                            Color.clear
-                        )
-                        .cornerRadius(selectedTab == index ? 12 : 0)
-                    }
-                }
-                .padding(.horizontal)
-                .padding(.top, 8)
-                
-                // Tab content with enhanced animations
-                TabView(selection: $selectedTab) {
-                    // Home Tab
-                    RingDeviceHomeView(smartHomeManager: smartHomeManager)
-                        .tag(0)
-                        .transition(.asymmetric(
-                            insertion: .move(edge: .leading).combined(with: .opacity),
-                            removal: .move(edge: .trailing).combined(with: .opacity)
-                        ))
                     
-                    // Devices Tab
-                    RingDeviceViews(smartHomeManager: smartHomeManager)
-                        .tag(1)
-                        .transition(.asymmetric(
-                            insertion: .move(edge: .trailing).combined(with: .opacity),
-                            removal: .move(edge: .leading).combined(with: .opacity)
-                        ))
-                    
-                    // Automation Tab
-                    RingAdvancedDesign(smartHomeManager: smartHomeManager)
-                        .tag(2)
-                        .transition(.asymmetric(
-                            insertion: .move(edge: .bottom).combined(with: .opacity),
-                            removal: .move(edge: .top).combined(with: .opacity)
-                        ))
-                    
-                    // Settings Tab
-                    RingSystemViews(smartHomeManager: smartHomeManager)
-                        .tag(3)
-                        .transition(.asymmetric(
-                            insertion: .move(edge: .top).combined(with: .opacity),
-                            removal: .move(edge: .bottom).combined(with: .opacity)
-                        ))
-                }
-                .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
-                .animation(.spring(response: 0.6, dampingFraction: 0.8), value: selectedTab)
-            }
-            
-            // Enhanced floating action menu
-            VStack {
-                Spacer()
-                HStack {
-                    Spacer()
-                    
-                    VStack(spacing: 16) {
-                        if showFloatingMenu {
-                            // Quick actions with ripple effects
-                            VStack(spacing: 12) {
-                                RippleButton(
-                                    title: "All On",
-                                    icon: "power"
-                                ) {
-                                    smartHomeManager.turnAllDevicesOn()
+                    VStack(spacing: 0) {
+                        // Enhanced header with animated gradient text
+                        VStack(spacing: 16) {
+                            HStack {
+                                AnimatedGradientText("Smart Home", colors: [.white, .blue, .purple])
+                                    .font(.largeTitle)
+                                    .fontWeight(.bold)
+                                
+                                Spacer()
+                                
+                                // Premium mode toggle
+                                Button(action: {
+                                    withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                                        showPremiumMode.toggle()
+                                    }
+                                    HapticFeedback.impact(style: .medium)
+                                }) {
+                                    Image(systemName: showPremiumMode ? "sparkles" : "crown")
+                                        .font(.title2)
+                                        .foregroundColor(showPremiumMode ? .yellow : .white)
+                                        .frame(width: 44, height: 44)
+                                        .background(
+                                            Circle()
+                                                .fill(.ultraThinMaterial)
+                                                .overlay(
+                                                    Circle()
+                                                        .stroke(showPremiumMode ? .yellow : .clear, lineWidth: 2)
+                                                )
+                                        )
                                 }
                                 
-                                RippleButton(
-                                    title: "All Off",
-                                    icon: "poweroff"
+                                // Magnetic notification button
+                                MagneticButton(
+                                    icon: "bell.fill",
+                                    color: .orange
                                 ) {
-                                    smartHomeManager.turnAllDevicesOff()
-                                }
-                                
-                                RippleButton(
-                                    title: "Away Mode",
-                                    icon: "house"
-                                ) {
-                                    smartHomeManager.setAwayMode()
-                                }
-                                
-                                RippleButton(
-                                    title: "Night Mode",
-                                    icon: "moon.fill"
-                                ) {
-                                    smartHomeManager.setNightMode()
+                                    // Notification action
                                 }
                             }
-                            .transition(.scale.combined(with: .opacity))
+                            
+                            // Enhanced status overview with glowing cards
+                            HStack(spacing: 12) {
+                                GlowingCard(glowColor: .green, intensity: 0.4) {
+                                    VStack(spacing: 8) {
+                                        AnimatedIcon(icon: "checkmark.circle.fill", color: .green, animationType: .pulse)
+                                        Text("\(smartHomeManager.devices.filter { $0.status == .online }.count)")
+                                            .font(.ringTitle)
+                                            .fontWeight(.bold)
+                                        Text("Online")
+                                            .font(.ringCaption)
+                                            .foregroundColor(.secondary)
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 12)
+                                }
+                                
+                                GlowingCard(glowColor: .orange, intensity: 0.3) {
+                                    VStack(spacing: 8) {
+                                        AnimatedIcon(icon: "exclamationmark.triangle.fill", color: .orange, animationType: .shake)
+                                        Text("\(smartHomeManager.devices.filter { $0.status == .offline }.count)")
+                                            .font(.ringTitle)
+                                            .fontWeight(.bold)
+                                        Text("Offline")
+                                            .font(.ringCaption)
+                                            .foregroundColor(.secondary)
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 12)
+                                }
+                                
+                                GlowingCard(glowColor: .blue, intensity: 0.4) {
+                                    VStack(spacing: 8) {
+                                        AnimatedIcon(icon: "bolt.fill", color: .blue, animationType: .bounce)
+                                        Text("\(smartHomeManager.activeAutomations)")
+                                            .font(.ringTitle)
+                                            .fontWeight(.bold)
+                                        Text("Active")
+                                            .font(.ringCaption)
+                                            .foregroundColor(.secondary)
+                                    }
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, 12)
+                                }
+                            }
                         }
+                        .padding()
+                        .background(.ultraThinMaterial)
+                        .advancedShadow(AdvancedShadow.soft)
                         
-                        // Main floating action button with liquid effect
-                        Button(action: {
-                            withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                                showFloatingMenu.toggle()
-                            }
-                            HapticFeedback.impact(style: .medium)
-                        }) {
-                            Image(systemName: showFloatingMenu ? "xmark" : "plus")
-                                .font(.title2)
-                                .fontWeight(.semibold)
-                                .foregroundColor(.white)
-                                .frame(width: 60, height: 60)
+                        // Enhanced tab navigation with morphing effects
+                        HStack(spacing: 0) {
+                            ForEach(Array(tabItems.enumerated()), id: \.offset) { index, item in
+                                MorphingButton(
+                                    title: item.title,
+                                    icon: item.icon
+                                ) {
+                                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                                        selectedTab = index
+                                    }
+                                    HapticFeedback.impact(style: .light)
+                                }
                                 .background(
-                                    Circle()
-                                        .fill(
-                                            LinearGradient(
-                                                colors: [.blue, .purple, .pink],
-                                                startPoint: .topLeading,
-                                                endPoint: .bottomTrailing
-                                            )
-                                        )
-                                        .shadow(
-                                            color: .blue.opacity(0.4),
-                                            radius: showFloatingMenu ? 15 : 10,
-                                            x: 0,
-                                            y: showFloatingMenu ? 8 : 5
-                                        )
+                                    selectedTab == index ?
+                                    Color.white.opacity(0.2) :
+                                    Color.clear
                                 )
-                                .rotationEffect(.degrees(showFloatingMenu ? 45 : 0))
-                                .scaleEffect(showFloatingMenu ? 1.1 : 1.0)
+                                .cornerRadius(selectedTab == index ? 12 : 0)
+                            }
                         }
-                        .buttonStyle(PlainButtonStyle())
-                        .liquidEffect()
+                        .padding(.horizontal)
+                        .padding(.top, 8)
+                        
+                        // Tab content with enhanced animations
+                        TabView(selection: $selectedTab) {
+                            // Home Tab
+                            RingDeviceHomeView(smartHomeManager: smartHomeManager)
+                                .tag(0)
+                                .transition(.asymmetric(
+                                    insertion: .move(edge: .leading).combined(with: .opacity),
+                                    removal: .move(edge: .trailing).combined(with: .opacity)
+                                ))
+                            
+                            // Devices Tab
+                            RingDeviceViews(smartHomeManager: smartHomeManager)
+                                .tag(1)
+                                .transition(.asymmetric(
+                                    insertion: .move(edge: .trailing).combined(with: .opacity),
+                                    removal: .move(edge: .leading).combined(with: .opacity)
+                                ))
+                            
+                            // Automation Tab
+                            RingAdvancedDesign(smartHomeManager: smartHomeManager)
+                                .tag(2)
+                                .transition(.asymmetric(
+                                    insertion: .move(edge: .bottom).combined(with: .opacity),
+                                    removal: .move(edge: .top).combined(with: .opacity)
+                                ))
+                            
+                            // Settings Tab
+                            RingSystemViews(smartHomeManager: smartHomeManager)
+                                .tag(3)
+                                .transition(.asymmetric(
+                                    insertion: .move(edge: .top).combined(with: .opacity),
+                                    removal: .move(edge: .bottom).combined(with: .opacity)
+                                ))
+                        }
+                        .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
+                        .animation(.spring(response: 0.6, dampingFraction: 0.8), value: selectedTab)
                     }
-                    .padding(.trailing, 20)
-                    .padding(.bottom, 20)
+                    
+                    // Enhanced floating action menu
+                    VStack {
+                        Spacer()
+                        HStack {
+                            Spacer()
+                            
+                            VStack(spacing: 16) {
+                                if showFloatingMenu {
+                                    // Quick actions with ripple effects
+                                    VStack(spacing: 12) {
+                                        RippleButton(
+                                            title: "All On",
+                                            icon: "power"
+                                        ) {
+                                            smartHomeManager.turnAllDevicesOn()
+                                        }
+                                        
+                                        RippleButton(
+                                            title: "All Off",
+                                            icon: "poweroff"
+                                        ) {
+                                            smartHomeManager.turnAllDevicesOff()
+                                        }
+                                        
+                                        RippleButton(
+                                            title: "Away Mode",
+                                            icon: "house"
+                                        ) {
+                                            smartHomeManager.setAwayMode()
+                                        }
+                                        
+                                        RippleButton(
+                                            title: "Night Mode",
+                                            icon: "moon.fill"
+                                        ) {
+                                            smartHomeManager.setNightMode()
+                                        }
+                                    }
+                                    .transition(.scale.combined(with: .opacity))
+                                }
+                                
+                                // Main floating action button with liquid effect
+                                Button(action: {
+                                    withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
+                                        showFloatingMenu.toggle()
+                                    }
+                                    HapticFeedback.impact(style: .medium)
+                                }) {
+                                    Image(systemName: showFloatingMenu ? "xmark" : "plus")
+                                        .font(.title2)
+                                        .fontWeight(.semibold)
+                                        .foregroundColor(.white)
+                                        .frame(width: 60, height: 60)
+                                        .background(
+                                            Circle()
+                                                .fill(
+                                                    LinearGradient(
+                                                        colors: [.blue, .purple, .pink],
+                                                        startPoint: .topLeading,
+                                                        endPoint: .bottomTrailing
+                                                    )
+                                                )
+                                                .shadow(
+                                                    color: .blue.opacity(0.4),
+                                                    radius: showFloatingMenu ? 15 : 10,
+                                                    x: 0,
+                                                    y: showFloatingMenu ? 8 : 5
+                                                )
+                                        )
+                                        .rotationEffect(.degrees(showFloatingMenu ? 45 : 0))
+                                        .scaleEffect(showFloatingMenu ? 1.1 : 1.0)
+                                }
+                                .buttonStyle(PlainButtonStyle())
+                                .liquidEffect()
+                            }
+                            .padding(.trailing, 20)
+                            .padding(.bottom, 20)
+                        }
+                    }
                 }
             }
         }
