@@ -198,86 +198,74 @@ struct RingDesignSystem {
             x: 0,
             y: 12
         )
-        
-        struct ShadowStyle {
-            let color: Color
-            let radius: CGFloat
-            let x: CGFloat
-            let y: CGFloat
-        }
     }
     
-    // MARK: - Animations
+    // MARK: - Animation Styles
     
     struct Animations {
         static let quick = Animation.easeInOut(duration: 0.2)
-        static let smooth = Animation.easeInOut(duration: 0.3)
-        static let gentle = Animation.easeInOut(duration: 0.5)
-        static let dramatic = Animation.easeInOut(duration: 0.8)
-        
-        static let spring = Animation.interpolatingSpring(
-            mass: 1.0,
-            stiffness: 100,
-            damping: 10,
-            initialVelocity: 0
-        )
-        
-        static let bouncy = Animation.interpolatingSpring(
-            mass: 0.8,
-            stiffness: 120,
-            damping: 8,
-            initialVelocity: 0
-        )
-        
-        static let snappy = Animation.interpolatingSpring(
-            mass: 0.5,
-            stiffness: 150,
-            damping: 12,
-            initialVelocity: 0
-        )
+        static let gentle = Animation.easeInOut(duration: 0.3)
+        static let smooth = Animation.easeInOut(duration: 0.5)
+        static let bouncy = Animation.spring(response: 0.6, dampingFraction: 0.8)
+        static let dramatic = Animation.spring(response: 0.8, dampingFraction: 0.6)
     }
     
     // MARK: - Haptic Feedback
     
     struct Haptics {
-        
-        static func impact(_ style: UIImpactFeedbackGenerator.FeedbackStyle) {
-            let generator = UIImpactFeedbackGenerator(style: style)
-            generator.impactOccurred()
+        static func light() {
+            let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+            impactFeedback.impactOccurred()
         }
         
-        static func notification(_ type: UINotificationFeedbackGenerator.FeedbackType) {
-            let generator = UINotificationFeedbackGenerator()
-            generator.notificationOccurred(type)
+        static func medium() {
+            let impactFeedback = UIImpactFeedbackGenerator(style: .medium)
+            impactFeedback.impactOccurred()
         }
         
-        static func selection() {
-            let generator = UISelectionFeedbackGenerator()
-            generator.selectionChanged()
+        static func heavy() {
+            let impactFeedback = UIImpactFeedbackGenerator(style: .heavy)
+            impactFeedback.impactOccurred()
         }
         
-        // Convenience methods
-        static func light() { impact(.light) }
-        static func medium() { impact(.medium) }
-        static func heavy() { impact(.heavy) }
-        static func success() { notification(.success) }
-        static func warning() { notification(.warning) }
-        static func error() { notification(.error) }
+        static func success() {
+            let notificationFeedback = UINotificationFeedbackGenerator()
+            notificationFeedback.notificationOccurred(.success)
+        }
+        
+        static func warning() {
+            let notificationFeedback = UINotificationFeedbackGenerator()
+            notificationFeedback.notificationOccurred(.warning)
+        }
+        
+        static func error() {
+            let notificationFeedback = UINotificationFeedbackGenerator()
+            notificationFeedback.notificationOccurred(.error)
+        }
     }
+}
+
+// MARK: - Supporting Structures
+
+struct ShadowStyle {
+    let color: Color
+    let radius: CGFloat
+    let x: CGFloat
+    let y: CGFloat
 }
 
 // MARK: - View Modifiers
 
-@available(iOS 15.0, *)
-extension View {
+struct LiquidGlassModifier: ViewModifier {
+    let style: LiquidGlassStyle
+    let cornerRadius: CGFloat
     
-    // MARK: - Liquid Glass Effect
+    enum LiquidGlassStyle {
+        case ultraThin, thin, regular, thick, ultraThick
+    }
     
-    func liquidGlass(
-        style: RingDesignSystem.LiquidGlass.Style = .regular,
-        cornerRadius: CGFloat = RingDesignSystem.CornerRadius.md
-    ) -> some View {
-        self
+    func body(content: Content) -> some View {
+        content
             .background(
                 RoundedRectangle(cornerRadius: cornerRadius)
                     .fill(.ultraThinMaterial)
@@ -286,8 +274,8 @@ extension View {
                             .stroke(
                                 LinearGradient(
                                     colors: [
-                                        Color.white.opacity(0.3),
-                                        Color.white.opacity(0.1)
+                                        RingDesignSystem.Colors.LiquidGlass.ultraThin,
+                                        RingDesignSystem.Colors.LiquidGlass.thin
                                     ],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
@@ -297,276 +285,244 @@ extension View {
                     )
             )
     }
+}
+
+struct PulseModifier: ViewModifier {
+    let active: Bool
     
-    // MARK: - Ring Card Style
-    
-    func ringCard(
-        cornerRadius: CGFloat = RingDesignSystem.CornerRadius.lg,
-        shadow: RingDesignSystem.Shadow.ShadowStyle = RingDesignSystem.Shadow.soft,
-        padding: CGFloat = RingDesignSystem.Spacing.md
-    ) -> some View {
-        self
-            .padding(padding)
-            .background(
-                RoundedRectangle(cornerRadius: cornerRadius)
-                    .fill(RingDesignSystem.Colors.Background.secondary)
-                    .shadow(
-                        color: shadow.color,
-                        radius: shadow.radius,
-                        x: shadow.x,
-                        y: shadow.y
-                    )
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(active ? 1.05 : 1.0)
+            .animation(
+                active ? 
+                Animation.easeInOut(duration: 1.5).repeatForever(autoreverses: true) : 
+                .default,
+                value: active
             )
     }
+}
+
+struct ShimmerModifier: ViewModifier {
+    let active: Bool
+    @State private var phase: CGFloat = 0
     
-    // MARK: - Ring Button Style
-    
-    func ringButton(
-        style: RingButtonStyle = .primary,
-        size: RingButtonSize = .medium
-    ) -> some View {
-        self
-            .font(size.font)
-            .foregroundColor(style.foregroundColor)
-            .padding(.horizontal, size.horizontalPadding)
-            .padding(.vertical, size.verticalPadding)
-            .background(
-                RoundedRectangle(cornerRadius: size.cornerRadius)
-                    .fill(style.backgroundColor)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: size.cornerRadius)
-                            .stroke(style.borderColor, lineWidth: style.borderWidth)
-                    )
-            )
-    }
-    
-    // MARK: - Status Indicator
-    
-    func ringStatusIndicator(
-        status: DeviceStatus,
-        size: CGFloat = 8
-    ) -> some View {
-        self
+    func body(content: Content) -> some View {
+        content
             .overlay(
-                Circle()
-                    .fill(status.color)
-                    .frame(width: size, height: size)
-                    .overlay(
-                        Circle()
-                            .stroke(RingDesignSystem.Colors.Background.primary, lineWidth: 2)
-                    ),
-                alignment: .topTrailing
-            )
-    }
-    
-    // MARK: - Shimmer Effect
-    
-    func shimmer(active: Bool = true) -> some View {
-        self
-            .overlay(
-                Rectangle()
-                    .fill(
+                Group {
+                    if active {
                         LinearGradient(
                             colors: [
-                                Color.white.opacity(0),
+                                Color.clear,
                                 Color.white.opacity(0.3),
-                                Color.white.opacity(0)
+                                Color.clear
                             ],
                             startPoint: .leading,
                             endPoint: .trailing
                         )
-                    )
-                    .scaleEffect(x: active ? 1 : 0, anchor: .leading)
-                    .animation(
-                        active ? 
-                        Animation.linear(duration: 1.5).repeatForever(autoreverses: false) :
-                        .default,
-                        value: active
-                    )
-                    .clipped()
-            )
-            .clipped()
-    }
-    
-    // MARK: - Pulsing Animation
-    
-    func pulse(active: Bool = true, scale: CGFloat = 1.05) -> some View {
-        self
-            .scaleEffect(active ? scale : 1.0)
-            .animation(
-                active ?
-                Animation.easeInOut(duration: 1.0).repeatForever(autoreverses: true) :
-                .default,
-                value: active
+                        .offset(x: -200 + phase * 400)
+                        .animation(
+                            Animation.linear(duration: 1.5).repeatForever(autoreverses: false),
+                            value: phase
+                        )
+                        .onAppear {
+                            phase = 1
+                        }
+                    }
+                }
             )
     }
+}
+
+struct TapFeedbackModifier: ViewModifier {
+    let haptic: RingDesignSystem.Haptics
+    let action: () -> Void
     
-    // MARK: - Breathing Animation
-    
-    func breathe(active: Bool = true) -> some View {
-        self
-            .opacity(active ? 0.6 : 1.0)
-            .animation(
-                active ?
-                Animation.easeInOut(duration: 2.0).repeatForever(autoreverses: true) :
-                .default,
-                value: active
-            )
-    }
-    
-    // MARK: - Tap Feedback
-    
-    func onTapWithFeedback(
-        haptic: UIImpactFeedbackGenerator.FeedbackStyle = .light,
-        perform action: @escaping () -> Void
-    ) -> some View {
-        self
+    func body(content: Content) -> some View {
+        content
             .onTapGesture {
-                RingDesignSystem.Haptics.impact(haptic)
+                switch haptic {
+                case .light: RingDesignSystem.Haptics.light()
+                case .medium: RingDesignSystem.Haptics.medium()
+                case .heavy: RingDesignSystem.Haptics.heavy()
+                case .success: RingDesignSystem.Haptics.success()
+                case .warning: RingDesignSystem.Haptics.warning()
+                case .error: RingDesignSystem.Haptics.error()
+                }
                 action()
             }
     }
 }
 
-// MARK: - Button Styles
+// MARK: - View Extensions
 
-@available(iOS 15.0, *)
-enum RingButtonStyle {
-    case primary, secondary, tertiary, destructive, success, warning
-    
-    var backgroundColor: Color {
-        switch self {
-        case .primary: return RingDesignSystem.Colors.ringBlue
-        case .secondary: return RingDesignSystem.Colors.Background.secondary
-        case .tertiary: return Color.clear
-        case .destructive: return RingDesignSystem.Colors.ringRed
-        case .success: return RingDesignSystem.Colors.ringGreen
-        case .warning: return RingDesignSystem.Colors.ringOrange
-        }
+extension View {
+    func liquidGlass(_ style: LiquidGlassModifier.LiquidGlassStyle = .regular, cornerRadius: CGFloat) -> some View {
+        modifier(LiquidGlassModifier(style: style, cornerRadius: cornerRadius))
     }
     
-    var foregroundColor: Color {
-        switch self {
-        case .primary, .destructive, .success, .warning: return .white
-        case .secondary, .tertiary: return RingDesignSystem.Colors.Foreground.primary
-        }
+    func pulse(active: Bool) -> some View {
+        modifier(PulseModifier(active: active))
     }
     
-    var borderColor: Color {
-        switch self {
-        case .primary, .destructive, .success, .warning: return Color.clear
-        case .secondary: return RingDesignSystem.Colors.Separator.primary
-        case .tertiary: return RingDesignSystem.Colors.ringBlue
-        }
+    func shimmer(active: Bool) -> some View {
+        modifier(ShimmerModifier(active: active))
     }
     
-    var borderWidth: CGFloat {
-        switch self {
-        case .tertiary: return 1
-        default: return 0
-        }
+    func onTapWithFeedback(haptic: RingDesignSystem.Haptics, action: @escaping () -> Void) -> some View {
+        modifier(TapFeedbackModifier(haptic: haptic, action: action))
     }
 }
 
-@available(iOS 15.0, *)
-enum RingButtonSize {
-    case small, medium, large
+// MARK: - UI Components
+
+struct FilterChip: View {
+    let title: String
+    let isSelected: Bool
+    let action: () -> Void
     
-    var font: Font {
-        switch self {
-        case .small: return RingDesignSystem.Typography.caption1
-        case .medium: return RingDesignSystem.Typography.callout
-        case .large: return RingDesignSystem.Typography.headline
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(RingDesignSystem.Typography.subheadline)
+                .fontWeight(isSelected ? .semibold : .medium)
+                .foregroundColor(isSelected ? .white : RingDesignSystem.Colors.Foreground.primary)
+                .padding(.horizontal, RingDesignSystem.Spacing.md)
+                .padding(.vertical, RingDesignSystem.Spacing.sm)
+                .background(
+                    RoundedRectangle(cornerRadius: RingDesignSystem.CornerRadius.circular)
+                        .fill(
+                            isSelected ? 
+                            RingDesignSystem.Colors.ringBlue :
+                            RingDesignSystem.Colors.Fill.secondary
+                        )
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: RingDesignSystem.CornerRadius.circular)
+                        .stroke(
+                            isSelected ? 
+                            RingDesignSystem.Colors.ringBlue :
+                            RingDesignSystem.Colors.Separator.primary,
+                            lineWidth: 1
+                        )
+                )
         }
-    }
-    
-    var horizontalPadding: CGFloat {
-        switch self {
-        case .small: return RingDesignSystem.Spacing.sm
-        case .medium: return RingDesignSystem.Spacing.md
-        case .large: return RingDesignSystem.Spacing.lg
-        }
-    }
-    
-    var verticalPadding: CGFloat {
-        switch self {
-        case .small: return RingDesignSystem.Spacing.xs
-        case .medium: return RingDesignSystem.Spacing.sm
-        case .large: return RingDesignSystem.Spacing.md
-        }
-    }
-    
-    var cornerRadius: CGFloat {
-        switch self {
-        case .small: return RingDesignSystem.CornerRadius.xs
-        case .medium: return RingDesignSystem.CornerRadius.sm
-        case .large: return RingDesignSystem.CornerRadius.md
-        }
+        .buttonStyle(PlainButtonStyle())
+        .scaleEffect(isSelected ? 1.05 : 1.0)
+        .animation(RingDesignSystem.Animations.quick, value: isSelected)
     }
 }
 
-// MARK: - Liquid Glass Style Extensions
-
-@available(iOS 15.0, *)
-extension RingDesignSystem.LiquidGlass {
-    enum Style {
-        case ultraThin, thin, regular, thick, ultraThick
-        
-        var material: Material {
-            switch self {
-            case .ultraThin: return .ultraThinMaterial
-            case .thin: return .thinMaterial
-            case .regular: return .regularMaterial
-            case .thick: return .thickMaterial
-            case .ultraThick: return .ultraThickMaterial
+struct StatusMetric: View {
+    let title: String
+    let value: String
+    let icon: String
+    let color: Color
+    
+    var body: some View {
+        HStack(spacing: RingDesignSystem.Spacing.sm) {
+            Image(systemName: icon)
+                .font(.title2)
+                .foregroundColor(color)
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text(value)
+                    .font(RingDesignSystem.Typography.headline)
+                    .fontWeight(.bold)
+                    .foregroundColor(RingDesignSystem.Colors.Foreground.primary)
+                
+                Text(title)
+                    .font(RingDesignSystem.Typography.caption1)
+                    .foregroundColor(RingDesignSystem.Colors.Foreground.secondary)
             }
+            
+            Spacer()
         }
-        
-        var opacity: Double {
-            switch self {
-            case .ultraThin: return 0.1
-            case .thin: return 0.2
-            case .regular: return 0.3
-            case .thick: return 0.4
-            case .ultraThick: return 0.6
-            }
-        }
+        .padding(RingDesignSystem.Spacing.sm)
+        .liquidGlass(cornerRadius: RingDesignSystem.CornerRadius.sm)
     }
 }
 
-// MARK: - Device Status Extensions
-
-extension DeviceStatus {
-    var color: Color {
-        switch self {
-        case .on, .open: return RingDesignSystem.Colors.DeviceStatus.online
-        case .off, .closed: return RingDesignSystem.Colors.DeviceStatus.offline
-        case .unknown: return RingDesignSystem.Colors.DeviceStatus.unknown
-        }
-    }
+struct HealthRow: View {
+    let title: String
+    let count: Int
+    let icon: String
+    let color: Color
     
-    var iconName: String {
-        switch self {
-        case .on: return "power"
-        case .off: return "power"
-        case .open: return "lock.open"
-        case .closed: return "lock"
-        case .unknown: return "questionmark"
+    var body: some View {
+        HStack(spacing: RingDesignSystem.Spacing.sm) {
+            Image(systemName: icon)
+                .font(.title3)
+                .foregroundColor(color)
+            
+            Text(title)
+                .font(RingDesignSystem.Typography.subheadline)
+                .foregroundColor(RingDesignSystem.Colors.Foreground.primary)
+            
+            Spacer()
+            
+            Text("\(count)")
+                .font(RingDesignSystem.Typography.headline)
+                .fontWeight(.bold)
+                .foregroundColor(color)
         }
+        .padding(RingDesignSystem.Spacing.sm)
+        .liquidGlass(cornerRadius: RingDesignSystem.CornerRadius.sm)
     }
 }
 
-// MARK: - Alert Type Extensions
-
-extension MotionAlert.AlertType {
-    var color: Color {
-        switch self {
-        case .motion: return RingDesignSystem.Colors.ringOrange
-        case .person: return RingDesignSystem.Colors.ringBlue
-        case .vehicle: return RingDesignSystem.Colors.ringPurple
-        case .package: return RingDesignSystem.Colors.ringGreen
-        case .doorbell: return RingDesignSystem.Colors.ringYellow
+struct AlertSummaryRow: View {
+    let title: String
+    let count: Int
+    let icon: String
+    let color: Color
+    
+    var body: some View {
+        HStack(spacing: RingDesignSystem.Spacing.sm) {
+            Image(systemName: icon)
+                .font(.title3)
+                .foregroundColor(color)
+            
+            Text(title)
+                .font(RingDesignSystem.Typography.subheadline)
+                .foregroundColor(RingDesignSystem.Colors.Foreground.primary)
+            
+            Spacer()
+            
+            Text("\(count)")
+                .font(RingDesignSystem.Typography.headline)
+                .fontWeight(.bold)
+                .foregroundColor(color)
         }
+        .padding(RingDesignSystem.Spacing.sm)
+        .liquidGlass(cornerRadius: RingDesignSystem.CornerRadius.sm)
+    }
+}
+
+struct QuickActionButton: View {
+    let title: String
+    let icon: String
+    let color: Color
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: RingDesignSystem.Spacing.sm) {
+                Image(systemName: icon)
+                    .font(.title3)
+                    .foregroundColor(color)
+                
+                Text(title)
+                    .font(RingDesignSystem.Typography.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundColor(RingDesignSystem.Colors.Foreground.primary)
+                
+                Spacer()
+            }
+            .padding(RingDesignSystem.Spacing.md)
+            .liquidGlass(cornerRadius: RingDesignSystem.CornerRadius.md)
+        }
+        .buttonStyle(PlainButtonStyle())
     }
 }
 
@@ -591,5 +547,357 @@ extension DeviceType {
         case .floodlight: return [RingDesignSystem.Colors.ringYellow, RingDesignSystem.Colors.ringYellow.opacity(0.7)]
         case .chime: return [RingDesignSystem.Colors.ringPurple, RingDesignSystem.Colors.ringPurple.opacity(0.7)]
         }
+    }
+    
+    var iconName: String {
+        switch self {
+        case .camera: return "video.fill"
+        case .doorbell: return "bell.fill"
+        case .motionSensor: return "sensor.tag.radiowaves.forward.fill"
+        case .floodlight: return "lightbulb.fill"
+        case .chime: return "speaker.wave.2.fill"
+        }
+    }
+}
+
+extension DeviceStatus {
+    var color: Color {
+        switch self {
+        case .on: return RingDesignSystem.Colors.ringGreen
+        case .off: return RingDesignSystem.Colors.ringRed
+        case .open: return RingDesignSystem.Colors.ringGreen
+        case .closed: return RingDesignSystem.Colors.ringRed
+        case .unknown: return RingDesignSystem.Colors.ringOrange
+        }
+    }
+}
+
+// MARK: - Utility Functions
+
+func timeAgoString(from date: Date) -> String {
+    let interval = Date().timeIntervalSince(date)
+    
+    if interval < 60 {
+        return "Just now"
+    } else if interval < 3600 {
+        let minutes = Int(interval / 60)
+        return "\(minutes)m ago"
+    } else if interval < 86400 {
+        let hours = Int(interval / 3600)
+        return "\(hours)h ago"
+    } else {
+        let days = Int(interval / 86400)
+        return "\(days)d ago"
+    }
+}
+
+// MARK: - Enhanced Animation Presets
+
+extension RingDesignSystem {
+    struct EnhancedAnimations {
+        static let springBounce = Animation.spring(response: 0.6, dampingFraction: 0.8, blendDuration: 0)
+        static let elasticOut = Animation.interpolatingSpring(stiffness: 100, damping: 10)
+        static let smoothEase = Animation.easeInOut(duration: 0.4)
+        static let quickSnap = Animation.easeOut(duration: 0.2)
+        static let gentleFloat = Animation.easeInOut(duration: 0.8)
+        static let pulseBounce = Animation.spring(response: 0.4, dampingFraction: 0.6, blendDuration: 0)
+        static let slideIn = Animation.easeOut(duration: 0.5)
+        static let fadeIn = Animation.easeIn(duration: 0.3)
+        static let scaleIn = Animation.spring(response: 0.5, dampingFraction: 0.7, blendDuration: 0)
+        static let rotateIn = Animation.easeOut(duration: 0.6)
+    }
+}
+
+// MARK: - Micro-Interaction Modifiers
+
+struct MicroInteractionModifier: ViewModifier {
+    let isActive: Bool
+    let scale: CGFloat
+    let rotation: Double
+    let animation: Animation
+    
+    init(isActive: Bool, scale: CGFloat = 1.05, rotation: Double = 0, animation: Animation = RingDesignSystem.Animations.quick) {
+        self.isActive = isActive
+        self.scale = scale
+        self.rotation = rotation
+        self.animation = animation
+    }
+    
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(isActive ? scale : 1.0)
+            .rotationEffect(.degrees(isActive ? rotation : 0))
+            .animation(animation, value: isActive)
+    }
+}
+
+struct HoverEffectModifier: ViewModifier {
+    @State private var isHovered = false
+    
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(isHovered ? 1.02 : 1.0)
+            .shadow(
+                color: isHovered ? RingDesignSystem.Colors.ringBlue.opacity(0.2) : Color.clear,
+                radius: isHovered ? 8 : 0,
+                x: 0,
+                y: isHovered ? 4 : 0
+            )
+            .animation(RingDesignSystem.Animations.gentle, value: isHovered)
+            .onHover { hovering in
+                isHovered = hovering
+            }
+    }
+}
+
+struct PressEffectModifier: ViewModifier {
+    @State private var isPressed = false
+    
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(isPressed ? 0.95 : 1.0)
+            .animation(RingDesignSystem.Animations.quick, value: isPressed)
+            .onTapGesture {
+                withAnimation(RingDesignSystem.Animations.quick) {
+                    isPressed = true
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                    withAnimation(RingDesignSystem.Animations.quick) {
+                        isPressed = false
+                    }
+                }
+            }
+    }
+}
+
+// MARK: - Advanced Loading Animations
+
+struct ShimmerEffect: ViewModifier {
+    @State private var phase: CGFloat = 0
+    
+    func body(content: Content) -> some View {
+        content
+            .overlay(
+                LinearGradient(
+                    colors: [
+                        Color.clear,
+                        Color.white.opacity(0.3),
+                        Color.clear
+                    ],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+                .offset(x: -200 + phase * 400)
+                .animation(
+                    Animation.linear(duration: 1.5)
+                        .repeatForever(autoreverses: false),
+                    value: phase
+                )
+            )
+            .onAppear {
+                phase = 1
+            }
+    }
+}
+
+struct BreathingEffect: ViewModifier {
+    @State private var breathing = false
+    
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(breathing ? 1.05 : 1.0)
+            .opacity(breathing ? 0.8 : 1.0)
+            .animation(
+                Animation.easeInOut(duration: 2)
+                    .repeatForever(autoreverses: true),
+                value: breathing
+            )
+            .onAppear {
+                breathing = true
+            }
+    }
+}
+
+struct FloatingEffect: ViewModifier {
+    @State private var floating = false
+    
+    func body(content: Content) -> some View {
+        content
+            .offset(y: floating ? -5 : 5)
+            .animation(
+                Animation.easeInOut(duration: 3)
+                    .repeatForever(autoreverses: true),
+                value: floating
+            )
+            .onAppear {
+                floating = true
+            }
+    }
+}
+
+// MARK: - Advanced View Modifiers
+
+extension View {
+    func microInteraction(isActive: Bool, scale: CGFloat = 1.05, rotation: Double = 0, animation: Animation = RingDesignSystem.Animations.quick) -> some View {
+        modifier(MicroInteractionModifier(isActive: isActive, scale: scale, rotation: rotation, animation: animation))
+    }
+    
+    func hoverEffect() -> some View {
+        modifier(HoverEffectModifier())
+    }
+    
+    func pressEffect() -> some View {
+        modifier(PressEffectModifier())
+    }
+    
+    func shimmer() -> some View {
+        modifier(ShimmerEffect())
+    }
+    
+    func breathing() -> some View {
+        modifier(BreathingEffect())
+    }
+    
+    func floating() -> some View {
+        modifier(FloatingEffect())
+    }
+    
+    func bounceIn(delay: Double = 0) -> some View {
+        self
+            .scaleEffect(0.3)
+            .opacity(0)
+            .animation(
+                RingDesignSystem.EnhancedAnimations.springBounce.delay(delay),
+                value: true
+            )
+            .onAppear {
+                withAnimation(RingDesignSystem.EnhancedAnimations.springBounce.delay(delay)) {
+                    // Trigger animation
+                }
+            }
+    }
+    
+    func slideInFromBottom(delay: Double = 0) -> some View {
+        self
+            .offset(y: 50)
+            .opacity(0)
+            .animation(
+                RingDesignSystem.EnhancedAnimations.slideIn.delay(delay),
+                value: true
+            )
+            .onAppear {
+                withAnimation(RingDesignSystem.EnhancedAnimations.slideIn.delay(delay)) {
+                    // Trigger animation
+                }
+            }
+    }
+    
+    func fadeInUp(delay: Double = 0) -> some View {
+        self
+            .offset(y: 20)
+            .opacity(0)
+            .animation(
+                RingDesignSystem.EnhancedAnimations.fadeIn.delay(delay),
+                value: true
+            )
+            .onAppear {
+                withAnimation(RingDesignSystem.EnhancedAnimations.fadeIn.delay(delay)) {
+                    // Trigger animation
+                }
+            }
+    }
+    
+    func rotateIn(delay: Double = 0) -> some View {
+        self
+            .rotationEffect(.degrees(-180))
+            .opacity(0)
+            .animation(
+                RingDesignSystem.EnhancedAnimations.rotateIn.delay(delay),
+                value: true
+            )
+            .onAppear {
+                withAnimation(RingDesignSystem.EnhancedAnimations.rotateIn.delay(delay)) {
+                    // Trigger animation
+                }
+            }
+    }
+}
+
+// MARK: - Advanced Color Extensions
+
+extension Color {
+    func adaptive() -> Color {
+        return self
+    }
+    
+    func withAlpha(_ alpha: Double) -> Color {
+        return self.opacity(alpha)
+    }
+    
+    var isLight: Bool {
+        var red: CGFloat = 0
+        var green: CGFloat = 0
+        var blue: CGFloat = 0
+        var alpha: CGFloat = 0
+        
+        UIColor(self).getRed(&red, green: &green, blue: &blue, alpha: &alpha)
+        
+        let brightness = ((red * 299) + (green * 587) + (blue * 114)) / 1000
+        return brightness > 0.5
+    }
+    
+    var contrastingText: Color {
+        return isLight ? .black : .white
+    }
+}
+
+// MARK: - Advanced Typography
+
+extension RingDesignSystem {
+    struct AdvancedTypography {
+        static let displayLarge = Font.system(size: 48, weight: .bold, design: .rounded)
+        static let displayMedium = Font.system(size: 36, weight: .bold, design: .rounded)
+        static let displaySmall = Font.system(size: 24, weight: .bold, design: .rounded)
+        static let headlineLarge = Font.system(size: 22, weight: .semibold, design: .rounded)
+        static let headlineMedium = Font.system(size: 20, weight: .semibold, design: .rounded)
+        static let headlineSmall = Font.system(size: 18, weight: .semibold, design: .rounded)
+        static let titleLarge = Font.system(size: 16, weight: .semibold, design: .rounded)
+        static let titleMedium = Font.system(size: 14, weight: .semibold, design: .rounded)
+        static let titleSmall = Font.system(size: 12, weight: .semibold, design: .rounded)
+        static let bodyLarge = Font.system(size: 16, weight: .regular, design: .rounded)
+        static let bodyMedium = Font.system(size: 14, weight: .regular, design: .rounded)
+        static let bodySmall = Font.system(size: 12, weight: .regular, design: .rounded)
+        static let labelLarge = Font.system(size: 14, weight: .medium, design: .rounded)
+        static let labelMedium = Font.system(size: 12, weight: .medium, design: .rounded)
+        static let labelSmall = Font.system(size: 10, weight: .medium, design: .rounded)
+    }
+}
+
+// MARK: - Advanced Spacing
+
+extension RingDesignSystem {
+    struct AdvancedSpacing {
+        static let xs = CGFloat(4)
+        static let sm = CGFloat(8)
+        static let md = CGFloat(16)
+        static let lg = CGFloat(24)
+        static let xl = CGFloat(32)
+        static let xxl = CGFloat(48)
+        static let xxxl = CGFloat(64)
+    }
+}
+
+// MARK: - Advanced Corner Radius
+
+extension RingDesignSystem {
+    struct AdvancedCornerRadius {
+        static let none = CGFloat(0)
+        static let xs = CGFloat(4)
+        static let sm = CGFloat(8)
+        static let md = CGFloat(12)
+        static let lg = CGFloat(16)
+        static let xl = CGFloat(24)
+        static let xxl = CGFloat(32)
+        static let full = CGFloat(999)
     }
 }

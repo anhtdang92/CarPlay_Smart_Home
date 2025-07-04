@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import Charts
 
 // MARK: - Advanced Design Components
 
@@ -765,6 +766,649 @@ struct PremiumLoadingView: View {
         .onAppear {
             rotationAngle = 360
             pulseScale = 1.2
+        }
+    }
+}
+
+// MARK: - Advanced Analytics Dashboard
+
+struct AdvancedAnalyticsView: View {
+    @ObservedObject var smartHomeManager: SmartHomeManager
+    @State private var selectedTimeRange: TimeRange = .week
+    @State private var showingDetailedChart = false
+    @Environment(\.colorScheme) var colorScheme
+    
+    var body: some View {
+        NavigationView {
+            ScrollView {
+                LazyVStack(spacing: RingDesignSystem.Spacing.lg) {
+                    // Time Range Selector
+                    timeRangeSelector
+                    
+                    // Key Metrics Cards
+                    keyMetricsSection
+                    
+                    // Activity Chart
+                    activityChartSection
+                    
+                    // Device Performance
+                    devicePerformanceSection
+                    
+                    // Security Insights
+                    securityInsightsSection
+                    
+                    // Network Health
+                    networkHealthSection
+                }
+                .padding(RingDesignSystem.Spacing.md)
+            }
+            .background(backgroundGradient.ignoresSafeArea())
+            .navigationTitle("Analytics")
+            .navigationBarTitleDisplayMode(.large)
+            .sheet(isPresented: $showingDetailedChart) {
+                DetailedChartView(timeRange: selectedTimeRange)
+            }
+        }
+    }
+    
+    private var backgroundGradient: some View {
+        LinearGradient(
+            colors: colorScheme == .dark ? 
+            [Color.black, Color(red: 0.05, green: 0.05, blue: 0.1)] :
+            [Color(red: 0.95, green: 0.97, blue: 1.0), Color.white],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
+    
+    private var timeRangeSelector: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: RingDesignSystem.Spacing.sm) {
+                ForEach(TimeRange.allCases, id: \.self) { range in
+                    AdvancedFilterChip(
+                        title: range.displayName,
+                        subtitle: range.description,
+                        icon: range.icon,
+                        isSelected: selectedTimeRange == range
+                    ) {
+                        withAnimation(RingDesignSystem.Animations.gentle) {
+                            selectedTimeRange = range
+                        }
+                        RingDesignSystem.Haptics.light()
+                    }
+                }
+            }
+            .padding(.horizontal, RingDesignSystem.Spacing.md)
+        }
+    }
+    
+    private var keyMetricsSection: some View {
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: RingDesignSystem.Spacing.md) {
+            AdvancedMetricCard(
+                title: "Motion Events",
+                value: "\(generateMotionEvents())",
+                trend: "+12%",
+                trendDirection: .up,
+                icon: "sensor.tag.radiowaves.forward.fill",
+                color: RingDesignSystem.Colors.ringOrange
+            )
+            
+            AdvancedMetricCard(
+                title: "Battery Health",
+                value: "\(generateBatteryHealth())%",
+                trend: "+5%",
+                trendDirection: .up,
+                icon: "battery.100",
+                color: RingDesignSystem.Colors.ringGreen
+            )
+            
+            AdvancedMetricCard(
+                title: "Network Uptime",
+                value: "99.8%",
+                trend: "+0.2%",
+                trendDirection: .up,
+                icon: "wifi",
+                color: RingDesignSystem.Colors.ringBlue
+            )
+            
+            AdvancedMetricCard(
+                title: "Response Time",
+                value: "1.2s",
+                trend: "-0.3s",
+                trendDirection: .down,
+                icon: "speedometer",
+                color: RingDesignSystem.Colors.ringPurple
+            )
+        }
+    }
+    
+    private var activityChartSection: some View {
+        VStack(alignment: .leading, spacing: RingDesignSystem.Spacing.md) {
+            HStack {
+                Text("Activity Overview")
+                    .font(RingDesignSystem.Typography.headline)
+                    .foregroundColor(RingDesignSystem.Colors.Foreground.primary)
+                
+                Spacer()
+                
+                Button("View Details") {
+                    showingDetailedChart = true
+                }
+                .font(RingDesignSystem.Typography.subheadline)
+                .foregroundColor(RingDesignSystem.Colors.ringBlue)
+            }
+            
+            ActivityChartView(data: generateChartData())
+                .frame(height: 200)
+                .liquidGlass(cornerRadius: RingDesignSystem.CornerRadius.lg)
+        }
+    }
+    
+    private var devicePerformanceSection: some View {
+        VStack(alignment: .leading, spacing: RingDesignSystem.Spacing.md) {
+            Text("Device Performance")
+                .font(RingDesignSystem.Typography.headline)
+                .foregroundColor(RingDesignSystem.Colors.Foreground.primary)
+            
+            VStack(spacing: RingDesignSystem.Spacing.sm) {
+                ForEach(generateDevicePerformance(), id: \.name) { device in
+                    DevicePerformanceRow(device: device)
+                }
+            }
+        }
+        .padding(RingDesignSystem.Spacing.md)
+        .liquidGlass(cornerRadius: RingDesignSystem.CornerRadius.lg)
+    }
+    
+    private var securityInsightsSection: some View {
+        VStack(alignment: .leading, spacing: RingDesignSystem.Spacing.md) {
+            Text("Security Insights")
+                .font(RingDesignSystem.Typography.headline)
+                .foregroundColor(RingDesignSystem.Colors.Foreground.primary)
+            
+            VStack(spacing: RingDesignSystem.Spacing.md) {
+                SecurityInsightCard(
+                    title: "Peak Activity Times",
+                    description: "Most motion detected between 6-8 PM",
+                    icon: "clock.fill",
+                    color: RingDesignSystem.Colors.ringOrange
+                )
+                
+                SecurityInsightCard(
+                    title: "Quiet Zones",
+                    description: "Backyard camera shows minimal activity",
+                    icon: "leaf.fill",
+                    color: RingDesignSystem.Colors.ringGreen
+                )
+            }
+        }
+        .padding(RingDesignSystem.Spacing.md)
+        .liquidGlass(cornerRadius: RingDesignSystem.CornerRadius.lg)
+    }
+    
+    private var networkHealthSection: some View {
+        VStack(alignment: .leading, spacing: RingDesignSystem.Spacing.md) {
+            Text("Network Health")
+                .font(RingDesignSystem.Typography.headline)
+                .foregroundColor(RingDesignSystem.Colors.Foreground.primary)
+            
+            NetworkHealthCard()
+        }
+        .padding(RingDesignSystem.Spacing.md)
+        .liquidGlass(cornerRadius: RingDesignSystem.CornerRadius.lg)
+    }
+    
+    // MARK: - Helper Functions
+    
+    private func generateMotionEvents() -> Int {
+        return Int.random(in: 45...120)
+    }
+    
+    private func generateBatteryHealth() -> Int {
+        return Int.random(in: 85...98)
+    }
+    
+    private func generateChartData() -> [ChartDataPoint] {
+        return (0..<7).map { day in
+            ChartDataPoint(
+                label: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][day],
+                value: Double.random(in: 5...25),
+                secondaryValue: Double.random(in: 2...8)
+            )
+        }
+    }
+    
+    private func generateDevicePerformance() -> [DevicePerformance] {
+        return [
+            DevicePerformance(name: "Front Door Camera", uptime: 99.9, responseTime: 1.1, status: .excellent),
+            DevicePerformance(name: "Backyard Camera", uptime: 98.5, responseTime: 1.8, status: .good),
+            DevicePerformance(name: "Garage Floodlight", uptime: 99.2, responseTime: 1.3, status: .excellent),
+            DevicePerformance(name: "Kitchen Sensor", uptime: 97.8, responseTime: 2.1, status: .fair)
+        ]
+    }
+}
+
+// MARK: - Advanced UI Components
+
+struct AdvancedFilterChip: View {
+    let title: String
+    let subtitle: String
+    let icon: String
+    let isSelected: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            VStack(spacing: RingDesignSystem.Spacing.xs) {
+                HStack(spacing: RingDesignSystem.Spacing.sm) {
+                    Image(systemName: icon)
+                        .font(.title3)
+                        .foregroundColor(isSelected ? .white : RingDesignSystem.Colors.Foreground.primary)
+                    
+                    Text(title)
+                        .font(RingDesignSystem.Typography.subheadline)
+                        .fontWeight(.semibold)
+                        .foregroundColor(isSelected ? .white : RingDesignSystem.Colors.Foreground.primary)
+                }
+                
+                Text(subtitle)
+                    .font(RingDesignSystem.Typography.caption2)
+                    .foregroundColor(isSelected ? .white.opacity(0.8) : RingDesignSystem.Colors.Foreground.secondary)
+            }
+            .padding(RingDesignSystem.Spacing.md)
+            .background(
+                RoundedRectangle(cornerRadius: RingDesignSystem.CornerRadius.lg)
+                    .fill(
+                        isSelected ? 
+                        LinearGradient(
+                            colors: [RingDesignSystem.Colors.ringBlue, RingDesignSystem.Colors.ringBlue.opacity(0.8)],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        ) :
+                        RingDesignSystem.Colors.Fill.secondary
+                    )
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: RingDesignSystem.CornerRadius.lg)
+                    .stroke(
+                        isSelected ? 
+                        RingDesignSystem.Colors.ringBlue :
+                        RingDesignSystem.Colors.Separator.primary,
+                        lineWidth: 1
+                    )
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
+        .scaleEffect(isSelected ? 1.05 : 1.0)
+        .animation(RingDesignSystem.Animations.quick, value: isSelected)
+    }
+}
+
+struct AdvancedMetricCard: View {
+    let title: String
+    let value: String
+    let trend: String
+    let trendDirection: TrendDirection
+    let icon: String
+    let color: Color
+    
+    enum TrendDirection {
+        case up, down
+        
+        var color: Color {
+            switch self {
+            case .up: return RingDesignSystem.Colors.ringGreen
+            case .down: return RingDesignSystem.Colors.ringRed
+            }
+        }
+        
+        var icon: String {
+            switch self {
+            case .up: return "arrow.up.right"
+            case .down: return "arrow.down.right"
+            }
+        }
+    }
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: RingDesignSystem.Spacing.sm) {
+            HStack {
+                Image(systemName: icon)
+                    .font(.title2)
+                    .foregroundColor(color)
+                
+                Spacer()
+                
+                HStack(spacing: 2) {
+                    Image(systemName: trendDirection.icon)
+                        .font(.caption)
+                        .foregroundColor(trendDirection.color)
+                    
+                    Text(trend)
+                        .font(RingDesignSystem.Typography.caption1)
+                        .foregroundColor(trendDirection.color)
+                }
+                .padding(.horizontal, RingDesignSystem.Spacing.xs)
+                .padding(.vertical, 2)
+                .background(
+                    RoundedRectangle(cornerRadius: RingDesignSystem.CornerRadius.xs)
+                        .fill(trendDirection.color.opacity(0.1))
+                )
+            }
+            
+            Text(value)
+                .font(RingDesignSystem.Typography.title1)
+                .fontWeight(.bold)
+                .foregroundColor(RingDesignSystem.Colors.Foreground.primary)
+            
+            Text(title)
+                .font(RingDesignSystem.Typography.subheadline)
+                .foregroundColor(RingDesignSystem.Colors.Foreground.primary)
+        }
+        .padding(RingDesignSystem.Spacing.md)
+        .liquidGlass(cornerRadius: RingDesignSystem.CornerRadius.lg)
+    }
+}
+
+struct ActivityChartView: View {
+    let data: [ChartDataPoint]
+    
+    var body: some View {
+        Chart {
+            ForEach(Array(data.enumerated()), id: \.offset) { index, point in
+                LineMark(
+                    x: .value("Day", point.label),
+                    y: .value("Events", point.value)
+                )
+                .foregroundStyle(RingDesignSystem.Colors.ringBlue)
+                .lineStyle(StrokeStyle(lineWidth: 3))
+                
+                AreaMark(
+                    x: .value("Day", point.label),
+                    y: .value("Events", point.value)
+                )
+                .foregroundStyle(
+                    LinearGradient(
+                        colors: [
+                            RingDesignSystem.Colors.ringBlue.opacity(0.3),
+                            RingDesignSystem.Colors.ringBlue.opacity(0.1)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                )
+                
+                PointMark(
+                    x: .value("Day", point.label),
+                    y: .value("Events", point.value)
+                )
+                .foregroundStyle(RingDesignSystem.Colors.ringBlue)
+                .symbolSize(20)
+            }
+        }
+        .chartYAxis {
+            AxisMarks(position: .leading) { value in
+                AxisGridLine()
+                AxisValueLabel()
+            }
+        }
+        .chartXAxis {
+            AxisMarks { value in
+                AxisValueLabel()
+            }
+        }
+    }
+}
+
+struct DevicePerformanceRow: View {
+    let device: DevicePerformance
+    
+    var body: some View {
+        HStack(spacing: RingDesignSystem.Spacing.sm) {
+            // Status indicator
+            Circle()
+                .fill(device.status.color)
+                .frame(width: 8, height: 8)
+            
+            // Device info
+            VStack(alignment: .leading, spacing: 2) {
+                Text(device.name)
+                    .font(RingDesignSystem.Typography.subheadline)
+                    .foregroundColor(RingDesignSystem.Colors.Foreground.primary)
+                
+                Text("\(device.uptime, specifier: "%.1f")% uptime • \(device.responseTime, specifier: "%.1f")s response")
+                    .font(RingDesignSystem.Typography.caption2)
+                    .foregroundColor(RingDesignSystem.Colors.Foreground.secondary)
+            }
+            
+            Spacer()
+            
+            // Performance indicator
+            VStack(alignment: .trailing, spacing: 2) {
+                Text(device.status.rawValue)
+                    .font(RingDesignSystem.Typography.caption1)
+                    .fontWeight(.medium)
+                    .foregroundColor(device.status.color)
+                
+                Text("\(device.status.score)/100")
+                    .font(RingDesignSystem.Typography.caption2)
+                    .foregroundColor(RingDesignSystem.Colors.Foreground.tertiary)
+            }
+        }
+        .padding(RingDesignSystem.Spacing.sm)
+        .liquidGlass(cornerRadius: RingDesignSystem.CornerRadius.sm)
+    }
+}
+
+struct SecurityInsightCard: View {
+    let title: String
+    let description: String
+    let icon: String
+    let color: Color
+    
+    var body: some View {
+        HStack(spacing: RingDesignSystem.Spacing.md) {
+            Image(systemName: icon)
+                .font(.title2)
+                .foregroundColor(color)
+                .frame(width: 32)
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(RingDesignSystem.Typography.subheadline)
+                    .fontWeight(.medium)
+                    .foregroundColor(RingDesignSystem.Colors.Foreground.primary)
+                
+                Text(description)
+                    .font(RingDesignSystem.Typography.caption1)
+                    .foregroundColor(RingDesignSystem.Colors.Foreground.secondary)
+            }
+            
+            Spacer()
+        }
+        .padding(RingDesignSystem.Spacing.sm)
+        .liquidGlass(cornerRadius: RingDesignSystem.CornerRadius.sm)
+    }
+}
+
+struct NetworkHealthCard: View {
+    @State private var networkLatency = 24.0
+    @State private var packetLoss = 0.1
+    @State private var bandwidth = 95.8
+    
+    var body: some View {
+        VStack(spacing: RingDesignSystem.Spacing.md) {
+            // Overall health indicator
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Excellent")
+                        .font(RingDesignSystem.Typography.headline)
+                        .foregroundColor(RingDesignSystem.Colors.ringGreen)
+                    
+                    Text("Network performance is optimal")
+                        .font(RingDesignSystem.Typography.caption1)
+                        .foregroundColor(RingDesignSystem.Colors.Foreground.secondary)
+                }
+                
+                Spacer()
+                
+                ZStack {
+                    Circle()
+                        .stroke(RingDesignSystem.Colors.ringGreen.opacity(0.2), lineWidth: 8)
+                        .frame(width: 60, height: 60)
+                    
+                    Circle()
+                        .trim(from: 0, to: 0.95)
+                        .stroke(RingDesignSystem.Colors.ringGreen, style: StrokeStyle(lineWidth: 8, lineCap: .round))
+                        .frame(width: 60, height: 60)
+                        .rotationEffect(.degrees(-90))
+                        .animation(RingDesignSystem.Animations.smooth, value: bandwidth)
+                    
+                    Text("95%")
+                        .font(RingDesignSystem.Typography.caption1)
+                        .fontWeight(.bold)
+                        .foregroundColor(RingDesignSystem.Colors.ringGreen)
+                }
+            }
+            
+            // Metrics grid
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: RingDesignSystem.Spacing.sm) {
+                NetworkMetric(label: "Latency", value: "\(Int(networkLatency))ms", color: .green)
+                NetworkMetric(label: "Packet Loss", value: "\(packetLoss, specifier: "%.1f")%", color: .green)
+                NetworkMetric(label: "Bandwidth", value: "\(bandwidth, specifier: "%.1f")%", color: .green)
+            }
+        }
+    }
+}
+
+struct NetworkMetric: View {
+    let label: String
+    let value: String
+    let color: Color
+    
+    var body: some View {
+        VStack(spacing: 2) {
+            Text(value)
+                .font(RingDesignSystem.Typography.subheadline)
+                .fontWeight(.bold)
+                .foregroundColor(color)
+            
+            Text(label)
+                .font(RingDesignSystem.Typography.caption2)
+                .foregroundColor(RingDesignSystem.Colors.Foreground.secondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(RingDesignSystem.Spacing.xs)
+        .liquidGlass(cornerRadius: RingDesignSystem.CornerRadius.xs)
+    }
+}
+
+// MARK: - Supporting Structures
+
+enum TimeRange: CaseIterable {
+    case day, week, month, quarter
+    
+    var displayName: String {
+        switch self {
+        case .day: return "24 Hours"
+        case .week: return "7 Days"
+        case .month: return "30 Days"
+        case .quarter: return "90 Days"
+        }
+    }
+    
+    var description: String {
+        switch self {
+        case .day: return "Today's activity"
+        case .week: return "Weekly trends"
+        case .month: return "Monthly patterns"
+        case .quarter: return "Quarterly view"
+        }
+    }
+    
+    var icon: String {
+        switch self {
+        case .day: return "clock.fill"
+        case .week: return "calendar"
+        case .month: return "calendar.badge.clock"
+        case .quarter: return "chart.line.uptrend.xyaxis"
+        }
+    }
+}
+
+struct ChartDataPoint {
+    let label: String
+    let value: Double
+    let secondaryValue: Double
+}
+
+struct DevicePerformance {
+    let name: String
+    let uptime: Double
+    let responseTime: Double
+    let status: PerformanceStatus
+    
+    enum PerformanceStatus {
+        case excellent, good, fair, poor
+        
+        var color: Color {
+            switch self {
+            case .excellent: return RingDesignSystem.Colors.ringGreen
+            case .good: return RingDesignSystem.Colors.ringBlue
+            case .fair: return RingDesignSystem.Colors.ringOrange
+            case .poor: return RingDesignSystem.Colors.ringRed
+            }
+        }
+        
+        var rawValue: String {
+            switch self {
+            case .excellent: return "Excellent"
+            case .good: return "Good"
+            case .fair: return "Fair"
+            case .poor: return "Poor"
+            }
+        }
+        
+        var score: Int {
+            switch self {
+            case .excellent: return 95
+            case .good: return 85
+            case .fair: return 70
+            case .poor: return 50
+            }
+        }
+    }
+}
+
+// MARK: - Detailed Chart View
+
+struct DetailedChartView: View {
+    let timeRange: TimeRange
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        NavigationView {
+            VStack {
+                Text("Detailed Analytics for \(timeRange.displayName)")
+                    .font(RingDesignSystem.Typography.headline)
+                    .padding()
+                
+                Spacer()
+                
+                Text("Detailed chart implementation would go here")
+                    .foregroundColor(RingDesignSystem.Colors.Foreground.secondary)
+                
+                Spacer()
+            }
+            .navigationTitle("Detailed View")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
         }
     }
 }
