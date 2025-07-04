@@ -15,6 +15,10 @@ struct ContentView: View {
     @State private var showingMaintenance = false
     @State private var showingEnergyUsage = false
     @State private var showingInsights = false
+    @State private var showingSiriShortcuts = false
+    @State private var showingWidgets = false
+    @State private var showingHomeKit = false
+    @State private var showingMultiAccount = false
 
     var body: some View {
         ZStack {
@@ -65,6 +69,19 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showingInsights) {
             SmartHomeInsightsView()
+        }
+        .sheet(isPresented: $showingSiriShortcuts) {
+            SiriShortcutsView()
+        }
+        .sheet(isPresented: $showingWidgets) {
+            WidgetsView()
+        }
+        .sheet(isPresented: $showingHomeKit) {
+            HomeKitIntegrationView()
+                .environmentObject(smartHomeManager)
+        }
+        .sheet(isPresented: $showingMultiAccount) {
+            MultiAccountView()
         }
     }
     
@@ -173,6 +190,26 @@ struct MainTabView: View {
                                 
                                 Button(action: { showingEnergyUsage = true }) {
                                     Label("Energy Analytics", systemImage: "bolt.circle")
+                                }
+                                
+                                Divider()
+                                
+                                Button(action: { showingSiriShortcuts = true }) {
+                                    Label("Siri Shortcuts", systemImage: "mic.circle")
+                                }
+                                
+                                Button(action: { showingWidgets = true }) {
+                                    Label("Home Screen Widgets", systemImage: "square.grid.2x2")
+                                }
+                                
+                                Button(action: { showingHomeKit = true }) {
+                                    Label("HomeKit Integration", systemImage: "house.fill")
+                                }
+                                
+                                Divider()
+                                
+                                Button(action: { showingMultiAccount = true }) {
+                                    Label("Multi-Account", systemImage: "person.2")
                                 }
                             } label: {
                                 Image(systemName: "chart.line.uptrend.xyaxis")
