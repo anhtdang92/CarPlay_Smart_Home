@@ -76,8 +76,8 @@ struct ContentView: View {
     var body: some View {
         ZStack {
             if showPremiumMode {
-                // Premium mode with ultra-premium components
-                RingPremiumComponents(smartHomeManager: smartHomeManager)
+                // Ultra-modern mode with cutting-edge components
+                RingUltraModernComponents(smartHomeManager: smartHomeManager)
             } else {
                 // Standard advanced mode with liquid glass
                 ZStack {
@@ -106,7 +106,7 @@ struct ContentView: View {
                                 ))
                             
                             // Devices Tab
-                            RingDeviceViews(smartHomeManager: smartHomeManager)
+                            RingUltraDeviceControl(smartHomeManager: smartHomeManager)
                                 .tag(1)
                                 .transition(.asymmetric(
                                     insertion: .move(edge: .trailing).combined(with: .opacity),
@@ -181,6 +181,17 @@ struct ContentView: View {
                                             color: .blue
                                         ) {
                                             showThemeSettings = true
+                                        }
+                                        
+                                        LiquidGlassActionButton(
+                                            title: showPremiumMode ? "Standard" : "Ultra",
+                                            icon: showPremiumMode ? "sparkles" : "sparkles.rectangle.stack",
+                                            color: .purple
+                                        ) {
+                                            withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
+                                                showPremiumMode.toggle()
+                                            }
+                                            HapticFeedback.impact(style: .heavy)
                                         }
                                     }
                                     .transition(.scale.combined(with: .opacity))
