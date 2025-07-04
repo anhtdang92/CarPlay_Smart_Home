@@ -807,3 +807,796 @@ struct AboutView: View {
         }
     }
 }
+
+// MARK: - Device Maintenance Scheduler
+struct DeviceMaintenanceView: View {
+    @StateObject private var maintenanceManager = MaintenanceManager()
+    @State private var showingAddMaintenance = false
+    
+    var body: some View {
+        NavigationView {
+            List {
+                Section(header: Text("Upcoming Maintenance")) {
+                    ForEach(maintenanceManager.upcomingMaintenance) { task in
+                        MaintenanceTaskRow(task: task)
+                    }
+                }
+                
+                Section(header: Text("Completed Tasks")) {
+                    ForEach(maintenanceManager.completedTasks) { task in
+                        MaintenanceTaskRow(task: task, isCompleted: true)
+                    }
+                }
+            }
+            .navigationTitle("Maintenance")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Add Task") {
+                        showingAddMaintenance = true
+                    }
+                }
+            }
+            .sheet(isPresented: $showingAddMaintenance) {
+                AddMaintenanceTaskView(maintenanceManager: maintenanceManager)
+            }
+        }
+    }
+}
+
+struct MaintenanceTask: Identifiable, Codable {
+    let id = UUID()
+    var deviceId: String
+    var deviceName: String
+    var taskType: TaskType
+    var scheduledDate: Date
+    var isCompleted: Bool
+    var notes: String?
+    var completedDate: Date?
+    
+    enum TaskType: String, CaseIterable, Codable {
+        case batteryReplacement = "Battery Replacement"
+        case firmwareUpdate = "Firmware Update"
+        case cleaning = "Cleaning"
+        case inspection = "Inspection"
+        case calibration = "Calibration"
+        
+        var icon: String {
+            switch self {
+            case .batteryReplacement: return "battery.100"
+            case .firmwareUpdate: return "arrow.clockwise"
+            case .cleaning: return "sparkles"
+            case .inspection: return "magnifyingglass"
+            case .calibration: return "slider.horizontal.3"
+            }
+        }
+        
+        var color: Color {
+            switch self {
+            case .batteryReplacement: return .red
+            case .firmwareUpdate: return .blue
+            case .cleaning: return .green
+            case .inspection: return .orange
+            case .calibration: return .purple
+            }
+        }
+    }
+}
+
+class MaintenanceManager: ObservableObject {
+    @Published var upcomingMaintenance: [MaintenanceTask] = []
+    @Published var completedTasks: [MaintenanceTask] = []
+    
+    init() {
+        loadSampleData()
+    }
+    
+    func addTask(_ task: MaintenanceTask) {
+        upcomingMaintenance.append(task)
+        sortTasks()
+    }
+    
+    func completeTask(_ task: MaintenanceTask) {
+        if let index = upcomingMaintenance.firstIndex(where: { $0.id == task.id }) {
+            var completedTask = task
+            completedTask.isCompleted = true
+            completedTask.completedDate = Date()
+            completedTasks.append(completedTask)
+            upcomingMaintenance.remove(at: index)
+        }
+    }
+    
+    private func sortTasks() {
+        upcomingMaintenance.sort { $0.scheduledDate < $1.scheduledDate }
+    }
+    
+    private func loadSampleData() {
+        let sampleTasks = [
+            MaintenanceTask(
+                deviceId: "1",
+                deviceName: "Front Door Camera",
+                taskType: .batteryReplacement,
+                scheduledDate: Date().addingTimeInterval(7 * 24 * 3600),
+                isCompleted: false,
+                notes: "Battery level at 15%"
+            ),
+            MaintenanceTask(
+                deviceId: "2",
+                deviceName: "Backyard Camera",
+                taskType: .cleaning,
+                scheduledDate: Date().addingTimeInterval(3 * 24 * 3600),
+                isCompleted: false,
+                notes: "Lens cleaning needed"
+            ),
+            MaintenanceTask(
+                deviceId: "3",
+                deviceName: "Motion Sensor",
+                taskType: .inspection,
+                scheduledDate: Date().addingTimeInterval(14 * 24 * 3600),
+                isCompleted: false
+            )
+        ]
+        
+        upcomingMaintenance = sampleTasks
+        
+        let completedSample = MaintenanceTask(
+            deviceId: "4",
+            deviceName: "Side Door Camera",
+            taskType: .firmwareUpdate,
+            scheduledDate: Date().addingTimeInterval(-7 * 24 * 3600),
+            isCompleted: true,
+            completedDate: Date().addingTimeInterval(-6 * 24 * 3600)
+        )
+        
+        completedTasks = [completedSample]
+    }
+}
+
+struct MaintenanceTaskRow: View {
+    let task: MaintenanceTask
+    var isCompleted: Bool = false
+    
+    var body: some View {
+        HStack {
+            Image(systemName: task.taskType.icon)
+                .foregroundColor(task.taskType.color)
+                .frame(width: 30)
+            
+            VStack(alignment: .leading, spacing: 4) {
+                Text(task.deviceName)
+                    .font(.headline)
+                    .strikethrough(isCompleted)
+                
+                Text(task.taskType.rawValue)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                
+                if let notes = task.notes {
+                    Text(notes)
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
+            }
+            
+            Spacer()
+            
+            VStack(alignment: .trailing, spacing: 4) {
+                Text(task.scheduledDate, style: .date)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+                
+                if isCompleted, let completedDate = task.completedDate {
+                    Text("Completed: \(completedDate, style: .date)")
+                        .font(.caption2)
+                        .foregroundColor(.green)
+                } else {
+                    Text(task.scheduledDate, style: .relative)
+                        .font(.caption2)
+                        .foregroundColor(task.scheduledDate < Date() ? .red : .secondary)
+                }
+            }
+        }
+        .opacity(isCompleted ? 0.6 : 1.0)
+    }
+}
+
+struct AddMaintenanceTaskView: View {
+    @ObservedObject var maintenanceManager: MaintenanceManager
+    @Environment(\.dismiss) private var dismiss
+    
+    @State private var selectedDevice = ""
+    @State private var selectedTaskType = MaintenanceTask.TaskType.batteryReplacement
+    @State private var scheduledDate = Date()
+    @State private var notes = ""
+    
+    let devices = ["Front Door Camera", "Backyard Camera", "Motion Sensor", "Floodlight Camera"]
+    
+    var body: some View {
+        NavigationView {
+            Form {
+                Section(header: Text("Device")) {
+                    Picker("Device", selection: $selectedDevice) {
+                        ForEach(devices, id: \.self) { device in
+                            Text(device).tag(device)
+                        }
+                    }
+                    .pickerStyle(MenuPickerStyle())
+                }
+                
+                Section(header: Text("Task Type")) {
+                    Picker("Task Type", selection: $selectedTaskType) {
+                        ForEach(MaintenanceTask.TaskType.allCases, id: \.self) { type in
+                            HStack {
+                                Image(systemName: type.icon)
+                                Text(type.rawValue)
+                            }
+                            .tag(type)
+                        }
+                    }
+                    .pickerStyle(MenuPickerStyle())
+                }
+                
+                Section(header: Text("Schedule")) {
+                    DatePicker("Scheduled Date", selection: $scheduledDate, displayedComponents: [.date])
+                }
+                
+                Section(header: Text("Notes")) {
+                    TextField("Optional notes", text: $notes, axis: .vertical)
+                        .lineLimit(3...6)
+                }
+            }
+            .navigationTitle("Add Maintenance Task")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Save") {
+                        saveTask()
+                    }
+                    .disabled(selectedDevice.isEmpty)
+                }
+            }
+        }
+    }
+    
+    private func saveTask() {
+        let task = MaintenanceTask(
+            deviceId: UUID().uuidString,
+            deviceName: selectedDevice,
+            taskType: selectedTaskType,
+            scheduledDate: scheduledDate,
+            isCompleted: false,
+            notes: notes.isEmpty ? nil : notes
+        )
+        
+        maintenanceManager.addTask(task)
+        dismiss()
+    }
+}
+
+// MARK: - Energy Usage Analytics
+struct EnergyUsageView: View {
+    @StateObject private var energyManager = EnergyManager()
+    @State private var selectedTimeframe = Timeframe.week
+    
+    enum Timeframe: String, CaseIterable {
+        case day = "Day"
+        case week = "Week"
+        case month = "Month"
+        case year = "Year"
+    }
+    
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 0) {
+                // Timeframe Selector
+                Picker("Timeframe", selection: $selectedTimeframe) {
+                    ForEach(Timeframe.allCases, id: \.self) { timeframe in
+                        Text(timeframe.rawValue).tag(timeframe)
+                    }
+                }
+                .pickerStyle(SegmentedPickerStyle())
+                .padding()
+                
+                ScrollView {
+                    LazyVStack(spacing: 20) {
+                        // Energy Summary
+                        EnergySummaryCard(energyManager: energyManager, timeframe: selectedTimeframe)
+                        
+                        // Device Energy Usage
+                        DeviceEnergyUsageCard(energyManager: energyManager, timeframe: selectedTimeframe)
+                        
+                        // Energy Trends
+                        EnergyTrendsCard(energyManager: energyManager, timeframe: selectedTimeframe)
+                        
+                        // Energy Saving Tips
+                        EnergySavingTipsCard()
+                    }
+                    .padding()
+                }
+            }
+            .navigationTitle("Energy Usage")
+            .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+}
+
+class EnergyManager: ObservableObject {
+    @Published var energyData: [String: Double] = [:]
+    @Published var deviceEnergyUsage: [String: Double] = [:]
+    @Published var energyTrends: [Date: Double] = [:]
+    
+    init() {
+        loadSampleData()
+    }
+    
+    private func loadSampleData() {
+        energyData = [
+            "Total Usage": 45.2,
+            "Average Daily": 6.8,
+            "Peak Usage": 12.3,
+            "Cost": 8.45
+        ]
+        
+        deviceEnergyUsage = [
+            "Front Door Camera": 12.5,
+            "Backyard Camera": 15.2,
+            "Motion Sensor": 3.1,
+            "Floodlight Camera": 14.4
+        ]
+        
+        // Generate sample trend data
+        for i in 0..<7 {
+            let date = Calendar.current.date(byAdding: .day, value: -i, to: Date()) ?? Date()
+            energyTrends[date] = Double.random(in: 5.0...15.0)
+        }
+    }
+}
+
+struct EnergySummaryCard: View {
+    @ObservedObject var energyManager: EnergyManager
+    let timeframe: EnergyUsageView.Timeframe
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Energy Summary")
+                .font(.headline)
+            
+            LazyVGrid(columns: [
+                GridItem(.flexible()),
+                GridItem(.flexible())
+            ], spacing: 16) {
+                EnergyMetricView(
+                    title: "Total Usage",
+                    value: "\(energyManager.energyData["Total Usage"] ?? 0, specifier: "%.1f") kWh",
+                    icon: "bolt.fill",
+                    color: .yellow
+                )
+                
+                EnergyMetricView(
+                    title: "Cost",
+                    value: "$\(energyManager.energyData["Cost"] ?? 0, specifier: "%.2f")",
+                    icon: "dollarsign.circle.fill",
+                    color: .green
+                )
+                
+                EnergyMetricView(
+                    title: "Daily Average",
+                    value: "\(energyManager.energyData["Average Daily"] ?? 0, specifier: "%.1f") kWh",
+                    icon: "chart.line.uptrend.xyaxis",
+                    color: .blue
+                )
+                
+                EnergyMetricView(
+                    title: "Peak Usage",
+                    value: "\(energyManager.energyData["Peak Usage"] ?? 0, specifier: "%.1f") kWh",
+                    icon: "arrow.up.circle.fill",
+                    color: .red
+                )
+            }
+        }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(.systemGray6))
+        )
+    }
+}
+
+struct EnergyMetricView: View {
+    let title: String
+    let value: String
+    let icon: String
+    let color: Color
+    
+    var body: some View {
+        VStack(spacing: 8) {
+            Image(systemName: icon)
+                .font(.title2)
+                .foregroundColor(color)
+            
+            Text(value)
+                .font(.headline)
+                .fontWeight(.semibold)
+            
+            Text(title)
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity)
+    }
+}
+
+struct DeviceEnergyUsageCard: View {
+    @ObservedObject var energyManager: EnergyManager
+    let timeframe: EnergyUsageView.Timeframe
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Device Energy Usage")
+                .font(.headline)
+            
+            VStack(spacing: 12) {
+                ForEach(Array(energyManager.deviceEnergyUsage.keys.sorted()), id: \.self) { device in
+                    DeviceEnergyRow(
+                        deviceName: device,
+                        usage: energyManager.deviceEnergyUsage[device] ?? 0
+                    )
+                }
+            }
+        }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(.systemGray6))
+        )
+    }
+}
+
+struct DeviceEnergyRow: View {
+    let deviceName: String
+    let usage: Double
+    
+    var body: some View {
+        HStack {
+            Text(deviceName)
+                .font(.subheadline)
+            
+            Spacer()
+            
+            Text("\(usage, specifier: "%.1f") kWh")
+                .font(.subheadline)
+                .fontWeight(.medium)
+        }
+        .padding(.vertical, 4)
+    }
+}
+
+struct EnergyTrendsCard: View {
+    @ObservedObject var energyManager: EnergyManager
+    let timeframe: EnergyUsageView.Timeframe
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Energy Trends")
+                .font(.headline)
+            
+            // Simple bar chart representation
+            HStack(alignment: .bottom, spacing: 8) {
+                ForEach(Array(energyManager.energyTrends.keys.sorted()), id: \.self) { date in
+                    let usage = energyManager.energyTrends[date] ?? 0
+                    let maxUsage = energyManager.energyTrends.values.max() ?? 1
+                    let height = CGFloat(usage / maxUsage) * 100
+                    
+                    VStack {
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(Color.blue)
+                            .frame(width: 20, height: height)
+                        
+                        Text(date, style: .date)
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+                }
+            }
+            .frame(height: 120)
+        }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(.systemGray6))
+        )
+    }
+}
+
+struct EnergySavingTipsCard: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Energy Saving Tips")
+                .font(.headline)
+            
+            VStack(alignment: .leading, spacing: 12) {
+                EnergyTipRow(
+                    tip: "Use motion detection instead of continuous recording",
+                    icon: "figure.walk",
+                    color: .green
+                )
+                
+                EnergyTipRow(
+                    tip: "Schedule cameras to turn off during quiet hours",
+                    icon: "clock",
+                    color: .blue
+                )
+                
+                EnergyTipRow(
+                    tip: "Keep firmware updated for optimal efficiency",
+                    icon: "arrow.clockwise",
+                    color: .orange
+                )
+                
+                EnergyTipRow(
+                    tip: "Use LED floodlights instead of traditional bulbs",
+                    icon: "lightbulb",
+                    color: .yellow
+                )
+            }
+        }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(.systemGray6))
+        )
+    }
+}
+
+struct EnergyTipRow: View {
+    let tip: String
+    let icon: String
+    let color: Color
+    
+    var body: some View {
+        HStack(spacing: 12) {
+            Image(systemName: icon)
+                .foregroundColor(color)
+                .frame(width: 20)
+            
+            Text(tip)
+                .font(.subheadline)
+                .foregroundColor(.primary)
+            
+            Spacer()
+        }
+    }
+}
+
+// MARK: - Smart Home Insights Dashboard
+struct SmartHomeInsightsView: View {
+    @StateObject private var insightsManager = InsightsManager()
+    
+    var body: some View {
+        NavigationView {
+            ScrollView {
+                LazyVStack(spacing: 20) {
+                    // Security Insights
+                    SecurityInsightsCard(insightsManager: insightsManager)
+                    
+                    // Activity Patterns
+                    ActivityPatternsCard(insightsManager: insightsManager)
+                    
+                    // Device Health Insights
+                    DeviceHealthInsightsCard(insightsManager: insightsManager)
+                    
+                    // Recommendations
+                    RecommendationsCard(insightsManager: insightsManager)
+                }
+                .padding()
+            }
+            .navigationTitle("Insights")
+            .navigationBarTitleDisplayMode(.inline)
+        }
+    }
+}
+
+class InsightsManager: ObservableObject {
+    @Published var securityScore = 85
+    @Published var activityPatterns: [String: Int] = [:]
+    @Published var deviceHealthIssues: [String] = []
+    @Published var recommendations: [String] = []
+    
+    init() {
+        loadSampleData()
+    }
+    
+    private func loadSampleData() {
+        activityPatterns = [
+            "Morning (6-9 AM)": 12,
+            "Afternoon (12-3 PM)": 8,
+            "Evening (6-9 PM)": 15,
+            "Night (9 PM-6 AM)": 3
+        ]
+        
+        deviceHealthIssues = [
+            "Front Door Camera battery at 15%",
+            "Motion Sensor needs calibration",
+            "Backyard Camera lens cleaning recommended"
+        ]
+        
+        recommendations = [
+            "Add a camera to cover the side entrance",
+            "Consider upgrading to 4K cameras for better clarity",
+            "Schedule regular maintenance for all devices",
+            "Enable motion zones to reduce false alerts"
+        ]
+    }
+}
+
+struct SecurityInsightsCard: View {
+    @ObservedObject var insightsManager: InsightsManager
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Security Score")
+                .font(.headline)
+            
+            HStack {
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("\(insightsManager.securityScore)")
+                        .font(.system(size: 48, weight: .bold))
+                        .foregroundColor(securityScoreColor)
+                    
+                    Text("out of 100")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+                
+                Spacer()
+                
+                VStack(alignment: .trailing, spacing: 8) {
+                    Text(securityScoreDescription)
+                        .font(.subheadline)
+                        .fontWeight(.medium)
+                        .foregroundColor(securityScoreColor)
+                    
+                    Text("Your home is well protected")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.trailing)
+                }
+            }
+        }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(.systemGray6))
+        )
+    }
+    
+    private var securityScoreColor: Color {
+        switch insightsManager.securityScore {
+        case 0..<50: return .red
+        case 50..<75: return .orange
+        default: return .green
+        }
+    }
+    
+    private var securityScoreDescription: String {
+        switch insightsManager.securityScore {
+        case 0..<50: return "Needs Attention"
+        case 50..<75: return "Good"
+        default: return "Excellent"
+        }
+    }
+}
+
+struct ActivityPatternsCard: View {
+    @ObservedObject var insightsManager: InsightsManager
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Activity Patterns")
+                .font(.headline)
+            
+            VStack(spacing: 12) {
+                ForEach(Array(insightsManager.activityPatterns.keys.sorted()), id: \.self) { timeSlot in
+                    ActivityPatternRow(
+                        timeSlot: timeSlot,
+                        count: insightsManager.activityPatterns[timeSlot] ?? 0
+                    )
+                }
+            }
+        }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(.systemGray6))
+        )
+    }
+}
+
+struct ActivityPatternRow: View {
+    let timeSlot: String
+    let count: Int
+    
+    var body: some View {
+        HStack {
+            Text(timeSlot)
+                .font(.subheadline)
+            
+            Spacer()
+            
+            Text("\(count) events")
+                .font(.subheadline)
+                .fontWeight(.medium)
+        }
+        .padding(.vertical, 4)
+    }
+}
+
+struct DeviceHealthInsightsCard: View {
+    @ObservedObject var insightsManager: InsightsManager
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Device Health Issues")
+                .font(.headline)
+            
+            if insightsManager.deviceHealthIssues.isEmpty {
+                Text("All devices are healthy!")
+                    .font(.subheadline)
+                    .foregroundColor(.green)
+            } else {
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(insightsManager.deviceHealthIssues, id: \.self) { issue in
+                        HStack {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .foregroundColor(.orange)
+                            
+                            Text(issue)
+                                .font(.subheadline)
+                        }
+                    }
+                }
+            }
+        }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(.systemGray6))
+        )
+    }
+}
+
+struct RecommendationsCard: View {
+    @ObservedObject var insightsManager: InsightsManager
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Recommendations")
+                .font(.headline)
+            
+            VStack(alignment: .leading, spacing: 12) {
+                ForEach(insightsManager.recommendations, id: \.self) { recommendation in
+                    HStack(alignment: .top, spacing: 12) {
+                        Image(systemName: "lightbulb.fill")
+                            .foregroundColor(.yellow)
+                            .frame(width: 20)
+                        
+                        Text(recommendation)
+                            .font(.subheadline)
+                            .foregroundColor(.primary)
+                    }
+                }
+            }
+        }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(.systemGray6))
+        )
+    }
+}

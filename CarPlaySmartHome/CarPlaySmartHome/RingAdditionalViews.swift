@@ -2178,3 +2178,967 @@ struct SystemAlertRow: View {
         return formatter.localizedString(for: date, relativeTo: Date())
     }
 }
+
+// MARK: - Device Comparison View
+struct DeviceComparisonView: View {
+    @State private var selectedDevices: Set<SmartDevice> = []
+    @State private var comparisonMetrics: [String: [String: Any]] = [:]
+    
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 0) {
+                // Device Selection
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
+                        ForEach(smartHomeManager.devices) { device in
+                            DeviceSelectionCard(
+                                device: device,
+                                isSelected: selectedDevices.contains(device),
+                                onToggle: { toggleDevice(device) }
+                            )
+                        }
+                    }
+                    .padding(.horizontal)
+                }
+                .padding(.vertical, 8)
+                
+                if selectedDevices.count >= 2 {
+                    // Comparison Table
+                    ScrollView {
+                        LazyVStack(spacing: 16) {
+                            ForEach(Array(comparisonMetrics.keys.sorted()), id: \.self) { metric in
+                                ComparisonMetricRow(
+                                    metric: metric,
+                                    devices: Array(selectedDevices),
+                                    values: comparisonMetrics[metric] ?? [:]
+                                )
+                            }
+                        }
+                        .padding()
+                    }
+                } else {
+                    // Empty State
+                    VStack(spacing: 16) {
+                        Image(systemName: "chart.bar.xaxis")
+                            .font(.system(size: 48))
+                            .foregroundColor(.secondary)
+                        
+                        Text("Select 2 or more devices to compare")
+                            .font(.headline)
+                            .multilineTextAlignment(.center)
+                        
+                        Text("Compare battery levels, signal strength, and performance metrics across your devices")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
+                    }
+                    .padding()
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+            }
+            .navigationTitle("Device Comparison")
+            .navigationBarTitleDisplayMode(.inline)
+            .onAppear {
+                updateComparisonMetrics()
+            }
+            .onChange(of: selectedDevices) { _ in
+                updateComparisonMetrics()
+            }
+        }
+    }
+    
+    private func toggleDevice(_ device: SmartDevice) {
+        if selectedDevices.contains(device) {
+            selectedDevices.remove(device)
+        } else {
+            selectedDevices.insert(device)
+        }
+    }
+    
+    private func updateComparisonMetrics() {
+        guard selectedDevices.count >= 2 else {
+            comparisonMetrics.removeAll()
+            return
+        }
+        
+        var metrics: [String: [String: Any]] = [:]
+        
+        // Battery Levels
+        var batteryData: [String: Any] = [:]
+        for device in selectedDevices {
+            batteryData[device.name] = device.batteryLevel
+        }
+        metrics["Battery Level"] = batteryData
+        
+        // Signal Strength
+        var signalData: [String: Any] = [:]
+        for device in selectedDevices {
+            signalData[device.name] = device.signalStrength
+        }
+        metrics["Signal Strength"] = signalData
+        
+        // Last Activity
+        var activityData: [String: Any] = [:]
+        for device in selectedDevices {
+            activityData[device.name] = device.lastActivity
+        }
+        metrics["Last Activity"] = activityData
+        
+        // Temperature (if applicable)
+        var tempData: [String: Any] = [:]
+        for device in selectedDevices {
+            if let temp = device.temperature {
+                tempData[device.name] = temp
+            }
+        }
+        if !tempData.isEmpty {
+            metrics["Temperature"] = tempData
+        }
+        
+        comparisonMetrics = metrics
+    }
+}
+
+struct DeviceSelectionCard: View {
+    let device: SmartDevice
+    let isSelected: Bool
+    let onToggle: () -> Void
+    
+    var body: some View {
+        Button(action: onToggle) {
+            VStack(spacing: 8) {
+                Image(systemName: device.type.iconName)
+                    .font(.title2)
+                    .foregroundColor(isSelected ? .white : .primary)
+                
+                Text(device.name)
+                    .font(.caption)
+                    .foregroundColor(isSelected ? .white : .primary)
+                    .lineLimit(2)
+                    .multilineTextAlignment(.center)
+            }
+            .frame(width: 80, height: 80)
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(isSelected ? Color.blue : Color(.systemGray6))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(isSelected ? Color.blue : Color.clear, lineWidth: 2)
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+}
+
+struct ComparisonMetricRow: View {
+    let metric: String
+    let devices: [SmartDevice]
+    let values: [String: Any]
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(metric)
+                .font(.headline)
+                .foregroundColor(.primary)
+            
+            HStack(spacing: 16) {
+                ForEach(devices) { device in
+                    VStack(spacing: 4) {
+                        Text(device.name)
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        
+                        if let value = values[device.name] {
+                            ComparisonValueView(metric: metric, value: value)
+                        } else {
+                            Text("N/A")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+            }
+        }
+        .padding()
+        .background(
+            RoundedRectangle(cornerRadius: 12)
+                .fill(Color(.systemGray6))
+        )
+    }
+}
+
+struct ComparisonValueView: View {
+    let metric: String
+    let value: Any
+    
+    var body: some View {
+        Group {
+            switch metric {
+            case "Battery Level":
+                if let level = value as? Int {
+                    HStack(spacing: 4) {
+                        Image(systemName: "battery.100")
+                            .foregroundColor(batteryColor(level))
+                        Text("\(level)%")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                    }
+                }
+            case "Signal Strength":
+                if let strength = value as? Int {
+                    HStack(spacing: 4) {
+                        Image(systemName: "wifi")
+                            .foregroundColor(signalColor(strength))
+                        Text("\(strength)%")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                    }
+                }
+            case "Last Activity":
+                if let date = value as? Date {
+                    Text(date, style: .relative)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+            case "Temperature":
+                if let temp = value as? Double {
+                    HStack(spacing: 4) {
+                        Image(systemName: "thermometer")
+                            .foregroundColor(.orange)
+                        Text("\(Int(temp))°F")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                    }
+                }
+            default:
+                Text("\(String(describing: value))")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+        }
+    }
+    
+    private func batteryColor(_ level: Int) -> Color {
+        switch level {
+        case 0..<20: return .red
+        case 20..<50: return .orange
+        default: return .green
+        }
+    }
+    
+    private func signalColor(_ strength: Int) -> Color {
+        switch strength {
+        case 0..<30: return .red
+        case 30..<70: return .orange
+        default: return .green
+        }
+    }
+}
+
+// MARK: - Smart Automation Rules
+struct AutomationRulesView: View {
+    @StateObject private var automationManager = AutomationManager()
+    @State private var showingCreateRule = false
+    
+    var body: some View {
+        NavigationView {
+            List {
+                Section(header: Text("Active Rules")) {
+                    ForEach(automationManager.activeRules) { rule in
+                        AutomationRuleRow(rule: rule) {
+                            automationManager.toggleRule(rule)
+                        }
+                    }
+                }
+                
+                Section(header: Text("Inactive Rules")) {
+                    ForEach(automationManager.inactiveRules) { rule in
+                        AutomationRuleRow(rule: rule) {
+                            automationManager.toggleRule(rule)
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Automation Rules")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Add Rule") {
+                        showingCreateRule = true
+                    }
+                }
+            }
+            .sheet(isPresented: $showingCreateRule) {
+                CreateAutomationRuleView(automationManager: automationManager)
+            }
+        }
+    }
+}
+
+struct AutomationRule: Identifiable, Codable {
+    let id = UUID()
+    var name: String
+    var trigger: AutomationTrigger
+    var actions: [AutomationAction]
+    var isEnabled: Bool
+    var createdAt: Date
+    
+    enum AutomationTrigger: String, CaseIterable, Codable {
+        case motion = "Motion Detected"
+        case time = "Time Schedule"
+        case location = "Location Based"
+        case deviceStatus = "Device Status Change"
+        
+        var icon: String {
+            switch self {
+            case .motion: return "figure.walk"
+            case .time: return "clock"
+            case .location: return "location"
+            case .deviceStatus: return "gear"
+            }
+        }
+    }
+    
+    enum AutomationAction: String, CaseIterable, Codable {
+        case turnOnLights = "Turn On Lights"
+        case turnOffLights = "Turn Off Lights"
+        case startRecording = "Start Recording"
+        case stopRecording = "Stop Recording"
+        case sendNotification = "Send Notification"
+        case activateSiren = "Activate Siren"
+        
+        var icon: String {
+            switch self {
+            case .turnOnLights: return "lightbulb.fill"
+            case .turnOffLights: return "lightbulb"
+            case .startRecording: return "record.circle"
+            case .stopRecording: return "stop.circle"
+            case .sendNotification: return "bell"
+            case .activateSiren: return "speaker.wave.3"
+            }
+        }
+    }
+}
+
+class AutomationManager: ObservableObject {
+    @Published var activeRules: [AutomationRule] = []
+    @Published var inactiveRules: [AutomationRule] = []
+    
+    init() {
+        loadSampleRules()
+    }
+    
+    func toggleRule(_ rule: AutomationRule) {
+        // Implementation for toggling rules
+    }
+    
+    private func loadSampleRules() {
+        let sampleRules = [
+            AutomationRule(
+                name: "Night Security",
+                trigger: .time,
+                actions: [.turnOnLights, .startRecording],
+                isEnabled: true,
+                createdAt: Date()
+            ),
+            AutomationRule(
+                name: "Motion Alert",
+                trigger: .motion,
+                actions: [.sendNotification, .activateSiren],
+                isEnabled: true,
+                createdAt: Date()
+            ),
+            AutomationRule(
+                name: "Away Mode",
+                trigger: .location,
+                actions: [.turnOffLights, .startRecording],
+                isEnabled: false,
+                createdAt: Date()
+            )
+        ]
+        
+        activeRules = sampleRules.filter { $0.isEnabled }
+        inactiveRules = sampleRules.filter { !$0.isEnabled }
+    }
+}
+
+struct AutomationRuleRow: View {
+    let rule: AutomationRule
+    let onToggle: () -> Void
+    
+    var body: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(rule.name)
+                    .font(.headline)
+                
+                HStack(spacing: 8) {
+                    Image(systemName: rule.trigger.icon)
+                        .foregroundColor(.blue)
+                    Text(rule.trigger.rawValue)
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                
+                HStack(spacing: 4) {
+                    ForEach(rule.actions, id: \.self) { action in
+                        Image(systemName: action.icon)
+                            .font(.caption2)
+                            .foregroundColor(.green)
+                    }
+                }
+            }
+            
+            Spacer()
+            
+            Toggle("", isOn: .constant(rule.isEnabled))
+                .onChange(of: rule.isEnabled) { _ in
+                    onToggle()
+                }
+        }
+        .padding(.vertical, 4)
+    }
+}
+
+struct CreateAutomationRuleView: View {
+    @ObservedObject var automationManager: AutomationManager
+    @Environment(\.dismiss) private var dismiss
+    
+    @State private var ruleName = ""
+    @State private var selectedTrigger = AutomationRule.AutomationTrigger.motion
+    @State private var selectedActions: Set<AutomationRule.AutomationAction> = []
+    
+    var body: some View {
+        NavigationView {
+            Form {
+                Section(header: Text("Rule Name")) {
+                    TextField("Enter rule name", text: $ruleName)
+                }
+                
+                Section(header: Text("Trigger")) {
+                    Picker("Trigger", selection: $selectedTrigger) {
+                        ForEach(AutomationRule.AutomationTrigger.allCases, id: \.self) { trigger in
+                            HStack {
+                                Image(systemName: trigger.icon)
+                                Text(trigger.rawValue)
+                            }
+                            .tag(trigger)
+                        }
+                    }
+                    .pickerStyle(MenuPickerStyle())
+                }
+                
+                Section(header: Text("Actions")) {
+                    ForEach(AutomationRule.AutomationAction.allCases, id: \.self) { action in
+                        HStack {
+                            Image(systemName: action.icon)
+                            Text(action.rawValue)
+                            Spacer()
+                            if selectedActions.contains(action) {
+                                Image(systemName: "checkmark")
+                                    .foregroundColor(.blue)
+                            }
+                        }
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            if selectedActions.contains(action) {
+                                selectedActions.remove(action)
+                            } else {
+                                selectedActions.insert(action)
+                            }
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Create Rule")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") {
+                        dismiss()
+                    }
+                }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Save") {
+                        saveRule()
+                    }
+                    .disabled(ruleName.isEmpty || selectedActions.isEmpty)
+                }
+            }
+        }
+    }
+    
+    private func saveRule() {
+        let newRule = AutomationRule(
+            name: ruleName,
+            trigger: selectedTrigger,
+            actions: Array(selectedActions),
+            isEnabled: true,
+            createdAt: Date()
+        )
+        
+        automationManager.activeRules.append(newRule)
+        dismiss()
+    }
+}
+
+// MARK: - Device Sharing
+struct DeviceSharingView: View {
+    @State private var selectedDevices: Set<SmartDevice> = []
+    @State private var sharingMode = SharingMode.family
+    @State private var showingShareSheet = false
+    
+    enum SharingMode: String, CaseIterable {
+        case family = "Family"
+        case guest = "Guest"
+        case temporary = "Temporary"
+        
+        var icon: String {
+            switch self {
+            case .family: return "person.3"
+            case .guest: return "person.badge.plus"
+            case .temporary: return "clock"
+            }
+        }
+        
+        var description: String {
+            switch self {
+            case .family: return "Share with family members permanently"
+            case .guest: return "Share with guests with limited access"
+            case .temporary: return "Share temporarily with time limit"
+            }
+        }
+    }
+    
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 0) {
+                // Sharing Mode Selection
+                VStack(spacing: 16) {
+                    Text("Select Sharing Mode")
+                        .font(.headline)
+                        .padding(.top)
+                    
+                    HStack(spacing: 12) {
+                        ForEach(SharingMode.allCases, id: \.self) { mode in
+                            SharingModeCard(
+                                mode: mode,
+                                isSelected: sharingMode == mode,
+                                onSelect: { sharingMode = mode }
+                            )
+                        }
+                    }
+                }
+                .padding()
+                .background(Color(.systemGray6))
+                
+                // Device Selection
+                List {
+                    Section(header: Text("Select Devices to Share")) {
+                        ForEach(smartHomeManager.devices) { device in
+                            DeviceSharingRow(
+                                device: device,
+                                isSelected: selectedDevices.contains(device),
+                                onToggle: { toggleDevice(device) }
+                            )
+                        }
+                    }
+                }
+                
+                // Share Button
+                Button(action: {
+                    showingShareSheet = true
+                }) {
+                    HStack {
+                        Image(systemName: "square.and.arrow.up")
+                        Text("Share \(selectedDevices.count) Device\(selectedDevices.count == 1 ? "" : "s")")
+                    }
+                    .font(.headline)
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(
+                        RoundedRectangle(cornerRadius: 12)
+                            .fill(selectedDevices.isEmpty ? Color.gray : Color.blue)
+                    )
+                }
+                .disabled(selectedDevices.isEmpty)
+                .padding()
+            }
+            .navigationTitle("Share Devices")
+            .navigationBarTitleDisplayMode(.inline)
+            .sheet(isPresented: $showingShareSheet) {
+                ShareSheetView(
+                    devices: Array(selectedDevices),
+                    mode: sharingMode
+                )
+            }
+        }
+    }
+    
+    private func toggleDevice(_ device: SmartDevice) {
+        if selectedDevices.contains(device) {
+            selectedDevices.remove(device)
+        } else {
+            selectedDevices.insert(device)
+        }
+    }
+}
+
+struct SharingModeCard: View {
+    let mode: DeviceSharingView.SharingMode
+    let isSelected: Bool
+    let onSelect: () -> Void
+    
+    var body: some View {
+        Button(action: onSelect) {
+            VStack(spacing: 8) {
+                Image(systemName: mode.icon)
+                    .font(.title2)
+                    .foregroundColor(isSelected ? .white : .primary)
+                
+                Text(mode.rawValue)
+                    .font(.caption)
+                    .fontWeight(.medium)
+                    .foregroundColor(isSelected ? .white : .primary)
+                
+                Text(mode.description)
+                    .font(.caption2)
+                    .foregroundColor(isSelected ? .white.opacity(0.8) : .secondary)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+            }
+            .frame(maxWidth: .infinity)
+            .padding()
+            .background(
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(isSelected ? Color.blue : Color(.systemBackground))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .stroke(isSelected ? Color.blue : Color(.systemGray4), lineWidth: 1)
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+}
+
+struct DeviceSharingRow: View {
+    let device: SmartDevice
+    let isSelected: Bool
+    let onToggle: () -> Void
+    
+    var body: some View {
+        HStack {
+            Image(systemName: device.type.iconName)
+                .font(.title2)
+                .foregroundColor(.blue)
+                .frame(width: 40)
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text(device.name)
+                    .font(.headline)
+                
+                Text(device.type.rawValue)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            
+            Spacer()
+            
+            Button(action: onToggle) {
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                    .font(.title2)
+                    .foregroundColor(isSelected ? .blue : .gray)
+            }
+        }
+        .contentShape(Rectangle())
+        .onTapGesture {
+            onToggle()
+        }
+    }
+}
+
+struct ShareSheetView: View {
+    let devices: [SmartDevice]
+    let mode: DeviceSharingView.SharingMode
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 20) {
+                // Share Summary
+                VStack(spacing: 12) {
+                    Image(systemName: mode.icon)
+                        .font(.system(size: 48))
+                        .foregroundColor(.blue)
+                    
+                    Text("Share \(devices.count) Device\(devices.count == 1 ? "" : "s")")
+                        .font(.title2)
+                        .fontWeight(.semibold)
+                    
+                    Text("Sharing mode: \(mode.rawValue)")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+                .padding()
+                
+                // Device List
+                List {
+                    ForEach(devices) { device in
+                        HStack {
+                            Image(systemName: device.type.iconName)
+                                .foregroundColor(.blue)
+                            
+                            Text(device.name)
+                            
+                            Spacer()
+                            
+                            Text(device.type.rawValue)
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                        }
+                    }
+                }
+                
+                // Share Options
+                VStack(spacing: 12) {
+                    Button(action: shareViaMessage) {
+                        HStack {
+                            Image(systemName: "message")
+                            Text("Share via Message")
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(12)
+                    }
+                    
+                    Button(action: shareViaEmail) {
+                        HStack {
+                            Image(systemName: "envelope")
+                            Text("Share via Email")
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.green)
+                        .foregroundColor(.white)
+                        .cornerRadius(12)
+                    }
+                    
+                    Button(action: generateQRCode) {
+                        HStack {
+                            Image(systemName: "qrcode")
+                            Text("Generate QR Code")
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.orange)
+                        .foregroundColor(.white)
+                        .cornerRadius(12)
+                    }
+                }
+                .padding()
+            }
+            .navigationTitle("Share Devices")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+    
+    private func shareViaMessage() {
+        // Implementation for sharing via message
+        dismiss()
+    }
+    
+    private func shareViaEmail() {
+        // Implementation for sharing via email
+        dismiss()
+    }
+    
+    private func generateQRCode() {
+        // Implementation for generating QR code
+        dismiss()
+    }
+}
+
+// MARK: - Enhanced Search with Voice Commands
+struct EnhancedSearchView: View {
+    @State private var searchText = ""
+    @State private var isListening = false
+    @State private var searchFilters = SearchFilters()
+    @State private var showingVoiceCommands = false
+    
+    var filteredDevices: [SmartDevice] {
+        smartHomeManager.devices.filter { device in
+            let matchesSearch = searchText.isEmpty || 
+                device.name.localizedCaseInsensitiveContains(searchText) ||
+                device.type.rawValue.localizedCaseInsensitiveContains(searchText) ||
+                device.location.localizedCaseInsensitiveContains(searchText)
+            
+            let matchesFilters = searchFilters.matches(device)
+            
+            return matchesSearch && matchesFilters
+        }
+    }
+    
+    var body: some View {
+        NavigationView {
+            VStack(spacing: 0) {
+                // Search Bar with Voice
+                HStack {
+                    HStack {
+                        Image(systemName: "magnifyingglass")
+                            .foregroundColor(.secondary)
+                        
+                        TextField("Search devices...", text: $searchText)
+                            .textFieldStyle(PlainTextFieldStyle())
+                        
+                        if !searchText.isEmpty {
+                            Button(action: { searchText = "" }) {
+                                Image(systemName: "xmark.circle.fill")
+                                    .foregroundColor(.secondary)
+                            }
+                        }
+                    }
+                    .padding()
+                    .background(Color(.systemGray6))
+                    .cornerRadius(12)
+                    
+                    Button(action: { isListening.toggle() }) {
+                        Image(systemName: isListening ? "stop.circle.fill" : "mic.circle.fill")
+                            .font(.title2)
+                            .foregroundColor(isListening ? .red : .blue)
+                    }
+                }
+                .padding()
+                
+                // Search Filters
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
+                        FilterChip(
+                            title: "All",
+                            isSelected: searchFilters.deviceType == nil,
+                            onTap: { searchFilters.deviceType = nil }
+                        )
+                        
+                        ForEach(DeviceType.allCases, id: \.self) { type in
+                            FilterChip(
+                                title: type.rawValue,
+                                isSelected: searchFilters.deviceType == type,
+                                onTap: { searchFilters.deviceType = type }
+                            )
+                        }
+                        
+                        FilterChip(
+                            title: "Low Battery",
+                            isSelected: searchFilters.lowBatteryOnly,
+                            onTap: { searchFilters.lowBatteryOnly.toggle() }
+                        )
+                        
+                        FilterChip(
+                            title: "Offline",
+                            isSelected: searchFilters.offlineOnly,
+                            onTap: { searchFilters.offlineOnly.toggle() }
+                        )
+                    }
+                    .padding(.horizontal)
+                }
+                
+                // Voice Commands Help
+                if showingVoiceCommands {
+                    VoiceCommandsHelpView()
+                }
+                
+                // Search Results
+                List {
+                    ForEach(filteredDevices) { device in
+                        DeviceRow(device: device)
+                    }
+                }
+            }
+            .navigationTitle("Search Devices")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(action: { showingVoiceCommands.toggle() }) {
+                        Image(systemName: "questionmark.circle")
+                    }
+                }
+            }
+        }
+    }
+}
+
+struct SearchFilters {
+    var deviceType: DeviceType?
+    var lowBatteryOnly = false
+    var offlineOnly = false
+    
+    func matches(_ device: SmartDevice) -> Bool {
+        if let type = deviceType, device.type != type {
+            return false
+        }
+        
+        if lowBatteryOnly && device.batteryLevel > 20 {
+            return false
+        }
+        
+        if offlineOnly && device.isOnline {
+            return false
+        }
+        
+        return true
+    }
+}
+
+struct VoiceCommandsHelpView: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Voice Commands")
+                .font(.headline)
+            
+            VStack(alignment: .leading, spacing: 8) {
+                VoiceCommandRow(command: "Show cameras", description: "Filter to show only cameras")
+                VoiceCommandRow(command: "Low battery devices", description: "Show devices with low battery")
+                VoiceCommandRow(command: "Offline devices", description: "Show offline devices")
+                VoiceCommandRow(command: "Front door", description: "Search for devices at front door")
+                VoiceCommandRow(command: "Backyard", description: "Search for devices in backyard")
+            }
+        }
+        .padding()
+        .background(Color(.systemGray6))
+        .cornerRadius(12)
+        .padding(.horizontal)
+    }
+}
+
+struct VoiceCommandRow: View {
+    let command: String
+    let description: String
+    
+    var body: some View {
+        HStack {
+            Text("\"\(command)\"")
+                .font(.caption)
+                .fontWeight(.medium)
+                .foregroundColor(.blue)
+            
+            Text("→")
+                .foregroundColor(.secondary)
+            
+            Text(description)
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+    }
+}

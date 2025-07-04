@@ -5,6 +5,16 @@ struct ContentView: View {
     @StateObject private var smartHomeManager = SmartHomeManager.shared
     @Environment(\.colorScheme) var colorScheme
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+    @State private var selectedTab = 0
+    @State private var showingOnboarding = false
+    @State private var showingQuickActions = false
+    @State private var showingDeviceComparison = false
+    @State private var showingAutomationRules = false
+    @State private var showingDeviceSharing = false
+    @State private var showingEnhancedSearch = false
+    @State private var showingMaintenance = false
+    @State private var showingEnergyUsage = false
+    @State private var showingInsights = false
 
     var body: some View {
         ZStack {
@@ -22,6 +32,40 @@ struct ContentView: View {
         }
         .animation(RingDesignSystem.Animations.gentle, value: authManager.isAuthenticated)
         .animation(RingDesignSystem.Animations.gentle, value: hasCompletedOnboarding)
+        .onAppear {
+            checkOnboardingStatus()
+        }
+        .sheet(isPresented: $showingOnboarding) {
+            OnboardingView()
+        }
+        .sheet(isPresented: $showingQuickActions) {
+            QuickActionsView()
+                .environmentObject(smartHomeManager)
+        }
+        .sheet(isPresented: $showingDeviceComparison) {
+            DeviceComparisonView()
+                .environmentObject(smartHomeManager)
+        }
+        .sheet(isPresented: $showingAutomationRules) {
+            AutomationRulesView()
+        }
+        .sheet(isPresented: $showingDeviceSharing) {
+            DeviceSharingView()
+                .environmentObject(smartHomeManager)
+        }
+        .sheet(isPresented: $showingEnhancedSearch) {
+            EnhancedSearchView()
+                .environmentObject(smartHomeManager)
+        }
+        .sheet(isPresented: $showingMaintenance) {
+            DeviceMaintenanceView()
+        }
+        .sheet(isPresented: $showingEnergyUsage) {
+            EnergyUsageView()
+        }
+        .sheet(isPresented: $showingInsights) {
+            SmartHomeInsightsView()
+        }
     }
     
     private var backgroundGradient: some View {
@@ -32,6 +76,14 @@ struct ContentView: View {
             startPoint: .topLeading,
             endPoint: .bottomTrailing
         )
+    }
+    
+    private func checkOnboardingStatus() {
+        // Check if user has completed onboarding
+        let hasCompletedOnboarding = UserDefaults.standard.bool(forKey: "hasCompletedOnboarding")
+        if !hasCompletedOnboarding {
+            showingOnboarding = true
+        }
     }
 }
 
@@ -44,35 +96,109 @@ struct MainTabView: View {
     
     var body: some View {
         TabView(selection: $selectedTab) {
-            EnhancedDashboardView(smartHomeManager: smartHomeManager)
-                .tabItem {
-                    Image(systemName: "house.fill")
-                    Text("Home")
-                }
-                .tag(0)
+            // Devices Tab
+            NavigationView {
+                RingDeviceHomeView()
+                    .environmentObject(smartHomeManager)
+                    .navigationTitle("Devices")
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarTrailing) {
+                            Menu {
+                                Button(action: { showingDeviceComparison = true }) {
+                                    Label("Compare Devices", systemImage: "chart.bar.xaxis")
+                                }
+                                
+                                Button(action: { showingDeviceSharing = true }) {
+                                    Label("Share Devices", systemImage: "square.and.arrow.up")
+                                }
+                                
+                                Button(action: { showingEnhancedSearch = true }) {
+                                    Label("Advanced Search", systemImage: "magnifyingglass.circle")
+                                }
+                                
+                                Divider()
+                                
+                                Button(action: { showingMaintenance = true }) {
+                                    Label("Maintenance", systemImage: "wrench.and.screwdriver")
+                                }
+                                
+                                Button(action: { showingEnergyUsage = true }) {
+                                    Label("Energy Usage", systemImage: "bolt")
+                                }
+                                
+                                Divider()
+                                
+                                Button(action: { showingQuickActions = true }) {
+                                    Label("Quick Actions", systemImage: "bolt")
+                                }
+                            } label: {
+                                Image(systemName: "ellipsis.circle")
+                            }
+                        }
+                    }
+            }
+            .tabItem {
+                Image(systemName: "house")
+                Text("Devices")
+            }
+            .tag(0)
             
-            RingDeviceHomeView(smartHomeManager: smartHomeManager)
-                .tabItem {
-                    Image(systemName: "video.fill")
-                    Text("Devices")
-                }
-                .tag(1)
+            // Alerts Tab
+            NavigationView {
+                MotionAlertsView()
+                    .environmentObject(smartHomeManager)
+                    .navigationTitle("Alerts")
+            }
+            .tabItem {
+                Image(systemName: "bell")
+                Text("Alerts")
+            }
+            .tag(1)
             
-            NotificationCenter(smartHomeManager: smartHomeManager)
-                .tabItem {
-                    Image(systemName: "bell.fill")
-                    Text("Alerts")
-                }
-                .tag(2)
+            // System Status Tab
+            NavigationView {
+                SystemHealthDashboardView()
+                    .environmentObject(smartHomeManager)
+                    .navigationTitle("System")
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarTrailing) {
+                            Menu {
+                                Button(action: { showingAutomationRules = true }) {
+                                    Label("Automation Rules", systemImage: "gearshape")
+                                }
+                                
+                                Button(action: { showingInsights = true }) {
+                                    Label("Smart Insights", systemImage: "brain.head.profile")
+                                }
+                                
+                                Button(action: { showingEnergyUsage = true }) {
+                                    Label("Energy Analytics", systemImage: "bolt.circle")
+                                }
+                            } label: {
+                                Image(systemName: "chart.line.uptrend.xyaxis")
+                            }
+                        }
+                    }
+            }
+            .tabItem {
+                Image(systemName: "chart.line.uptrend.xyaxis")
+                Text("System")
+            }
+            .tag(2)
             
-            SettingsView(smartHomeManager: smartHomeManager)
-                .tabItem {
-                    Image(systemName: "gear")
-                    Text("Settings")
-                }
-                .tag(3)
+            // Settings Tab
+            NavigationView {
+                UserPreferencesView()
+                    .environmentObject(smartHomeManager)
+                    .navigationTitle("Settings")
+            }
+            .tabItem {
+                Image(systemName: "person.circle")
+                Text("Settings")
+            }
+            .tag(3)
         }
-        .accentColor(RingDesignSystem.Colors.ringBlue)
+        .accentColor(.blue)
         .onReceive(NotificationCenter.default.publisher(for: UIAccessibility.reduceMotionStatusDidChangeNotification)) { _ in
             animationEnabled = !UIAccessibility.isReduceMotionEnabled
         }
