@@ -1,6 +1,7 @@
 import SwiftUI
 
 // MARK: - Ultra Premium Components
+// Enhanced with centralized constants, optimized animations, and accessibility support
 struct RingPremiumComponents: View {
     @ObservedObject var smartHomeManager: SmartHomeManager
     @State private var showPremiumEffects = false
@@ -30,17 +31,18 @@ struct RingPremiumComponents: View {
             }
         }
         .onAppear {
-            withAnimation(.spring(response: 1.0, dampingFraction: 0.8).delay(0.3)) {
+            // Use centralized animation constants for consistency
+            withAnimation(.quickSpring.delay(AppConstants.Animation.mediumDelay)) {
                 animatePremium = true
             }
             
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-                withAnimation(.easeInOut(duration: 1.5)) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + AppConstants.Animation.longDelay) {
+                withAnimation(.slow) {
                     showPremiumEffects = true
                 }
             }
             
-            withAnimation(.easeInOut(duration: 10.0).repeatForever(autoreverses: true)) {
+            withAnimation(.easeInOut(duration: AppConstants.Premium.morphingDuration).repeatForever(autoreverses: true)) {
                 morphingPremium = true
             }
         }
@@ -118,7 +120,12 @@ struct MeshGradientView: View {
             }
         }
         .onAppear {
-            withAnimation(.easeInOut(duration: 6.0).repeatForever(autoreverses: true)) {
+            // Respect reduced motion accessibility preference
+            let animationDuration = UIAccessibility.isReduceMotionEnabled ? 
+                AppConstants.Premium.rotationCycleDuration * AppConstants.Accessibility.reducedMotionScale :
+                AppConstants.Premium.rotationCycleDuration
+            
+            withAnimation(.easeInOut(duration: animationDuration).repeatForever(autoreverses: true)) {
                 animate = true
             }
         }
@@ -131,22 +138,22 @@ struct PremiumFloatingElements: View {
     
     var body: some View {
         ZStack {
-            // Geometric shapes
-            ForEach(0..<8) { index in
+            // Geometric shapes - optimized with constants
+            ForEach(0..<AppConstants.Premium.maxFloatingElements) { index in
                 PremiumGeometricShape(
                     type: index % 4,
-                    color: [.blue, .purple, .pink, .cyan][index % 4],
-                    size: CGFloat.random(in: 20...60),
-                    delay: Double(index) * 0.3
+                    color: [.premiumBlue, .premiumPurple, .blue, .cyan][index % 4],
+                    size: CGFloat.random(in: AppConstants.Premium.floatingElementSize),
+                    delay: Double(index) * AppConstants.Animation.mediumDelay
                 )
             }
             
-            // Floating orbs
-            ForEach(0..<6) { index in
+            // Floating orbs - optimized with constants
+            ForEach(0..<AppConstants.Premium.maxFloatingOrbs) { index in
                 PremiumFloatingOrb(
-                    color: [.blue, .purple, .pink, .cyan, .orange, .green][index],
-                    size: CGFloat.random(in: 10...30),
-                    delay: Double(index) * 0.2
+                    color: [.premiumBlue, .premiumPurple, .pink, .cyan, .premiumOrange, .premiumGreen][index],
+                    size: CGFloat.random(in: AppConstants.Premium.floatingOrbSize),
+                    delay: Double(index) * AppConstants.Animation.quickDuration
                 )
             }
         }
@@ -292,7 +299,7 @@ struct PremiumHeader: View {
     @State private var showParticles = false
     
     var body: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: .largeSpacing) {
             HStack {
                 // Premium 3D icon with particles
                 ZStack {
@@ -307,7 +314,7 @@ struct PremiumHeader: View {
                                 endPoint: .bottomTrailing
                             )
                         )
-                        .frame(width: 80, height: 80)
+                        .frame(width: AppConstants.Layout.deviceIconLargeSize, height: AppConstants.Layout.deviceIconLargeSize)
                         .shadow(
                             color: .blue.opacity(pulseGlow ? 0.8 : 0.4),
                             radius: pulseGlow ? 30 : 15,
@@ -339,7 +346,7 @@ struct PremiumHeader: View {
                     }
                 }
                 
-                VStack(alignment: .leading, spacing: 6) {
+                VStack(alignment: .leading, spacing: .smallSpacing - 2) {
                     Text("Premium Control")
                         .font(.system(size: 28, weight: .bold, design: .rounded))
                         .foregroundStyle(
@@ -358,7 +365,7 @@ struct PremiumHeader: View {
                 Spacer()
                 
                 // Premium status indicator
-                VStack(spacing: 6) {
+                VStack(spacing: .smallSpacing - 2) {
                     ZStack {
                         Circle()
                             .fill(.green)
@@ -407,10 +414,10 @@ struct PremiumHeader: View {
                 )
             }
         }
-        .padding(24)
+        .padding(.largePadding)
         .background(.ultraThinMaterial)
-        .cornerRadius(24)
-        .shadow(color: .black.opacity(0.3), radius: 30, x: 0, y: 15)
+        .cornerRadius(.largeRadius)
+        .shadow(color: .black.opacity(AppConstants.VisualEffects.mediumOpacity), radius: AppConstants.VisualEffects.extraHeavyShadowRadius, x: 0, y: 15)
         .onAppear {
             withAnimation(.linear(duration: 6.0).repeatForever(autoreverses: false)) {
                 rotateIcon = true
@@ -779,21 +786,21 @@ struct PremiumToggle: View {
     
     var body: some View {
         Button(action: {
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+            withAnimation(.bouncySpring) {
                 isOn.toggle()
             }
-            HapticFeedback.impact(style: .light)
+            HapticFeedback.toggle(isOn: isOn)
         }) {
             ZStack {
                 // Background
                 RoundedRectangle(cornerRadius: 25)
                     .fill(isOn ? color : .gray.opacity(0.3))
-                    .frame(width: 60, height: 30)
+                    .frame(width: AppConstants.Layout.toggleWidth, height: AppConstants.Layout.toggleHeight)
                 
                 // Thumb
                 Circle()
                     .fill(.white)
-                    .frame(width: 26, height: 26)
+                    .frame(width: AppConstants.Layout.toggleThumbSize, height: AppConstants.Layout.toggleThumbSize)
                     .offset(x: isOn ? 15 : -15)
                     .shadow(color: .black.opacity(0.2), radius: 3, x: 0, y: 2)
                     .scaleEffect(animate ? 1.1 : 1.0)

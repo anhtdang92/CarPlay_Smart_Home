@@ -1,5 +1,7 @@
 import SwiftUI
 
+// MARK: - Modern Content View with Enhanced UI
+
 struct ContentView: View {
     @StateObject private var authManager = AuthenticationManager.shared
     @StateObject private var smartHomeManager = SmartHomeManager.shared
@@ -77,142 +79,77 @@ struct ContentView: View {
         ZStack {
             if showPremiumMode {
                 // Ultra-modern mode with cutting-edge components
-                RingUltraModernComponents(smartHomeManager: smartHomeManager)
+                RingPremiumComponents(smartHomeManager: smartHomeManager)
+                    .transition(.asymmetric(
+                        insertion: .scale.combined(with: .opacity),
+                        removal: .scale.combined(with: .opacity)
+                    ))
             } else {
-                // Standard advanced mode with liquid glass
-                ZStack {
-                    // Liquid glass background
-                    LiquidGlassBackground()
+                // Modern CarPlay-optimized interface with Apple design language
+                ModernCarPlayInterface(smartHomeManager: smartHomeManager)
+                    .transition(.asymmetric(
+                        insertion: .move(edge: .leading).combined(with: .opacity),
+                        removal: .move(edge: .trailing).combined(with: .opacity)
+                    ))
+            }
+            
+            // Ultra Mode Toggle (floating in top right)
+            VStack {
+                HStack {
+                    Spacer()
                     
-                    VStack(spacing: 0) {
-                        // Enhanced header with liquid glass effects
-                        LiquidGlassHeader()
-                            .offset(y: animateBackground ? 0 : -20)
-                            .opacity(animateBackground ? 1 : 0)
-                        
-                        // Enhanced tab navigation with morphing effects
-                        LiquidGlassTabNavigation(selectedTab: $selectedTab)
-                            .offset(y: animateBackground ? 0 : 20)
-                            .opacity(animateBackground ? 1 : 0)
-                        
-                        // Enhanced tab content with 3D transitions
-                        TabView(selection: $selectedTab) {
-                            // Home Tab
-                            RingDeviceHomeView(smartHomeManager: smartHomeManager)
-                                .tag(0)
-                                .transition(.asymmetric(
-                                    insertion: .move(edge: .leading).combined(with: .opacity),
-                                    removal: .move(edge: .trailing).combined(with: .opacity)
-                                ))
-                            
-                            // Devices Tab
-                            RingUltraDeviceControl(smartHomeManager: smartHomeManager)
-                                .tag(1)
-                                .transition(.asymmetric(
-                                    insertion: .move(edge: .trailing).combined(with: .opacity),
-                                    removal: .move(edge: .leading).combined(with: .opacity)
-                                ))
-                            
-                            // Automation Tab
-                            RingAdvancedDesign(smartHomeManager: smartHomeManager)
-                                .tag(2)
-                                .transition(.asymmetric(
-                                    insertion: .move(edge: .bottom).combined(with: .opacity),
-                                    removal: .move(edge: .top).combined(with: .opacity)
-                                ))
-                            
-                            // Settings Tab
-                            RingSystemViews(smartHomeManager: smartHomeManager)
-                                .tag(3)
-                                .transition(.asymmetric(
-                                    insertion: .move(edge: .top).combined(with: .opacity),
-                                    removal: .move(edge: .bottom).combined(with: .opacity)
-                                ))
+                    Button(action: {
+                        withAnimation(AppleDesignSystem.Animations.snappy) {
+                            showPremiumMode.toggle()
                         }
-                        .tabViewStyle(PageTabViewStyle(indexDisplayMode: .never))
-                        .animation(.spring(response: 0.8, dampingFraction: 0.8), value: selectedTab)
-                    }
-                    
-                    // Enhanced floating action menu with liquid glass
-                    VStack {
-                        Spacer()
-                        HStack {
-                            Spacer()
+                        HapticFeedback.toggle(isOn: showPremiumMode)
+                    }) {
+                        HStack(spacing: 8) {
+                            Image(systemName: showPremiumMode ? "sparkles" : "wand.and.rays")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundColor(.white)
                             
-                            VStack(spacing: 16) {
-                                if showFloatingMenu {
-                                    // Quick actions with liquid glass effects
-                                    VStack(spacing: 12) {
-                                        LiquidGlassActionButton(
-                                            title: "All On",
-                                            icon: "power",
-                                            color: .green
-                                        ) {
-                                            smartHomeManager.turnAllDevicesOn()
-                                        }
-                                        
-                                        LiquidGlassActionButton(
-                                            title: "All Off",
-                                            icon: "poweroff",
-                                            color: .red
-                                        ) {
-                                            smartHomeManager.turnAllDevicesOff()
-                                        }
-                                        
-                                        LiquidGlassActionButton(
-                                            title: "Away Mode",
-                                            icon: "house",
-                                            color: .orange
-                                        ) {
-                                            smartHomeManager.setAwayMode()
-                                        }
-                                        
-                                        LiquidGlassActionButton(
-                                            title: "Night Mode",
-                                            icon: "moon.fill",
-                                            color: .purple
-                                        ) {
-                                            smartHomeManager.setNightMode()
-                                        }
-                                        
-                                        LiquidGlassActionButton(
-                                            title: "Theme",
-                                            icon: "paintbrush.fill",
-                                            color: .blue
-                                        ) {
-                                            showThemeSettings = true
-                                        }
-                                        
-                                        LiquidGlassActionButton(
-                                            title: showPremiumMode ? "Standard" : "Ultra",
-                                            icon: showPremiumMode ? "sparkles" : "sparkles.rectangle.stack",
-                                            color: .purple
-                                        ) {
-                                            withAnimation(.spring(response: 0.6, dampingFraction: 0.8)) {
-                                                showPremiumMode.toggle()
-                                            }
-                                            HapticFeedback.impact(style: .heavy)
-                                        }
-                                    }
-                                    .transition(.scale.combined(with: .opacity))
-                                }
+                            Text(showPremiumMode ? "Premium" : "CarPlay")
+                                .font(AppleDesignSystem.Typography.carPlaySmall)
+                                .fontWeight(.semibold)
+                                .foregroundColor(.white)
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 8)
+                        .background(
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 20)
+                                    .fill(
+                                        LinearGradient(
+                                            colors: showPremiumMode ? 
+                                                [.purple, .blue] : 
+                                                [AppleDesignSystem.Colors.accentBlue, AppleDesignSystem.Colors.accentPurple],
+                                            startPoint: .topLeading,
+                                            endPoint: .bottomTrailing
+                                        )
+                                    )
                                 
-                                // Main floating action button with liquid glass effect
-                                LiquidGlassFloatingButton(
-                                    icon: showFloatingMenu ? "xmark" : "plus",
-                                    action: {
-                                        withAnimation(.spring(response: 0.4, dampingFraction: 0.8)) {
-                                            showFloatingMenu.toggle()
-                                        }
-                                        HapticFeedback.impact(style: .medium)
-                                    }
-                                )
+                                // Animated glow effect
+                                RoundedRectangle(cornerRadius: 20)
+                                    .fill(showPremiumMode ? .purple : .blue)
+                                    .blur(radius: 8)
+                                    .opacity(0.4)
+                                    .scaleEffect(morphingState ? 1.2 : 1.0)
                             }
-                            .padding(.trailing, 20)
-                            .padding(.bottom, 20)
-                        }
+                        )
+                        .shadow(
+                            color: (showPremiumMode ? .purple : .blue).opacity(0.3),
+                            radius: 10,
+                            x: 0,
+                            y: 5
+                        )
                     }
+                    .buttonStyle(PlainButtonStyle())
+                    .padding(.top, 60)
+                    .padding(.trailing, 20)
                 }
+                
+                Spacer()
             }
         }
         .onAppear {
