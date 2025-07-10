@@ -2,6 +2,33 @@ import Foundation
 import Combine
 import UserNotifications
 
+// Import our enhanced systems
+// Note: Logger and AppConstants provide centralized logging and constants
+
+// MARK: - Result Extensions for Enhanced Error Handling
+
+extension Result {
+    /// Convenience property to check if result is successful
+    var isSuccess: Bool {
+        switch self {
+        case .success:
+            return true
+        case .failure:
+            return false
+        }
+    }
+    
+    /// Get the error if result is a failure
+    var error: Failure? {
+        switch self {
+        case .success:
+            return nil
+        case .failure(let error):
+            return error
+        }
+    }
+}
+
 enum DeviceStatus: CustomStringConvertible {
     case on, off, open, closed, unknown
 
@@ -104,13 +131,21 @@ class SmartHomeManager: ObservableObject {
         var lastUpdated: Date = Date()
     }
     
+    /// Track user actions for analytics with proper logging
     func trackUserAction(_ action: String, context: String? = nil) {
+        guard AppConstants.Version.analyticsEnabled else { return }
+        
         let key = context != nil ? "\(action)_\(context!)" : action
         userAnalytics.mostUsedFeatures[key, default: 0] += 1
         userAnalytics.lastUpdated = Date()
         
-        // Send to analytics service (implement as needed)
-        print("📊 Analytics: \(action) - \(context ?? "no context")")
+        // Log analytics event using our enhanced logging system
+        Logger.shared.logUserAction(action, context: context)
+        
+        // Limit analytics data to prevent memory issues
+        if userAnalytics.mostUsedFeatures.count > AppConstants.Analytics.maxEventsPerSession {
+            userAnalytics.mostUsedFeatures.removeFirst()
+        }
     }
     
     func trackDeviceInteraction(_ deviceId: UUID, action: String) {
@@ -119,10 +154,19 @@ class SmartHomeManager: ObservableObject {
         userAnalytics.lastUpdated = Date()
     }
     
-    func trackError(_ error: Error, context: String) {
+    /// Track errors with enhanced logging and context
+    func trackError(_ error: Error, context: String, additionalInfo: [String: Any]? = nil) {
         let errorKey = "\(context)_\(error.localizedDescription)"
         userAnalytics.errorOccurrences[errorKey, default: 0] += 1
         userAnalytics.lastUpdated = Date()
+        
+        // Use enhanced error logging
+        Logger.shared.logError(error, context: context, additionalInfo: additionalInfo)
+        
+        // Limit error tracking to prevent memory issues
+        if userAnalytics.errorOccurrences.count > AppConstants.Analytics.maxEventsPerSession {
+            userAnalytics.errorOccurrences.removeFirst()
+        }
     }
     
     // MARK: - Push Notification Preferences
@@ -152,16 +196,30 @@ class SmartHomeManager: ObservableObject {
         updateSystemNotificationSettings()
     }
     
+    /// Save notification preferences with proper error handling
     private func saveNotificationPreferences() {
-        if let encoded = try? JSONEncoder().encode(notificationPreferences) {
-            UserDefaults.standard.set(encoded, forKey: "notificationPreferences")
+        do {
+            let encoded = try JSONEncoder().encode(notificationPreferences)
+            UserDefaults.standard.set(encoded, forKey: AppConstants.Storage.notificationPreferencesKey)
+            logDebug("Notification preferences saved successfully", category: .system)
+        } catch {
+            trackError(error, context: "saveNotificationPreferences")
         }
     }
     
+    /// Load notification preferences with proper error handling
     private func loadNotificationPreferences() {
-        if let data = UserDefaults.standard.data(forKey: "notificationPreferences"),
-           let preferences = try? JSONDecoder().decode(NotificationPreferences.self, from: data) {
-            notificationPreferences = preferences
+        guard let data = UserDefaults.standard.data(forKey: AppConstants.Storage.notificationPreferencesKey) else {
+            logDebug("No stored notification preferences found, using defaults", category: .system)
+            return
+        }
+        
+        do {
+            notificationPreferences = try JSONDecoder().decode(NotificationPreferences.self, from: data)
+            logDebug("Notification preferences loaded successfully", category: .system)
+        } catch {
+            trackError(error, context: "loadNotificationPreferences")
+            logWarning("Failed to load notification preferences, using defaults", category: .system)
         }
     }
     
@@ -308,22 +366,42 @@ class SmartHomeManager: ObservableObject {
 
     // MARK: - Device Management
     
+    /// Load devices from Ring API with enhanced error handling and logging
     func loadDevicesFromRing() {
+        let startTime = Date()
         isLoading = true
         lastError = nil
         
+        logInfo("Starting device load from Ring API", category: .device)
+        
         RingAPIManager.shared.getRingDevices { [weak self] result in
             DispatchQueue.main.async {
-                self?.isLoading = false
+                guard let self = self else { return }
+                
+                self.isLoading = false
+                let loadDuration = Date().timeIntervalSince(startTime)
                 
                 switch result {
                 case .success(let ringDevices):
-                    self?.devices = ringDevices
-                    self?.loadAllDeviceStatuses()
-                    self?.loadRecentAlerts()
+                    self.devices = ringDevices
+                    self.loadAllDeviceStatuses()
+                    self.loadRecentAlerts()
+                    
+                    // Log successful load with performance metrics
+                    Logger.shared.logPerformance(
+                        "Device load",
+                        duration: loadDuration,
+                        details: "Loaded \(ringDevices.count) devices"
+                    )
+                    
+                    self.trackUserAction("devices_loaded", context: "success")
+                    
                 case .failure(let error):
-                    self?.lastError = error
-                    print("Failed to load devices: \(error.localizedDescription)")
+                    self.lastError = error
+                    self.trackError(error, context: "loadDevicesFromRing", additionalInfo: [
+                        "duration": loadDuration,
+                        "deviceCount": self.devices.count
+                    ])
                 }
             }
         }
@@ -385,15 +463,31 @@ class SmartHomeManager: ObservableObject {
         }
     }
     
+    /// Get recent motion alerts with enhanced error handling
     func getRecentMotionAlerts(for deviceId: UUID, completion: @escaping ([MotionAlert]) -> Void) {
-        RingAPIManager.shared.getRecentMotionAlerts(for: deviceId) { result in
+        let startTime = Date()
+        
+        RingAPIManager.shared.getRecentMotionAlerts(for: deviceId) { [weak self] result in
             DispatchQueue.main.async {
+                let duration = Date().timeIntervalSince(startTime)
+                
                 switch result {
                 case .success(let alerts):
                     completion(alerts)
+                    
+                    Logger.shared.logDeviceOperation(
+                        deviceId.uuidString,
+                        operation: "getRecentMotionAlerts",
+                        success: true
+                    )
+                    
                 case .failure(let error):
-                    print("Failed to get motion alerts: \(error.localizedDescription)")
                     completion([])
+                    
+                    self?.trackError(error, context: "getRecentMotionAlerts", additionalInfo: [
+                        "deviceId": deviceId.uuidString,
+                        "duration": duration
+                    ])
                 }
             }
         }
@@ -414,57 +508,146 @@ class SmartHomeManager: ObservableObject {
         }
     }
     
+    /// Enable motion detection with enhanced feedback and logging
     func enableMotionDetection(for deviceId: UUID, completion: @escaping (Bool) -> Void) {
-        RingAPIManager.shared.enableMotionDetection(for: deviceId) { result in
+        let startTime = Date()
+        
+        RingAPIManager.shared.enableMotionDetection(for: deviceId) { [weak self] result in
             DispatchQueue.main.async {
-                switch result {
-                case .success:
-                    completion(true)
-                case .failure(let error):
-                    print("Failed to enable motion detection: \(error.localizedDescription)")
-                    completion(false)
+                let duration = Date().timeIntervalSince(startTime)
+                let success = result.isSuccess
+                
+                completion(success)
+                
+                // Enhanced haptic feedback
+                HapticFeedback.deviceOperation(success: success)
+                
+                // Log operation result
+                Logger.shared.logDeviceOperation(
+                    deviceId.uuidString,
+                    operation: "enableMotionDetection",
+                    success: success,
+                    error: result.error
+                )
+                
+                if case .failure(let error) = result {
+                    self?.trackError(error, context: "enableMotionDetection", additionalInfo: [
+                        "deviceId": deviceId.uuidString,
+                        "duration": duration
+                    ])
                 }
             }
         }
     }
     
+    /// Disable motion detection with enhanced feedback and logging
     func disableMotionDetection(for deviceId: UUID, completion: @escaping (Bool) -> Void) {
-        RingAPIManager.shared.disableMotionDetection(for: deviceId) { result in
+        let startTime = Date()
+        
+        RingAPIManager.shared.disableMotionDetection(for: deviceId) { [weak self] result in
             DispatchQueue.main.async {
-                switch result {
-                case .success:
-                    completion(true)
-                case .failure(let error):
-                    print("Failed to disable motion detection: \(error.localizedDescription)")
-                    completion(false)
+                let duration = Date().timeIntervalSince(startTime)
+                let success = result.isSuccess
+                
+                completion(success)
+                
+                // Enhanced haptic feedback
+                HapticFeedback.deviceOperation(success: success)
+                
+                // Log operation result
+                Logger.shared.logDeviceOperation(
+                    deviceId.uuidString,
+                    operation: "disableMotionDetection",
+                    success: success,
+                    error: result.error
+                )
+                
+                if case .failure(let error) = result {
+                    self?.trackError(error, context: "disableMotionDetection", additionalInfo: [
+                        "deviceId": deviceId.uuidString,
+                        "duration": duration
+                    ])
                 }
             }
         }
     }
     
-    func activateSiren(for deviceId: UUID, duration: TimeInterval = 30, completion: @escaping (Bool) -> Void) {
-        RingAPIManager.shared.setSirenState(for: deviceId, enabled: true, duration: duration) { result in
+    /// Activate siren with safety checks and enhanced feedback
+    func activateSiren(for deviceId: UUID, duration: TimeInterval = AppConstants.Device.defaultSirenDuration, completion: @escaping (Bool) -> Void) {
+        // Safety check for maximum duration
+        let safeDuration = min(duration, AppConstants.Device.maxSirenDuration)
+        let startTime = Date()
+        
+        // Log critical security action
+        logWarning("Activating siren for device \(deviceId) for \(safeDuration)s", category: .device)
+        
+        RingAPIManager.shared.setSirenState(for: deviceId, enabled: true, duration: safeDuration) { [weak self] result in
             DispatchQueue.main.async {
-                switch result {
-                case .success:
-                    completion(true)
-                case .failure(let error):
-                    print("Failed to activate siren: \(error.localizedDescription)")
-                    completion(false)
+                let operationDuration = Date().timeIntervalSince(startTime)
+                let success = result.isSuccess
+                
+                completion(success)
+                
+                // Critical alert haptic feedback
+                if success {
+                    HapticFeedback.criticalAlert()
+                } else {
+                    HapticFeedback.error()
+                }
+                
+                // Log operation result
+                Logger.shared.logDeviceOperation(
+                    deviceId.uuidString,
+                    operation: "activateSiren",
+                    success: success,
+                    error: result.error
+                )
+                
+                if case .failure(let error) = result {
+                    self?.trackError(error, context: "activateSiren", additionalInfo: [
+                        "deviceId": deviceId.uuidString,
+                        "duration": operationDuration,
+                        "requestedDuration": safeDuration
+                    ])
+                } else {
+                    // Track successful critical action
+                    self?.trackUserAction("siren_activated", context: "security")
                 }
             }
         }
     }
     
+    /// Deactivate siren with enhanced feedback
     func deactivateSiren(for deviceId: UUID, completion: @escaping (Bool) -> Void) {
-        RingAPIManager.shared.setSirenState(for: deviceId, enabled: false) { result in
+        let startTime = Date()
+        
+        logInfo("Deactivating siren for device \(deviceId)", category: .device)
+        
+        RingAPIManager.shared.setSirenState(for: deviceId, enabled: false) { [weak self] result in
             DispatchQueue.main.async {
-                switch result {
-                case .success:
-                    completion(true)
-                case .failure(let error):
-                    print("Failed to deactivate siren: \(error.localizedDescription)")
-                    completion(false)
+                let duration = Date().timeIntervalSince(startTime)
+                let success = result.isSuccess
+                
+                completion(success)
+                
+                // Feedback for siren deactivation
+                HapticFeedback.deviceOperation(success: success)
+                
+                // Log operation result
+                Logger.shared.logDeviceOperation(
+                    deviceId.uuidString,
+                    operation: "deactivateSiren",
+                    success: success,
+                    error: result.error
+                )
+                
+                if case .failure(let error) = result {
+                    self?.trackError(error, context: "deactivateSiren", additionalInfo: [
+                        "deviceId": deviceId.uuidString,
+                        "duration": duration
+                    ])
+                } else {
+                    self?.trackUserAction("siren_deactivated", context: "security")
                 }
             }
         }
