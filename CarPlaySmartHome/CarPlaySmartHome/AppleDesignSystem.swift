@@ -148,6 +148,435 @@ struct AppleDesignSystem {
         static let carPlayStandard = Animation.easeInOut(duration: 0.25)
         static let carPlaySlow = Animation.easeInOut(duration: 0.4)
     }
+    
+    // MARK: - Liquid Glass Material System
+    
+    struct LiquidGlassMaterial {
+        static func primaryGlass(
+            cornerRadius: CGFloat = 16,
+            elevation: ElevationLevel = .medium
+        ) -> some View {
+            RoundedRectangle(cornerRadius: cornerRadius)
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: cornerRadius)
+                        .stroke(
+                            LinearGradient(
+                                colors: [
+                                    Color.white.opacity(0.3),
+                                    Color.white.opacity(0.1),
+                                    Color.clear
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1
+                        )
+                )
+                .shadow(
+                    color: Color.black.opacity(elevation.shadowOpacity),
+                    radius: elevation.shadowRadius,
+                    x: 0,
+                    y: elevation.shadowOffset
+                )
+        }
+        
+        static func secondaryGlass(
+            cornerRadius: CGFloat = 12,
+            elevation: ElevationLevel = .low
+        ) -> some View {
+            RoundedRectangle(cornerRadius: cornerRadius)
+                .fill(.thinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: cornerRadius)
+                        .stroke(
+                            LinearGradient(
+                                colors: [
+                                    Color.white.opacity(0.2),
+                                    Color.clear
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 0.5
+                        )
+                )
+                .shadow(
+                    color: Color.black.opacity(elevation.shadowOpacity * 0.7),
+                    radius: elevation.shadowRadius * 0.8,
+                    x: 0,
+                    y: elevation.shadowOffset * 0.8
+                )
+        }
+        
+        static func accentGlass(
+            color: Color,
+            cornerRadius: CGFloat = 16,
+            elevation: ElevationLevel = .medium
+        ) -> some View {
+            RoundedRectangle(cornerRadius: cornerRadius)
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: cornerRadius)
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    color.opacity(0.3),
+                                    color.opacity(0.1),
+                                    color.opacity(0.05)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: cornerRadius)
+                        .stroke(
+                            LinearGradient(
+                                colors: [
+                                    color.opacity(0.4),
+                                    color.opacity(0.2),
+                                    Color.clear
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1.5
+                        )
+                )
+                .shadow(
+                    color: color.opacity(elevation.shadowOpacity * 0.3),
+                    radius: elevation.shadowRadius,
+                    x: 0,
+                    y: elevation.shadowOffset
+                )
+        }
+        
+        static func animatedGlass(
+            color: Color,
+            cornerRadius: CGFloat = 16,
+            elevation: ElevationLevel = .medium,
+            isAnimating: Bool = false
+        ) -> some View {
+            RoundedRectangle(cornerRadius: cornerRadius)
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: cornerRadius)
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    color.opacity(isAnimating ? 0.4 : 0.2),
+                                    color.opacity(isAnimating ? 0.2 : 0.1),
+                                    color.opacity(isAnimating ? 0.1 : 0.05)
+                                ],
+                                startPoint: isAnimating ? .bottomTrailing : .topLeading,
+                                endPoint: isAnimating ? .topLeading : .bottomTrailing
+                            )
+                        )
+                        .animation(
+                            .easeInOut(duration: 2.0).repeatForever(autoreverses: true),
+                            value: isAnimating
+                        )
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: cornerRadius)
+                        .stroke(
+                            LinearGradient(
+                                colors: [
+                                    color.opacity(isAnimating ? 0.6 : 0.3),
+                                    color.opacity(isAnimating ? 0.3 : 0.15),
+                                    Color.clear
+                                ],
+                                startPoint: isAnimating ? .bottomTrailing : .topLeading,
+                                endPoint: isAnimating ? .topLeading : .bottomTrailing
+                            ),
+                            lineWidth: isAnimating ? 2 : 1
+                        )
+                        .animation(
+                            .easeInOut(duration: 2.0).repeatForever(autoreverses: true),
+                            value: isAnimating
+                        )
+                )
+                .shadow(
+                    color: color.opacity(elevation.shadowOpacity * (isAnimating ? 0.5 : 0.3)),
+                    radius: elevation.shadowRadius * (isAnimating ? 1.2 : 1.0),
+                    x: 0,
+                    y: elevation.shadowOffset
+                )
+                .animation(
+                    .easeInOut(duration: 2.0).repeatForever(autoreverses: true),
+                    value: isAnimating
+                )
+        }
+    }
+    
+    // MARK: - Glass Card System
+    
+    struct GlassCard {
+        static func primary(
+            cornerRadius: CGFloat = 16,
+            elevation: ElevationLevel = .medium
+        ) -> some View {
+            LiquidGlassMaterial.primaryGlass(
+                cornerRadius: cornerRadius,
+                elevation: elevation
+            )
+        }
+        
+        static func secondary(
+            cornerRadius: CGFloat = 12,
+            elevation: ElevationLevel = .low
+        ) -> some View {
+            LiquidGlassMaterial.secondaryGlass(
+                cornerRadius: cornerRadius,
+                elevation: elevation
+            )
+        }
+        
+        static func accent(
+            color: Color,
+            cornerRadius: CGFloat = 16,
+            elevation: ElevationLevel = .medium
+        ) -> some View {
+            LiquidGlassMaterial.accentGlass(
+                color: color,
+                cornerRadius: cornerRadius,
+                elevation: elevation
+            )
+        }
+        
+        static func animated(
+            color: Color,
+            cornerRadius: CGFloat = 16,
+            elevation: ElevationLevel = .medium,
+            isAnimating: Bool = false
+        ) -> some View {
+            LiquidGlassMaterial.animatedGlass(
+                color: color,
+                cornerRadius: cornerRadius,
+                elevation: elevation,
+                isAnimating: isAnimating
+            )
+        }
+    }
+    
+    // MARK: - Glass Overlay System
+    
+    struct GlassOverlay {
+        static func primary(
+            cornerRadius: CGFloat = 16
+        ) -> some View {
+            RoundedRectangle(cornerRadius: cornerRadius)
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: cornerRadius)
+                        .stroke(
+                            Color.white.opacity(0.2),
+                            lineWidth: 1
+                        )
+                )
+        }
+        
+        static func secondary(
+            cornerRadius: CGFloat = 12
+        ) -> some View {
+            RoundedRectangle(cornerRadius: cornerRadius)
+                .fill(.thinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: cornerRadius)
+                        .stroke(
+                            Color.white.opacity(0.15),
+                            lineWidth: 0.5
+                        )
+                )
+        }
+        
+        static func accent(
+            color: Color,
+            cornerRadius: CGFloat = 16
+        ) -> some View {
+            RoundedRectangle(cornerRadius: cornerRadius)
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: cornerRadius)
+                        .fill(
+                            color.opacity(0.1)
+                        )
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: cornerRadius)
+                        .stroke(
+                            color.opacity(0.3),
+                            lineWidth: 1
+                        )
+                )
+        }
+    }
+    
+    // MARK: - Glass Background System
+    
+    struct GlassBackground {
+        static func primary() -> some View {
+            ZStack {
+                Colors.adaptiveBackground(for: .light)
+                    .ignoresSafeArea()
+                
+                LinearGradient(
+                    colors: [
+                        Color.white.opacity(0.1),
+                        Color.clear,
+                        Color.white.opacity(0.05)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
+            }
+        }
+        
+        static func accent(color: Color) -> some View {
+            ZStack {
+                Colors.adaptiveBackground(for: .light)
+                    .ignoresSafeArea()
+                
+                LinearGradient(
+                    colors: [
+                        color.opacity(0.1),
+                        Color.clear,
+                        color.opacity(0.05)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                .ignoresSafeArea()
+            }
+        }
+        
+        static func animated(color: Color, isAnimating: Bool = false) -> some View {
+            ZStack {
+                Colors.adaptiveBackground(for: .light)
+                    .ignoresSafeArea()
+                
+                LinearGradient(
+                    colors: [
+                        color.opacity(isAnimating ? 0.15 : 0.1),
+                        Color.clear,
+                        color.opacity(isAnimating ? 0.08 : 0.05)
+                    ],
+                    startPoint: isAnimating ? .bottomTrailing : .topLeading,
+                    endPoint: isAnimating ? .topLeading : .bottomTrailing
+                )
+                .ignoresSafeArea()
+                .animation(
+                    .easeInOut(duration: 3.0).repeatForever(autoreverses: true),
+                    value: isAnimating
+                )
+            }
+        }
+    }
+    
+    // MARK: - Typography System
+    
+    struct Typography {
+        // CarPlay-Optimized Typography
+        static let largeTitle = Font.system(size: 34, weight: .bold, design: .rounded)
+        static let title1 = Font.system(size: 28, weight: .bold, design: .rounded)
+        static let title2 = Font.system(size: 22, weight: .bold, design: .rounded)
+        static let title3 = Font.system(size: 20, weight: .semibold, design: .rounded)
+        static let headline = Font.system(size: 17, weight: .semibold, design: .rounded)
+        static let body = Font.system(size: 17, weight: .regular, design: .default)
+        static let callout = Font.system(size: 16, weight: .regular, design: .default)
+        static let subheadline = Font.system(size: 15, weight: .regular, design: .default)
+        static let footnote = Font.system(size: 13, weight: .regular, design: .default)
+        static let caption1 = Font.system(size: 12, weight: .regular, design: .default)
+        static let caption2 = Font.system(size: 11, weight: .regular, design: .default)
+        
+        // CarPlay-Specific Sizes
+        static let carPlayLarge = Font.system(size: 32, weight: .bold, design: .rounded)
+        static let carPlayMedium = Font.system(size: 20, weight: .semibold, design: .rounded)
+        static let carPlaySmall = Font.system(size: 16, weight: .medium, design: .default)
+    }
+    
+    // MARK: - Spacing System
+    
+    struct Spacing {
+        static let xxxs: CGFloat = 2
+        static let xxs: CGFloat = 4
+        static let xs: CGFloat = 8
+        static let sm: CGFloat = 12
+        static let md: CGFloat = 16
+        static let lg: CGFloat = 24
+        static let xl: CGFloat = 32
+        static let xxl: CGFloat = 48
+        static let xxxl: CGFloat = 64
+        
+        // CarPlay-Specific Spacing
+        static let carPlayTight: CGFloat = 8
+        static let carPlayStandard: CGFloat = 16
+        static let carPlayLoose: CGFloat = 24
+        static let carPlaySection: CGFloat = 32
+    }
+    
+    // MARK: - Elevation System
+    
+    enum ElevationLevel {
+        case surface
+        case low
+        case medium
+        case high
+        case overlay
+        
+        var shadowRadius: CGFloat {
+            switch self {
+            case .surface: return 0
+            case .low: return 4
+            case .medium: return 8
+            case .high: return 16
+            case .overlay: return 24
+            }
+        }
+        
+        var shadowOpacity: Double {
+            switch self {
+            case .surface: return 0
+            case .low: return 0.05
+            case .medium: return 0.1
+            case .high: return 0.2
+            case .overlay: return 0.3
+            }
+        }
+        
+        var shadowOffset: CGSize {
+            switch self {
+            case .surface: return .zero
+            case .low: return CGSize(width: 0, height: 2)
+            case .medium: return CGSize(width: 0, height: 4)
+            case .high: return CGSize(width: 0, height: 8)
+            case .overlay: return CGSize(width: 0, height: 12)
+            }
+        }
+    }
+    
+    // MARK: - Animation System
+    
+    struct Animations {
+        // Apple-like Animation Curves
+        static let spring = Animation.interpolatingSpring(stiffness: 300, damping: 30)
+        static let snappy = Animation.interpolatingSpring(stiffness: 400, damping: 25)
+        static let smooth = Animation.interpolatingSpring(stiffness: 250, damping: 35)
+        static let gentle = Animation.interpolatingSpring(stiffness: 200, damping: 40)
+        
+        // Timing-based Animations
+        static let quick = Animation.easeOut(duration: 0.2)
+        static let standard = Animation.easeInOut(duration: 0.3)
+        static let slow = Animation.easeInOut(duration: 0.5)
+        
+        // CarPlay-Optimized Animations
+        static let carPlayFast = Animation.easeOut(duration: 0.15)
+        static let carPlayStandard = Animation.easeInOut(duration: 0.25)
+        static let carPlaySlow = Animation.easeInOut(duration: 0.4)
+    }
 }
 
 // MARK: - Liquid Glass Material

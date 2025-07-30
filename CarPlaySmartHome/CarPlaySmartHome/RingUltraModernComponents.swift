@@ -137,31 +137,247 @@ struct UltraMeshGradientView: View {
 
 // MARK: - Ultra Floating Elements
 struct UltraFloatingElements: View {
-    @State private var animate = false
+    @State private var animateParticles = false
+    @State private var particleOpacity = 0.0
+    @State private var morphingShapes = false
     
     var body: some View {
         ZStack {
-            // Ultra geometric shapes
+            // Enhanced particle system
             ForEach(0..<12) { index in
-                UltraGeometricShape(
-                    type: index % 6,
-                    color: [.blue, .purple, .pink, .cyan, .orange, .green][index % 6],
-                    size: CGFloat.random(in: 30...80),
-                    delay: Double(index) * 0.2
+                UltraParticle(
+                    index: index,
+                    animate: animateParticles,
+                    morphing: morphingShapes
                 )
             }
             
-            // Ultra floating orbs
-            ForEach(0..<8) { index in
-                UltraFloatingOrb(
-                    color: [.blue, .purple, .pink, .cyan, .orange, .green, .yellow, .red][index],
-                    size: CGFloat.random(in: 15...40),
-                    delay: Double(index) * 0.15
+            // Morphing geometric shapes
+            ForEach(0..<6) { index in
+                MorphingShape(
+                    index: index,
+                    animate: morphingShapes
                 )
             }
+            
+            // Energy field effects
+            EnergyFieldEffect()
+        }
+        .opacity(particleOpacity)
+        .onAppear {
+            withAnimation(.easeInOut(duration: 2.0)) {
+                particleOpacity = 1.0
+            }
+            
+            withAnimation(.easeInOut(duration: 8.0).repeatForever(autoreverses: true)) {
+                animateParticles = true
+            }
+            
+            withAnimation(.easeInOut(duration: 15.0).repeatForever(autoreverses: true)) {
+                morphingShapes = true
+            }
+        }
+    }
+}
+
+// MARK: - Ultra Particle
+struct UltraParticle: View {
+    let index: Int
+    let animate: Bool
+    let morphing: Bool
+    
+    @State private var position = CGPoint.zero
+    @State private var scale: CGFloat = 1.0
+    @State private var rotation: Double = 0.0
+    @State private var opacity: Double = 0.7
+    
+    var body: some View {
+        Circle()
+            .fill(
+                LinearGradient(
+                    colors: [
+                        Color.blue.opacity(0.8),
+                        Color.purple.opacity(0.6),
+                        Color.cyan.opacity(0.4)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+            .frame(width: 8, height: 8)
+            .blur(radius: 1)
+            .scaleEffect(scale)
+            .rotationEffect(.degrees(rotation))
+            .opacity(opacity)
+            .position(
+                x: position.x,
+                y: position.y
+            )
+            .onAppear {
+                setupParticle()
+            }
+    }
+    
+    private func setupParticle() {
+        let screenWidth = UIScreen.main.bounds.width
+        let screenHeight = UIScreen.main.bounds.height
+        
+        // Random initial position
+        position = CGPoint(
+            x: CGFloat.random(in: 0...screenWidth),
+            y: CGFloat.random(in: 0...screenHeight)
+        )
+        
+        // Animated movement
+        withAnimation(.easeInOut(duration: Double.random(in: 8...15)).repeatForever(autoreverses: true)) {
+            position = CGPoint(
+                x: CGFloat.random(in: 0...screenWidth),
+                y: CGFloat.random(in: 0...screenHeight)
+            )
+        }
+        
+        // Scale animation
+        withAnimation(.easeInOut(duration: Double.random(in: 3...6)).repeatForever(autoreverses: true)) {
+            scale = CGFloat.random(in: 0.5...2.0)
+        }
+        
+        // Rotation animation
+        withAnimation(.linear(duration: Double.random(in: 10...20)).repeatForever(autoreverses: false)) {
+            rotation = 360
+        }
+        
+        // Opacity animation
+        withAnimation(.easeInOut(duration: Double.random(in: 4...8)).repeatForever(autoreverses: true)) {
+            opacity = Double.random(in: 0.3...1.0)
+        }
+    }
+}
+
+// MARK: - Morphing Shape
+struct MorphingShape: View {
+    let index: Int
+    let animate: Bool
+    
+    @State private var morphingPath = Path()
+    @State private var rotation: Double = 0.0
+    @State private var scale: CGFloat = 1.0
+    
+    var body: some View {
+        morphingPath
+            .fill(
+                LinearGradient(
+                    colors: [
+                        Color.purple.opacity(0.3),
+                        Color.blue.opacity(0.2),
+                        Color.cyan.opacity(0.1)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+            .scaleEffect(scale)
+            .rotationEffect(.degrees(rotation))
+            .blur(radius: 2)
+            .onAppear {
+                setupMorphingShape()
+            }
+    }
+    
+    private func setupMorphingShape() {
+        let size: CGFloat = CGFloat.random(in: 40...120)
+        let centerX = CGFloat.random(in: 50...UIScreen.main.bounds.width - 50)
+        let centerY = CGFloat.random(in: 50...UIScreen.main.bounds.height - 50)
+        
+        // Create morphing path
+        morphingPath = createMorphingPath(size: size, center: CGPoint(x: centerX, y: centerY))
+        
+        // Rotation animation
+        withAnimation(.linear(duration: Double.random(in: 15...25)).repeatForever(autoreverses: false)) {
+            rotation = 360
+        }
+        
+        // Scale animation
+        withAnimation(.easeInOut(duration: Double.random(in: 8...12)).repeatForever(autoreverses: true)) {
+            scale = CGFloat.random(in: 0.7...1.5)
+        }
+    }
+    
+    private func createMorphingPath(size: CGFloat, center: CGPoint) -> Path {
+        Path { path in
+            let sides = Int.random(in: 3...8)
+            let radius = size / 2
+            
+            for i in 0..<sides {
+                let angle = (2 * Double.pi * Double(i)) / Double(sides)
+                let x = center.x + radius * cos(angle)
+                let y = center.y + radius * sin(angle)
+                
+                if i == 0 {
+                    path.move(to: CGPoint(x: x, y: y))
+                } else {
+                    path.addLine(to: CGPoint(x: x, y: y))
+                }
+            }
+            path.closeSubpath()
+        }
+    }
+}
+
+// MARK: - Energy Field Effect
+struct EnergyFieldEffect: View {
+    @State private var pulseScale: CGFloat = 1.0
+    @State private var energyOpacity: Double = 0.3
+    @State private var fieldRotation: Double = 0.0
+    
+    var body: some View {
+        ZStack {
+            // Primary energy field
+            Circle()
+                .stroke(
+                    LinearGradient(
+                        colors: [
+                            Color.blue.opacity(0.6),
+                            Color.purple.opacity(0.4),
+                            Color.cyan.opacity(0.2)
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 2
+                )
+                .frame(width: 300, height: 300)
+                .scaleEffect(pulseScale)
+                .opacity(energyOpacity)
+                .rotationEffect(.degrees(fieldRotation))
+            
+            // Secondary energy field
+            Circle()
+                .stroke(
+                    LinearGradient(
+                        colors: [
+                            Color.purple.opacity(0.4),
+                            Color.cyan.opacity(0.3),
+                            Color.blue.opacity(0.2)
+                        ],
+                        startPoint: .bottomTrailing,
+                        endPoint: .topLeading
+                    ),
+                    lineWidth: 1.5
+                )
+                .frame(width: 200, height: 200)
+                .scaleEffect(pulseScale * 0.8)
+                .opacity(energyOpacity * 0.7)
+                .rotationEffect(.degrees(-fieldRotation))
         }
         .onAppear {
-            animate = true
+            withAnimation(.easeInOut(duration: 4.0).repeatForever(autoreverses: true)) {
+                pulseScale = 1.2
+                energyOpacity = 0.6
+            }
+            
+            withAnimation(.linear(duration: 20.0).repeatForever(autoreverses: false)) {
+                fieldRotation = 360
+            }
         }
     }
 }

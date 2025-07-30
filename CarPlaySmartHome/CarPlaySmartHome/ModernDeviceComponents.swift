@@ -64,19 +64,23 @@ struct ModernDeviceCard: View {
     
     private var deviceIconWithStatus: some View {
         ZStack {
-            // Status ring
+            // Enhanced status ring with multiple layers
             Circle()
-                .stroke(statusColor.opacity(0.3), lineWidth: 3)
+                .stroke(statusColor.opacity(0.2), lineWidth: 2)
                 .frame(width: 80, height: 80)
-                .scaleEffect(isGlowing ? 1.1 : 1.0)
-                .opacity(isGlowing ? 0.8 : 0.5)
+                .scaleEffect(isGlowing ? 1.15 : 1.0)
+                .opacity(isGlowing ? 0.6 : 0.3)
             
-            // Animated status ring
+            // Animated status ring with gradient
             Circle()
                 .trim(from: 0, to: statusProgress)
                 .stroke(
                     AngularGradient(
-                        colors: [statusColor, statusColor.opacity(0.3)],
+                        colors: [
+                            statusColor,
+                            statusColor.opacity(0.7),
+                            statusColor.opacity(0.3)
+                        ],
                         center: .center
                     ),
                     style: StrokeStyle(lineCap: .round, lineWidth: 4)
@@ -85,14 +89,28 @@ struct ModernDeviceCard: View {
                 .rotationEffect(.degrees(-90))
                 .animation(AppleDesignSystem.Animations.smooth, value: statusProgress)
             
-            // Device icon
+            // Pulsing ring for active devices
+            if device.isActive {
+                Circle()
+                    .stroke(statusColor.opacity(0.4), lineWidth: 1)
+                    .frame(width: 80, height: 80)
+                    .scaleEffect(isGlowing ? 1.3 : 1.0)
+                    .opacity(isGlowing ? 0.8 : 0.0)
+                    .animation(
+                        .easeInOut(duration: 2.0).repeatForever(autoreverses: true),
+                        value: isGlowing
+                    )
+            }
+            
+            // Device icon with enhanced styling
             ZStack {
                 Circle()
                     .fill(
                         LinearGradient(
                             colors: [
-                                statusColor.opacity(0.8),
-                                statusColor.opacity(0.4)
+                                statusColor.opacity(0.9),
+                                statusColor.opacity(0.6),
+                                statusColor.opacity(0.3)
                             ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
@@ -358,6 +376,9 @@ struct FloatingActionButton: View {
     
     @State private var isPressed = false
     @State private var isPulsing = false
+    @State private var isGlowing = false
+    @State private var rotationAngle: Double = 0
+    @State private var showShimmer = false
     
     init(
         icon: String,
@@ -373,48 +394,85 @@ struct FloatingActionButton: View {
     
     var body: some View {
         Button(action: {
-            action()
-            HapticFeedback.medium()
-            
-            withAnimation(AppleDesignSystem.Animations.snappy) {
-                isPulsing = true
-            }
-            
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                isPulsing = false
-            }
+            performAction()
         }) {
             HStack(spacing: AppleDesignSystem.Spacing.sm) {
+                // Enhanced icon with rotation
                 Image(systemName: icon)
                     .font(.system(size: 20, weight: .semibold))
                     .foregroundColor(.white)
+                    .rotationEffect(.degrees(rotationAngle))
+                    .animation(AppleDesignSystem.Animations.smooth, value: rotationAngle)
                 
                 Text(label)
                     .font(AppleDesignSystem.Typography.carPlayMedium)
                     .fontWeight(.semibold)
                     .foregroundColor(.white)
+                    .opacity(isPressed ? 0.9 : 1.0)
             }
             .padding(.horizontal, AppleDesignSystem.Spacing.lg)
             .padding(.vertical, AppleDesignSystem.Spacing.md)
             .background(
                 ZStack {
-                    // Background gradient
+                    // Enhanced background gradient
                     RoundedRectangle(cornerRadius: 25)
                         .fill(
                             LinearGradient(
-                                colors: [accentColor, accentColor.opacity(0.8)],
+                                colors: [
+                                    accentColor,
+                                    accentColor.opacity(0.9),
+                                    accentColor.opacity(0.7)
+                                ],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             )
                         )
                     
-                    // Pulse effect
+                    // Shimmer effect
+                    if showShimmer {
+                        RoundedRectangle(cornerRadius: 25)
+                            .fill(
+                                LinearGradient(
+                                    colors: [
+                                        Color.clear,
+                                        Color.white.opacity(0.3),
+                                        Color.clear
+                                    ],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .offset(x: -50)
+                            .animation(
+                                .linear(duration: 1.5).repeatForever(autoreverses: false),
+                                value: showShimmer
+                            )
+                    }
+                    
+                    // Enhanced pulse effect
                     if isPulsing {
                         RoundedRectangle(cornerRadius: 25)
                             .fill(accentColor)
-                            .blur(radius: 10)
-                            .opacity(0.6)
-                            .scaleEffect(1.2)
+                            .blur(radius: 15)
+                            .opacity(0.4)
+                            .scaleEffect(1.3)
+                            .animation(
+                                .easeInOut(duration: 0.6).repeatForever(autoreverses: true),
+                                value: isPulsing
+                            )
+                    }
+                    
+                    // Glowing border
+                    if isGlowing {
+                        RoundedRectangle(cornerRadius: 25)
+                            .stroke(accentColor.opacity(0.6), lineWidth: 2)
+                            .blur(radius: 3)
+                            .scaleEffect(1.05)
+                            .opacity(0.8)
+                            .animation(
+                                .easeInOut(duration: 2.0).repeatForever(autoreverses: true),
+                                value: isGlowing
+                            )
                     }
                 }
             )
@@ -423,30 +481,74 @@ struct FloatingActionButton: View {
                     .stroke(
                         LinearGradient(
                             colors: [
-                                Color.white.opacity(0.3),
+                                Color.white.opacity(0.4),
+                                Color.white.opacity(0.2),
                                 Color.clear
                             ],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         ),
-                        lineWidth: 1
+                        lineWidth: 1.5
                     )
             )
             .shadow(
-                color: accentColor.opacity(0.3),
-                radius: isPressed ? 8 : 15,
+                color: accentColor.opacity(isPressed ? 0.2 : 0.4),
+                radius: isPressed ? 10 : 18,
                 x: 0,
-                y: isPressed ? 4 : 8
+                y: isPressed ? 5 : 10
             )
-            .scaleEffect(isPressed ? 0.96 : 1.0)
-            .scaleEffect(isPulsing ? 1.05 : 1.0)
+            .scaleEffect(isPressed ? 0.94 : 1.0)
+            .scaleEffect(isPulsing ? 1.08 : 1.0)
         }
         .buttonStyle(PlainButtonStyle())
         .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity) { pressing in
             withAnimation(AppleDesignSystem.Animations.quick) {
                 isPressed = pressing
             }
-        } perform: {}
+        } perform: {
+            HapticFeedback.longPress()
+        }
+        .onAppear {
+            startAnimations()
+        }
+    }
+    
+    private func performAction() {
+        // Enhanced haptic feedback
+        HapticFeedback.impact(style: .medium)
+        
+        // Visual feedback
+        withAnimation(AppleDesignSystem.Animations.snappy) {
+            isPulsing = true
+            rotationAngle += 20
+        }
+        
+        // Perform the action
+        action()
+        
+        // Reset animations after a delay
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+            withAnimation(AppleDesignSystem.Animations.smooth) {
+                isPulsing = false
+                rotationAngle -= 20
+            }
+        }
+    }
+    
+    private func startAnimations() {
+        // Start shimmer effect
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            withAnimation(.linear(duration: 1.5).repeatForever(autoreverses: false)) {
+                showShimmer = true
+            }
+        }
+        
+        // Start glowing effect
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
+                isGlowing = true
+            }
+        }
     }
 }
 
@@ -455,26 +557,71 @@ struct FloatingActionButton: View {
 struct StatusDashboard: View {
     @ObservedObject var smartHomeManager: SmartHomeManager
     @State private var animateStats = false
+    @State private var refreshData = false
+    @State private var showDetailedMetrics = false
+    @State private var pulseAnimation = false
     
     var body: some View {
         VStack(spacing: AppleDesignSystem.Spacing.lg) {
-            // System Status
-            systemStatusCard
+            // Enhanced Header with Refresh
+            enhancedHeaderCard
             
-            // Quick Stats
-            quickStatsGrid
+            // System Status with Enhanced Indicators
+            enhancedSystemStatusCard
             
-            // Recent Activity
-            recentActivityCard
+            // Quick Stats with Animations
+            animatedQuickStatsGrid
+            
+            // Recent Activity with Enhanced Display
+            enhancedRecentActivityCard
+            
+            // Quick Actions
+            quickActionsSection
         }
         .onAppear {
-            withAnimation(AppleDesignSystem.Animations.smooth.delay(0.2)) {
-                animateStats = true
-            }
+            startEnhancedAnimations()
         }
     }
     
-    private var systemStatusCard: some View {
+    private var enhancedHeaderCard: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: AppleDesignSystem.Spacing.xs) {
+                Text("System Dashboard")
+                    .font(AppleDesignSystem.Typography.carPlayLarge)
+                    .fontWeight(.bold)
+                    .foregroundColor(.primary)
+                
+                Text("Last updated: \(smartHomeManager.lastUpdateTime)")
+                    .font(AppleDesignSystem.Typography.caption1)
+                    .foregroundColor(.secondary)
+            }
+            
+            Spacer()
+            
+            Button(action: {
+                refreshDashboard()
+            }) {
+                Image(systemName: "arrow.clockwise")
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundColor(AppleDesignSystem.Colors.accentBlue)
+                    .rotationEffect(.degrees(refreshData ? 360 : 0))
+                    .animation(
+                        .linear(duration: 1.0).repeatForever(autoreverses: false),
+                        value: refreshData
+                    )
+            }
+            .buttonStyle(PlainButtonStyle())
+            .hapticFeedback({
+                HapticFeedback.impact(style: .light)
+            })
+        }
+        .padding(AppleDesignSystem.Spacing.lg)
+        .liquidGlassCard(elevation: .medium, cornerRadius: 24)
+        .offset(y: animateStats ? 0 : 30)
+        .opacity(animateStats ? 1 : 0)
+    }
+    
+    private var enhancedSystemStatusCard: some View {
         VStack(spacing: AppleDesignSystem.Spacing.md) {
             HStack {
                 Text("System Status")
@@ -484,26 +631,29 @@ struct StatusDashboard: View {
                 
                 Spacer()
                 
-                systemStatusIndicator
+                enhancedSystemStatusIndicator
             }
             
             HStack(spacing: AppleDesignSystem.Spacing.lg) {
-                statusMetric(
+                enhancedStatusMetric(
                     title: "Online",
                     value: "\(onlineDeviceCount)",
-                    color: .green
+                    color: .green,
+                    delay: 0.1
                 )
                 
-                statusMetric(
+                enhancedStatusMetric(
                     title: "Offline",
                     value: "\(offlineDeviceCount)",
-                    color: .red
+                    color: .red,
+                    delay: 0.2
                 )
                 
-                statusMetric(
+                enhancedStatusMetric(
                     title: "Total",
                     value: "\(smartHomeManager.devices.count)",
-                    color: .blue
+                    color: .blue,
+                    delay: 0.3
                 )
             }
         }
@@ -701,6 +851,328 @@ struct StatusDashboard: View {
         case 0.8...1.0: return "Excellent"
         case 0.5..<0.8: return "Good"
         default: return "Needs Attention"
+        }
+    }
+    
+    // MARK: - Enhanced Helper Methods
+    
+    private func startEnhancedAnimations() {
+        withAnimation(AppleDesignSystem.Animations.smooth.delay(0.2)) {
+            animateStats = true
+        }
+        
+        // Start pulse animation
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
+                pulseAnimation = true
+            }
+        }
+    }
+    
+    private func refreshDashboard() {
+        withAnimation(AppleDesignSystem.Animations.smooth) {
+            refreshData = true
+        }
+        
+        // Simulate refresh
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            withAnimation(AppleDesignSystem.Animations.smooth) {
+                refreshData = false
+            }
+        }
+        
+        HapticFeedback.impact(style: .light)
+    }
+    
+    private var enhancedSystemStatusIndicator: some View {
+        HStack(spacing: 8) {
+            Circle()
+                .fill(systemHealthColor)
+                .frame(width: 12, height: 12)
+                .scaleEffect(pulseAnimation ? 1.3 : 1.0)
+                .animation(
+                    Animation.easeInOut(duration: 1.5).repeatForever(autoreverses: true),
+                    value: pulseAnimation
+                )
+            
+            Text(systemHealthText)
+                .font(AppleDesignSystem.Typography.carPlaySmall)
+                .fontWeight(.semibold)
+                .foregroundColor(systemHealthColor)
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(
+            Capsule()
+                .fill(systemHealthColor.opacity(0.1))
+        )
+    }
+    
+    private func enhancedStatusMetric(title: String, value: String, color: Color, delay: Double) -> some View {
+        VStack(spacing: AppleDesignSystem.Spacing.xs) {
+            Text(value)
+                .font(AppleDesignSystem.Typography.carPlayLarge)
+                .fontWeight(.bold)
+                .foregroundColor(color)
+                .scaleEffect(animateStats ? 1.0 : 0.8)
+                .opacity(animateStats ? 1.0 : 0.0)
+                .animation(
+                    AppleDesignSystem.Animations.smooth.delay(delay),
+                    value: animateStats
+                )
+            
+            Text(title)
+                .font(AppleDesignSystem.Typography.caption1)
+                .foregroundColor(.secondary)
+                .opacity(animateStats ? 1.0 : 0.0)
+                .animation(
+                    AppleDesignSystem.Animations.smooth.delay(delay + 0.1),
+                    value: animateStats
+                )
+        }
+        .frame(maxWidth: .infinity)
+    }
+    
+    private var animatedQuickStatsGrid: some View {
+        let stats = [
+            ("Cameras", cameraCount, "video.fill", AppleDesignSystem.Colors.accentBlue),
+            ("Doorbells", doorbellCount, "bell.fill", AppleDesignSystem.Colors.accentPurple),
+            ("Sensors", sensorCount, "sensor.tag.radiowaves.forward.fill", .green),
+            ("Lights", lightCount, "lightbulb.fill", .orange)
+        ]
+        
+        return LazyVGrid(
+            columns: Array(repeating: GridItem(.flexible()), count: 2),
+            spacing: AppleDesignSystem.Spacing.md
+        ) {
+            ForEach(Array(stats.enumerated()), id: \.offset) { index, stat in
+                enhancedQuickStatCard(
+                    title: stat.0,
+                    count: stat.1,
+                    icon: stat.2,
+                    color: stat.3,
+                    delay: Double(index) * 0.1
+                )
+            }
+        }
+        .offset(y: animateStats ? 0 : 20)
+        .opacity(animateStats ? 1 : 0)
+        .animation(
+            AppleDesignSystem.Animations.smooth.delay(0.4),
+            value: animateStats
+        )
+    }
+    
+    private func enhancedQuickStatCard(title: String, count: Int, icon: String, color: Color, delay: Double) -> some View {
+        VStack(spacing: AppleDesignSystem.Spacing.sm) {
+            Image(systemName: icon)
+                .font(.system(size: 24, weight: .medium))
+                .foregroundColor(color)
+                .scaleEffect(animateStats ? 1.0 : 0.5)
+                .opacity(animateStats ? 1.0 : 0.0)
+                .animation(
+                    AppleDesignSystem.Animations.smooth.delay(delay),
+                    value: animateStats
+                )
+            
+            Text("\(count)")
+                .font(AppleDesignSystem.Typography.title2)
+                .fontWeight(.bold)
+                .foregroundColor(.primary)
+                .scaleEffect(animateStats ? 1.0 : 0.8)
+                .opacity(animateStats ? 1.0 : 0.0)
+                .animation(
+                    AppleDesignSystem.Animations.smooth.delay(delay + 0.1),
+                    value: animateStats
+                )
+            
+            Text(title)
+                .font(AppleDesignSystem.Typography.caption1)
+                .foregroundColor(.secondary)
+                .opacity(animateStats ? 1.0 : 0.0)
+                .animation(
+                    AppleDesignSystem.Animations.smooth.delay(delay + 0.2),
+                    value: animateStats
+                )
+        }
+        .frame(maxWidth: .infinity)
+        .padding(AppleDesignSystem.Spacing.md)
+        .liquidGlassCard(elevation: .low, cornerRadius: 16)
+    }
+    
+    private var enhancedRecentActivityCard: some View {
+        VStack(alignment: .leading, spacing: AppleDesignSystem.Spacing.md) {
+            HStack {
+                Text("Recent Activity")
+                    .font(AppleDesignSystem.Typography.title3)
+                    .fontWeight(.semibold)
+                
+                Spacer()
+                
+                Button("View All") {
+                    // Navigate to activity view
+                }
+                .font(AppleDesignSystem.Typography.caption1)
+                .foregroundColor(AppleDesignSystem.Colors.accentBlue)
+            }
+            
+            if smartHomeManager.recentActivity.isEmpty {
+                emptyActivityView
+            } else {
+                activityListView
+            }
+        }
+        .padding(AppleDesignSystem.Spacing.lg)
+        .liquidGlassCard(elevation: .medium, cornerRadius: 24)
+        .offset(y: animateStats ? 0 : 20)
+        .opacity(animateStats ? 1 : 0)
+        .animation(
+            AppleDesignSystem.Animations.smooth.delay(0.6),
+            value: animateStats
+        )
+    }
+    
+    private var emptyActivityView: some View {
+        VStack(spacing: AppleDesignSystem.Spacing.md) {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 32))
+                .foregroundColor(.green)
+                .opacity(0.6)
+            
+            Text("No Recent Activity")
+                .font(AppleDesignSystem.Typography.body)
+                .foregroundColor(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(AppleDesignSystem.Spacing.xl)
+    }
+    
+    private var activityListView: some View {
+        VStack(spacing: AppleDesignSystem.Spacing.sm) {
+            ForEach(smartHomeManager.recentActivity.prefix(3), id: \.id) { activity in
+                activityRow(activity)
+            }
+        }
+    }
+    
+    private func activityRow(_ activity: RingActivity) -> some View {
+        HStack(spacing: AppleDesignSystem.Spacing.sm) {
+            Circle()
+                .fill(activity.color)
+                .frame(width: 8, height: 8)
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text(activity.title)
+                    .font(AppleDesignSystem.Typography.caption1)
+                    .foregroundColor(.primary)
+                
+                Text(activity.timestamp)
+                    .font(AppleDesignSystem.Typography.caption2)
+                    .foregroundColor(.secondary)
+            }
+            
+            Spacer()
+            
+            Image(systemName: activity.icon)
+                .font(.system(size: 12))
+                .foregroundColor(activity.color)
+        }
+        .padding(.vertical, 4)
+    }
+    
+    private var quickActionsSection: some View {
+        VStack(alignment: .leading, spacing: AppleDesignSystem.Spacing.md) {
+            Text("Quick Actions")
+                .font(AppleDesignSystem.Typography.title3)
+                .fontWeight(.semibold)
+            
+            HStack(spacing: AppleDesignSystem.Spacing.md) {
+                QuickActionButton(
+                    title: "Refresh All",
+                    icon: "arrow.clockwise",
+                    action: { refreshAllDevices() }
+                )
+                
+                QuickActionButton(
+                    title: "System Check",
+                    icon: "checkmark.shield",
+                    action: { performSystemCheck() }
+                )
+                
+                QuickActionButton(
+                    title: "Emergency",
+                    icon: "exclamationmark.triangle",
+                    action: { triggerEmergency() }
+                )
+            }
+        }
+        .offset(y: animateStats ? 0 : 20)
+        .opacity(animateStats ? 1 : 0)
+        .animation(
+            AppleDesignSystem.Animations.smooth.delay(0.8),
+            value: animateStats
+        )
+    }
+    
+    private func refreshAllDevices() {
+        HapticFeedback.impact(style: .medium)
+        // Implementation for refreshing all devices
+    }
+    
+    private func performSystemCheck() {
+        HapticFeedback.impact(style: .medium)
+        // Implementation for system check
+    }
+    
+    private func triggerEmergency() {
+        HapticFeedback.emergency()
+        // Implementation for emergency trigger
+    }
+    
+    // MARK: - Quick Action Button Component
+    
+    struct QuickActionButton: View {
+        let title: String
+        let icon: String
+        let action: () -> Void
+        
+        @State private var isPressed = false
+        
+        var body: some View {
+            Button(action: {
+                action()
+            }) {
+                VStack(spacing: AppleDesignSystem.Spacing.xs) {
+                    Image(systemName: icon)
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(AppleDesignSystem.Colors.accentBlue)
+                    
+                    Text(title)
+                        .font(AppleDesignSystem.Typography.caption2)
+                        .foregroundColor(AppleDesignSystem.Colors.accentBlue)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(AppleDesignSystem.Spacing.sm)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(AppleDesignSystem.Colors.accentBlue.opacity(0.1))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(AppleDesignSystem.Colors.accentBlue.opacity(0.3), lineWidth: 1)
+                        )
+                )
+                .scaleEffect(isPressed ? 0.95 : 1.0)
+                .animation(AppleDesignSystem.Animations.quick, value: isPressed)
+            }
+            .buttonStyle(PlainButtonStyle())
+            .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity) { pressing in
+                withAnimation(AppleDesignSystem.Animations.quick) {
+                    isPressed = pressing
+                }
+            } perform: {
+                HapticFeedback.longPress()
+            }
         }
     }
 }
