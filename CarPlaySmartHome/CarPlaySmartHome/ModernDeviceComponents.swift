@@ -514,23 +514,35 @@ struct FloatingActionButton: View {
     }
     
     private func performAction() {
-        // Enhanced haptic feedback
-        HapticFeedback.impact(style: .medium)
+        // Enhanced haptic feedback with device-specific patterns
+        HapticFeedback.deviceFeedback(for: .system)
         
-        // Visual feedback
+        // Advanced visual feedback with multiple effects
         withAnimation(AppleDesignSystem.Animations.snappy) {
             isPulsing = true
-            rotationAngle += 20
+            rotationAngle += 25
         }
         
         // Perform the action
         action()
         
-        // Reset animations after a delay
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+        // Enhanced reset animations with staggered timing
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
             withAnimation(AppleDesignSystem.Animations.smooth) {
                 isPulsing = false
-                rotationAngle -= 20
+            }
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            withAnimation(AppleDesignSystem.Animations.gentle) {
+                rotationAngle -= 25
+            }
+        }
+        
+        // Restart shimmer effect after action
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+            withAnimation(AppleDesignSystem.Animations.shimmer) {
+                showShimmer = true
             }
         }
     }
@@ -857,14 +869,36 @@ struct StatusDashboard: View {
     // MARK: - Enhanced Helper Methods
     
     private func startEnhancedAnimations() {
+        // Staggered entrance animations with enhanced timing
         withAnimation(AppleDesignSystem.Animations.smooth.delay(0.2)) {
             animateStats = true
         }
         
-        // Start pulse animation
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            withAnimation(.easeInOut(duration: 2.0).repeatForever(autoreverses: true)) {
+        // Enhanced pulse animation with multiple layers
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+            withAnimation(AppleDesignSystem.Animations.pulse) {
                 pulseAnimation = true
+            }
+        }
+        
+        // Breathing effect for system health indicators
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+            withAnimation(AppleDesignSystem.Animations.breathing) {
+                // Breathing effect will be handled by the breathing modifier
+            }
+        }
+        
+        // Floating effect for quick action buttons
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            withAnimation(AppleDesignSystem.Animations.floating) {
+                // Floating effect will be handled by the floating modifier
+            }
+        }
+        
+        // Morphing effect for performance metrics
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            withAnimation(AppleDesignSystem.Animations.morphing) {
+                // Morphing effect will be handled by the morphing modifier
             }
         }
     }
@@ -965,16 +999,34 @@ struct StatusDashboard: View {
     
     private func enhancedQuickStatCard(title: String, count: Int, icon: String, color: Color, delay: Double) -> some View {
         VStack(spacing: AppleDesignSystem.Spacing.sm) {
-            Image(systemName: icon)
-                .font(.system(size: 24, weight: .medium))
-                .foregroundColor(color)
-                .scaleEffect(animateStats ? 1.0 : 0.5)
-                .opacity(animateStats ? 1.0 : 0.0)
-                .animation(
-                    AppleDesignSystem.Animations.smooth.delay(delay),
-                    value: animateStats
-                )
+            // Enhanced icon with multiple animation layers
+            ZStack {
+                // Background glow
+                Circle()
+                    .fill(color.opacity(0.1))
+                    .frame(width: 50, height: 50)
+                    .scaleEffect(animateStats ? 1.0 : 0.8)
+                    .opacity(animateStats ? 1.0 : 0.0)
+                    .animation(
+                        AppleDesignSystem.Animations.smooth.delay(delay),
+                        value: animateStats
+                    )
+                
+                // Icon with enhanced effects
+                Image(systemName: icon)
+                    .font(.system(size: 24, weight: .medium))
+                    .foregroundColor(color)
+                    .scaleEffect(animateStats ? 1.0 : 0.5)
+                    .opacity(animateStats ? 1.0 : 0.0)
+                    .rotationEffect(.degrees(animateStats ? 0 : -10))
+                    .animation(
+                        AppleDesignSystem.Animations.bouncy.delay(delay),
+                        value: animateStats
+                    )
+                    .breathing()
+            }
             
+            // Enhanced count with number animation
             Text("\(count)")
                 .font(AppleDesignSystem.Typography.title2)
                 .fontWeight(.bold)
@@ -982,14 +1034,17 @@ struct StatusDashboard: View {
                 .scaleEffect(animateStats ? 1.0 : 0.8)
                 .opacity(animateStats ? 1.0 : 0.0)
                 .animation(
-                    AppleDesignSystem.Animations.smooth.delay(delay + 0.1),
+                    AppleDesignSystem.Animations.elastic.delay(delay + 0.1),
                     value: animateStats
                 )
+                .pulse()
             
+            // Enhanced title with fade animation
             Text(title)
                 .font(AppleDesignSystem.Typography.caption1)
                 .foregroundColor(.secondary)
                 .opacity(animateStats ? 1.0 : 0.0)
+                .offset(y: animateStats ? 0 : 5)
                 .animation(
                     AppleDesignSystem.Animations.smooth.delay(delay + 0.2),
                     value: animateStats
@@ -998,6 +1053,12 @@ struct StatusDashboard: View {
         .frame(maxWidth: .infinity)
         .padding(AppleDesignSystem.Spacing.md)
         .liquidGlassCard(elevation: .low, cornerRadius: 16)
+        .scaleEffect(animateStats ? 1.0 : 0.9)
+        .animation(
+            AppleDesignSystem.Animations.smooth.delay(delay + 0.3),
+            value: animateStats
+        )
+        .morphing()
     }
     
     private var enhancedRecentActivityCard: some View {
@@ -1137,20 +1198,42 @@ struct StatusDashboard: View {
         let action: () -> Void
         
         @State private var isPressed = false
+        @State private var isAnimating = false
+        @State private var isGlowing = false
         
         var body: some View {
             Button(action: {
-                action()
+                performEnhancedAction()
             }) {
                 VStack(spacing: AppleDesignSystem.Spacing.xs) {
-                    Image(systemName: icon)
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundColor(AppleDesignSystem.Colors.accentBlue)
+                    // Enhanced icon with multiple effects
+                    ZStack {
+                        // Background glow
+                        Circle()
+                            .fill(AppleDesignSystem.Colors.accentBlue.opacity(0.1))
+                            .frame(width: 32, height: 32)
+                            .scaleEffect(isGlowing ? 1.2 : 1.0)
+                            .opacity(isGlowing ? 0.8 : 0.0)
+                            .animation(AppleDesignSystem.Animations.pulse, value: isGlowing)
+                        
+                        // Icon with enhanced styling
+                        Image(systemName: icon)
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundColor(AppleDesignSystem.Colors.accentBlue)
+                            .scaleEffect(isAnimating ? 1.1 : 1.0)
+                            .rotationEffect(.degrees(isAnimating ? 5 : 0))
+                            .animation(AppleDesignSystem.Animations.morphing, value: isAnimating)
+                    }
                     
+                    // Enhanced title with improved typography
                     Text(title)
                         .font(AppleDesignSystem.Typography.caption2)
                         .foregroundColor(AppleDesignSystem.Colors.accentBlue)
                         .multilineTextAlignment(.center)
+                        .lineLimit(2)
+                        .opacity(isPressed ? 0.8 : 1.0)
+                        .scaleEffect(isPressed ? 0.95 : 1.0)
+                        .animation(AppleDesignSystem.Animations.quick, value: isPressed)
                 }
                 .frame(maxWidth: .infinity)
                 .padding(AppleDesignSystem.Spacing.sm)
@@ -1160,6 +1243,432 @@ struct StatusDashboard: View {
                         .overlay(
                             RoundedRectangle(cornerRadius: 8)
                                 .stroke(AppleDesignSystem.Colors.accentBlue.opacity(0.3), lineWidth: 1)
+                        )
+                        .scaleEffect(isGlowing ? 1.05 : 1.0)
+                        .animation(AppleDesignSystem.Animations.breathing, value: isGlowing)
+                )
+                .scaleEffect(isPressed ? 0.92 : 1.0)
+                .animation(AppleDesignSystem.Animations.quick, value: isPressed)
+            }
+            .buttonStyle(PlainButtonStyle())
+            .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity) { pressing in
+                withAnimation(AppleDesignSystem.Animations.quick) {
+                    isPressed = pressing
+                }
+            } perform: {
+                HapticFeedback.longPress()
+            }
+            .onAppear {
+                startEnhancedAnimations()
+            }
+        }
+        
+        private func performEnhancedAction() {
+            // Enhanced haptic feedback
+            HapticFeedback.impact(style: .medium)
+            
+            // Visual feedback with multiple effects
+            withAnimation(AppleDesignSystem.Animations.snappy) {
+                isAnimating = true
+                isGlowing = true
+            }
+            
+            // Perform the action
+            action()
+            
+            // Reset animations with staggered timing
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                withAnimation(AppleDesignSystem.Animations.smooth) {
+                    isAnimating = false
+                }
+            }
+            
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                withAnimation(AppleDesignSystem.Animations.gentle) {
+                    isGlowing = false
+                }
+            }
+        }
+        
+        private func startEnhancedAnimations() {
+            // Start breathing animation
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                withAnimation(AppleDesignSystem.Animations.breathing) {
+                    isGlowing = true
+                }
+            }
+            
+            // Start morphing animation
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                withAnimation(AppleDesignSystem.Animations.morphing) {
+                    isAnimating = true
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Enhanced Device Card Animations
+
+struct EnhancedDeviceCard: View {
+    let device: RingDevice
+    @ObservedObject var smartHomeManager: SmartHomeManager
+    
+    @State private var isPressed = false
+    @State private var isGlowing = false
+    @State private var showActions = false
+    @Environment(\.colorScheme) var colorScheme
+    
+    var body: some View {
+        Button(action: {
+            withAnimation(AppleDesignSystem.Animations.snappy) {
+                showActions.toggle()
+            }
+            HapticFeedback.deviceActivation(for: device.type)
+        }) {
+            VStack(spacing: AppleDesignSystem.Spacing.md) {
+                // Enhanced Device Icon with Advanced Status Ring
+                enhancedDeviceIconWithStatus
+                
+                // Enhanced Device Information
+                enhancedDeviceInfo
+                
+                // Enhanced Quick Actions (expandable)
+                if showActions {
+                    enhancedQuickActions
+                        .transition(.asymmetric(
+                            insertion: .scale.combined(with: .opacity),
+                            removal: .scale.combined(with: .opacity)
+                        ))
+                }
+            }
+            .padding(AppleDesignSystem.Spacing.lg)
+            .frame(maxWidth: .infinity)
+            .liquidGlassCard(
+                elevation: isPressed ? .low : .medium,
+                cornerRadius: 24,
+                tint: statusColor.opacity(0.1)
+            )
+            .scaleEffect(isPressed ? 0.98 : 1.0)
+            .animation(AppleDesignSystem.Animations.snappy, value: isPressed)
+            .animation(AppleDesignSystem.Animations.smooth, value: showActions)
+            .staggeredEntrance(delay: Double(device.hashValue % 10) * 0.1)
+        }
+        .buttonStyle(PlainButtonStyle())
+        .onLongPressGesture(minimumDuration: 0, maximumDistance: .infinity) { pressing in
+            withAnimation(AppleDesignSystem.Animations.quick) {
+                isPressed = pressing
+            }
+        } perform: {
+            HapticFeedback.longPress()
+        }
+        .onAppear {
+            startEnhancedAnimations()
+        }
+    }
+    
+    // MARK: - Enhanced Device Icon with Advanced Status Ring
+    
+    private var enhancedDeviceIconWithStatus: some View {
+        ZStack {
+            // Multi-layer status ring system
+            ForEach(0..<3) { layer in
+                Circle()
+                    .stroke(
+                        statusColor.opacity(0.3 - Double(layer) * 0.1),
+                        lineWidth: 3 - CGFloat(layer)
+                    )
+                    .frame(width: 80 + CGFloat(layer * 10), height: 80 + CGFloat(layer * 10))
+                    .scaleEffect(isGlowing ? 1.1 + Double(layer) * 0.05 : 1.0)
+                    .opacity(isGlowing ? 0.8 - Double(layer) * 0.2 : 0.5 - Double(layer) * 0.1)
+                    .animation(
+                        AppleDesignSystem.Animations.smooth.delay(Double(layer) * 0.1),
+                        value: isGlowing
+                    )
+            }
+            
+            // Animated status ring with gradient
+            Circle()
+                .trim(from: 0, to: statusProgress)
+                .stroke(
+                    AngularGradient(
+                        colors: [
+                            statusColor,
+                            statusColor.opacity(0.7),
+                            statusColor.opacity(0.3),
+                            statusColor.opacity(0.1)
+                        ],
+                        center: .center
+                    ),
+                    style: StrokeStyle(lineCap: .round, lineWidth: 4)
+                )
+                .frame(width: 80, height: 80)
+                .rotationEffect(.degrees(-90))
+                .animation(AppleDesignSystem.Animations.smooth, value: statusProgress)
+            
+            // Pulsing ring for active devices
+            if device.isActive {
+                Circle()
+                    .stroke(statusColor.opacity(0.4), lineWidth: 1)
+                    .frame(width: 80, height: 80)
+                    .scaleEffect(isGlowing ? 1.3 : 1.0)
+                    .opacity(isGlowing ? 0.8 : 0.0)
+                    .animation(
+                        AppleDesignSystem.Animations.pulse,
+                        value: isGlowing
+                    )
+            }
+            
+            // Enhanced device icon with 3D effects
+            ZStack {
+                Circle()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                statusColor.opacity(0.9),
+                                statusColor.opacity(0.6),
+                                statusColor.opacity(0.3),
+                                statusColor.opacity(0.1)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                    .frame(width: 60, height: 60)
+                    .shadow(
+                        color: statusColor.opacity(0.3),
+                        radius: 8,
+                        x: 0,
+                        y: 4
+                    )
+                
+                Image(systemName: device.iconName)
+                    .font(.system(size: 24, weight: .medium))
+                    .foregroundColor(.white)
+                    .scaleEffect(isGlowing ? 1.1 : 1.0)
+                    .animation(AppleDesignSystem.Animations.smooth, value: isGlowing)
+            }
+            .scaleEffect(isPressed ? 0.95 : 1.0)
+            .animation(AppleDesignSystem.Animations.quick, value: isPressed)
+        }
+    }
+    
+    // MARK: - Enhanced Device Information
+    
+    private var enhancedDeviceInfo: some View {
+        VStack(spacing: AppleDesignSystem.Spacing.sm) {
+            // Device name with enhanced typography
+            Text(device.name)
+                .font(AppleDesignSystem.Typography.headline)
+                .fontWeight(.semibold)
+                .foregroundColor(.primary)
+                .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .scaleEffect(isPressed ? 0.98 : 1.0)
+                .animation(AppleDesignSystem.Animations.quick, value: isPressed)
+            
+            // Enhanced status indicators
+            enhancedStatusIndicators
+                .opacity(isPressed ? 0.8 : 1.0)
+                .animation(AppleDesignSystem.Animations.quick, value: isPressed)
+            
+            // Device location with icon
+            if !device.location.isEmpty {
+                HStack(spacing: AppleDesignSystem.Spacing.xs) {
+                    Image(systemName: "location.fill")
+                        .font(.system(size: 10))
+                        .foregroundColor(.secondary)
+                    
+                    Text(device.location)
+                        .font(AppleDesignSystem.Typography.caption1)
+                        .foregroundColor(.secondary)
+                        .lineLimit(1)
+                }
+                .opacity(isPressed ? 0.7 : 1.0)
+                .animation(AppleDesignSystem.Animations.quick, value: isPressed)
+            }
+        }
+    }
+    
+    // MARK: - Enhanced Status Indicators
+    
+    private var enhancedStatusIndicators: some View {
+        HStack(spacing: AppleDesignSystem.Spacing.xs) {
+            // Online status with pulse
+            Circle()
+                .fill(device.isOnline ? Colors.successGlass : Colors.errorGlass)
+                .frame(width: 8, height: 8)
+                .scaleEffect(isGlowing ? 1.2 : 1.0)
+                .animation(AppleDesignSystem.Animations.pulse, value: isGlowing)
+            
+            // Battery indicator with enhanced styling
+            if device.hasBattery {
+                enhancedBatteryIndicator
+            }
+            
+            // Signal strength with animated bars
+            if device.hasSignalStrength {
+                enhancedSignalStrengthIndicator
+            }
+            
+            // Motion detection with alert animation
+            if device.hasMotionDetection {
+                enhancedMotionDetectionIndicator
+            }
+        }
+    }
+    
+    // MARK: - Enhanced Battery Indicator
+    
+    private var enhancedBatteryIndicator: some View {
+        HStack(spacing: 2) {
+            Image(systemName: batteryIcon)
+                .font(.system(size: 10, weight: .medium))
+                .foregroundColor(batteryColor)
+                .scaleEffect(isGlowing ? 1.1 : 1.0)
+                .animation(AppleDesignSystem.Animations.smooth, value: isGlowing)
+            
+            if device.batteryLevel < 20 {
+                Text("\(Int(device.batteryLevel))%")
+                    .font(AppleDesignSystem.Typography.caption2)
+                    .foregroundColor(batteryColor)
+                    .scaleEffect(isGlowing ? 1.05 : 1.0)
+                    .animation(AppleDesignSystem.Animations.pulse, value: isGlowing)
+            }
+        }
+        .padding(.horizontal, 4)
+        .padding(.vertical, 2)
+        .background(
+            RoundedRectangle(cornerRadius: 4)
+                .fill(batteryColor.opacity(0.1))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 4)
+                        .stroke(batteryColor.opacity(0.3), lineWidth: 0.5)
+                )
+        )
+        .scaleEffect(isPressed ? 0.95 : 1.0)
+        .animation(AppleDesignSystem.Animations.quick, value: isPressed)
+    }
+    
+    // MARK: - Enhanced Signal Strength Indicator
+    
+    private var enhancedSignalStrengthIndicator: some View {
+        HStack(spacing: 1) {
+            ForEach(0..<4) { index in
+                Rectangle()
+                    .fill(signalColor)
+                    .frame(width: 2, height: CGFloat(index + 1) * 3)
+                    .opacity(index < device.signalStrength ? 1.0 : 0.3)
+                    .scaleEffect(isGlowing ? 1.05 : 1.0)
+                    .animation(
+                        AppleDesignSystem.Animations.smooth.delay(Double(index) * 0.05),
+                        value: isGlowing
+                    )
+            }
+        }
+        .scaleEffect(isPressed ? 0.95 : 1.0)
+        .animation(AppleDesignSystem.Animations.quick, value: isPressed)
+    }
+    
+    // MARK: - Enhanced Motion Detection Indicator
+    
+    private var enhancedMotionDetectionIndicator: some View {
+        Circle()
+            .fill(device.motionDetected ? Colors.warningGlass : Color.clear)
+            .frame(width: 6, height: 6)
+            .scaleEffect(device.motionDetected ? 1.5 : 1.0)
+            .opacity(device.motionDetected ? 1.0 : 0.0)
+            .animation(AppleDesignSystem.Animations.smooth, value: device.motionDetected)
+            .overlay(
+                Circle()
+                    .stroke(Colors.warningGlass.opacity(0.5), lineWidth: 1)
+                    .scaleEffect(device.motionDetected ? 2.0 : 1.0)
+                    .opacity(device.motionDetected ? 0.0 : 0.0)
+                    .animation(
+                        AppleDesignSystem.Animations.pulse,
+                        value: device.motionDetected
+                    )
+            )
+    }
+    
+    // MARK: - Enhanced Quick Actions
+    
+    private var enhancedQuickActions: some View {
+        VStack(spacing: AppleDesignSystem.Spacing.sm) {
+            // Action buttons with staggered entrance
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: AppleDesignSystem.Spacing.sm) {
+                ForEach(Array(device.availableActions.enumerated()), id: \.offset) { index, action in
+                    EnhancedActionButton(
+                        action: action,
+                        device: device,
+                        smartHomeManager: smartHomeManager,
+                        delay: Double(index) * 0.1
+                    )
+                }
+            }
+            
+            // Device-specific controls with enhanced styling
+            if device.hasAdvancedControls {
+                enhancedAdvancedControls
+            }
+        }
+        .padding(AppleDesignSystem.Spacing.md)
+        .background(
+            AppleDesignSystem.GlassCard.secondary(
+                cornerRadius: 12,
+                elevation: .low
+            )
+        )
+        .staggeredEntrance(delay: 0.2)
+    }
+    
+    // MARK: - Enhanced Action Button Component
+    
+    struct EnhancedActionButton: View {
+        let action: RingDevice.Action
+        let device: RingDevice
+        @ObservedObject var smartHomeManager: SmartHomeManager
+        let delay: Double
+        
+        @State private var isPressed = false
+        @State private var isLoading = false
+        @State private var isAnimating = false
+        
+        var body: some View {
+            Button(action: {
+                performEnhancedAction()
+            }) {
+                VStack(spacing: AppleDesignSystem.Spacing.xs) {
+                    if isLoading {
+                        ProgressView()
+                            .scaleEffect(0.8)
+                            .progressViewStyle(CircularProgressViewStyle(tint: action.color))
+                            .scaleEffect(isAnimating ? 1.1 : 1.0)
+                            .animation(AppleDesignSystem.Animations.pulse, value: isAnimating)
+                    } else {
+                        Image(systemName: action.icon)
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundColor(action.color)
+                            .scaleEffect(isAnimating ? 1.05 : 1.0)
+                            .rotationEffect(.degrees(isAnimating ? 5 : 0))
+                            .animation(AppleDesignSystem.Animations.morphing, value: isAnimating)
+                    }
+                    
+                    Text(action.title)
+                        .font(AppleDesignSystem.Typography.caption2)
+                        .foregroundColor(action.color)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(2)
+                        .opacity(isPressed ? 0.8 : 1.0)
+                        .animation(AppleDesignSystem.Animations.quick, value: isPressed)
+                }
+                .frame(width: 60, height: 50)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(action.color.opacity(0.1))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 8)
+                                .stroke(action.color.opacity(0.3), lineWidth: 1)
                         )
                 )
                 .scaleEffect(isPressed ? 0.95 : 1.0)
@@ -1172,6 +1681,63 @@ struct StatusDashboard: View {
                 }
             } perform: {
                 HapticFeedback.longPress()
+            }
+            .staggeredEntrance(delay: delay)
+            .onAppear {
+                DispatchQueue.main.asyncAfter(deadline: .now() + delay + 0.5) {
+                    isAnimating = true
+                }
+            }
+        }
+        
+        private func performEnhancedAction() {
+            isLoading = true
+            isAnimating = false
+            HapticFeedback.deviceActivation(for: device.type)
+            
+            Task {
+                do {
+                    try await smartHomeManager.performAction(action, on: device)
+                    await MainActor.run {
+                        isLoading = false
+                        HapticFeedback.success()
+                        
+                        // Restart animation after completion
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                            isAnimating = true
+                        }
+                    }
+                } catch {
+                    await MainActor.run {
+                        isLoading = false
+                        HapticFeedback.error()
+                        
+                        // Restart animation after error
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                            isAnimating = true
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    // MARK: - Enhanced Animation Methods
+    
+    private func startEnhancedAnimations() {
+        // Start glow animation with delay
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            withAnimation(AppleDesignSystem.Animations.smooth) {
+                isGlowing = true
+            }
+        }
+        
+        // Start breathing animation for active devices
+        if device.isActive {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                withAnimation(AppleDesignSystem.Animations.breathing) {
+                    // Breathing effect will be handled by the breathing modifier
+                }
             }
         }
     }

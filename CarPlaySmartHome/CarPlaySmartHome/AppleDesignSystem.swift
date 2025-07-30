@@ -129,24 +129,465 @@ struct AppleDesignSystem {
         }
     }
     
-    // MARK: - Animation System
+    // MARK: - Advanced Animation System
     
     struct Animations {
-        // Apple-like Animation Curves
-        static let spring = Animation.interpolatingSpring(stiffness: 300, damping: 30)
-        static let snappy = Animation.interpolatingSpring(stiffness: 400, damping: 25)
-        static let smooth = Animation.interpolatingSpring(stiffness: 250, damping: 35)
-        static let gentle = Animation.interpolatingSpring(stiffness: 200, damping: 40)
+        // Apple-like Animation Curves with Enhanced Physics
+        static let spring = Animation.interpolatingSpring(stiffness: 300, damping: 30, mass: 1.0)
+        static let snappy = Animation.interpolatingSpring(stiffness: 400, damping: 25, mass: 0.8)
+        static let smooth = Animation.interpolatingSpring(stiffness: 250, damping: 35, mass: 1.2)
+        static let gentle = Animation.interpolatingSpring(stiffness: 200, damping: 40, mass: 1.5)
+        static let bouncy = Animation.interpolatingSpring(stiffness: 500, damping: 20, mass: 0.6)
+        static let elastic = Animation.interpolatingSpring(stiffness: 600, damping: 15, mass: 0.4)
         
-        // Timing-based Animations
+        // Enhanced Timing-based Animations
         static let quick = Animation.easeOut(duration: 0.2)
         static let standard = Animation.easeInOut(duration: 0.3)
         static let slow = Animation.easeInOut(duration: 0.5)
+        static let verySlow = Animation.easeInOut(duration: 0.8)
         
         // CarPlay-Optimized Animations
         static let carPlayFast = Animation.easeOut(duration: 0.15)
         static let carPlayStandard = Animation.easeInOut(duration: 0.25)
         static let carPlaySlow = Animation.easeInOut(duration: 0.4)
+        
+        // Advanced Animation Curves
+        static let easeInBack = Animation.easeIn(duration: 0.3)
+        static let easeOutBack = Animation.easeOut(duration: 0.3)
+        static let easeInOutBack = Animation.easeInOut(duration: 0.4)
+        
+        // Staggered Animation Delays
+        static func staggered(delay: Double = 0.1) -> Animation {
+            .easeInOut(duration: 0.3).delay(delay)
+        }
+        
+        // Breathing Animation
+        static let breathing = Animation.easeInOut(duration: 2.0).repeatForever(autoreverses: true)
+        
+        // Pulse Animation
+        static let pulse = Animation.easeInOut(duration: 1.5).repeatForever(autoreverses: true)
+        
+        // Shimmer Animation
+        static let shimmer = Animation.linear(duration: 1.5).repeatForever(autoreverses: false)
+        
+        // Morphing Animation
+        static let morphing = Animation.easeInOut(duration: 3.0).repeatForever(autoreverses: true)
+        
+        // Floating Animation
+        static let floating = Animation.easeInOut(duration: 4.0).repeatForever(autoreverses: true)
+        
+        // Rotation Animation
+        static let rotation = Animation.linear(duration: 20.0).repeatForever(autoreverses: false)
+        
+        // Scale Animation
+        static let scale = Animation.interpolatingSpring(stiffness: 300, damping: 30).repeatForever(autoreverses: true)
+        
+        // Opacity Animation
+        static let fade = Animation.easeInOut(duration: 1.0).repeatForever(autoreverses: true)
+        
+        // Performance-Optimized Animations
+        static let optimized = Animation.easeInOut(duration: 0.25)
+        static let reducedMotion = Animation.easeInOut(duration: 0.1)
+        
+        // Accessibility-Aware Animations
+        static func accessibilityAware() -> Animation {
+            if UIAccessibility.isReduceMotionEnabled {
+                return reducedMotion
+            } else {
+                return optimized
+            }
+        }
+        
+        // Battery-Aware Animations
+        static func batteryAware() -> Animation {
+            // Reduce animation complexity when battery is low
+            return optimized
+        }
+    }
+    
+    // MARK: - Advanced Animation Modifiers
+    
+    struct AnimationModifiers {
+        // Staggered Entrance Animation
+        static func staggeredEntrance(delay: Double = 0.1) -> some ViewModifier {
+            StaggeredEntranceModifier(delay: delay)
+        }
+        
+        // Breathing Effect
+        static func breathing() -> some ViewModifier {
+            BreathingModifier()
+        }
+        
+        // Pulse Effect
+        static func pulse() -> some ViewModifier {
+            PulseModifier()
+        }
+        
+        // Shimmer Effect
+        static func shimmer() -> some ViewModifier {
+            ShimmerModifier()
+        }
+        
+        // Floating Effect
+        static func floating() -> some ViewModifier {
+            FloatingModifier()
+        }
+        
+        // Morphing Effect
+        static func morphing() -> some ViewModifier {
+            MorphingModifier()
+        }
+        
+        // Scale Effect
+        static func scale() -> some ViewModifier {
+            ScaleModifier()
+        }
+        
+        // Fade Effect
+        static func fade() -> some ViewModifier {
+            FadeModifier()
+        }
+    }
+    
+    // MARK: - Custom Animation Modifiers
+    
+    struct StaggeredEntranceModifier: ViewModifier {
+        let delay: Double
+        @State private var isVisible = false
+        
+        func body(content: Content) -> some View {
+            content
+                .opacity(isVisible ? 1.0 : 0.0)
+                .scaleEffect(isVisible ? 1.0 : 0.8)
+                .offset(y: isVisible ? 0 : 20)
+                .animation(Animations.smooth.delay(delay), value: isVisible)
+                .onAppear {
+                    isVisible = true
+                }
+        }
+    }
+    
+    struct BreathingModifier: ViewModifier {
+        @State private var isBreathing = false
+        
+        func body(content: Content) -> some View {
+            content
+                .scaleEffect(isBreathing ? 1.05 : 1.0)
+                .opacity(isBreathing ? 0.9 : 1.0)
+                .animation(Animations.breathing, value: isBreathing)
+                .onAppear {
+                    isBreathing = true
+                }
+        }
+    }
+    
+    struct PulseModifier: ViewModifier {
+        @State private var isPulsing = false
+        
+        func body(content: Content) -> some View {
+            content
+                .scaleEffect(isPulsing ? 1.1 : 1.0)
+                .animation(Animations.pulse, value: isPulsing)
+                .onAppear {
+                    isPulsing = true
+                }
+        }
+    }
+    
+    struct ShimmerModifier: ViewModifier {
+        @State private var shimmerOffset: CGFloat = -200
+        
+        func body(content: Content) -> some View {
+            content
+                .overlay(
+                    LinearGradient(
+                        colors: [
+                            Color.clear,
+                            Color.white.opacity(0.3),
+                            Color.clear
+                        ],
+                        startPoint: .leading,
+                        endPoint: .trailing
+                    )
+                    .offset(x: shimmerOffset)
+                    .animation(Animations.shimmer, value: shimmerOffset)
+                )
+                .onAppear {
+                    shimmerOffset = 200
+                }
+        }
+    }
+    
+    struct FloatingModifier: ViewModifier {
+        @State private var isFloating = false
+        
+        func body(content: Content) -> some View {
+            content
+                .offset(y: isFloating ? -5 : 5)
+                .animation(Animations.floating, value: isFloating)
+                .onAppear {
+                    isFloating = true
+                }
+        }
+    }
+    
+    struct MorphingModifier: ViewModifier {
+        @State private var isMorphing = false
+        
+        func body(content: Content) -> some View {
+            content
+                .scaleEffect(isMorphing ? 1.02 : 0.98)
+                .rotationEffect(.degrees(isMorphing ? 1 : -1))
+                .animation(Animations.morphing, value: isMorphing)
+                .onAppear {
+                    isMorphing = true
+                }
+        }
+    }
+    
+    struct ScaleModifier: ViewModifier {
+        @State private var isScaling = false
+        
+        func body(content: Content) -> some View {
+            content
+                .scaleEffect(isScaling ? 1.05 : 1.0)
+                .animation(Animations.scale, value: isScaling)
+                .onAppear {
+                    isScaling = true
+                }
+        }
+    }
+    
+    struct FadeModifier: ViewModifier {
+        @State private var isFading = false
+        
+        func body(content: Content) -> some View {
+            content
+                .opacity(isFading ? 0.7 : 1.0)
+                .animation(Animations.fade, value: isFading)
+                .onAppear {
+                    isFading = true
+                }
+        }
+    }
+    
+    // MARK: - Advanced Animation Performance Monitor
+    
+    struct AnimationPerformanceMonitor {
+        private static var frameCount = 0
+        private static var lastFrameTime: CFTimeInterval = 0
+        private static var frameRate: Double = 60.0
+        private static var isMonitoring = false
+        
+        // Performance thresholds
+        private static let targetFrameRate: Double = 60.0
+        private static let minimumFrameRate: Double = 30.0
+        private static let frameTimeThreshold: CFTimeInterval = 1.0 / 60.0
+        
+        // Animation complexity levels
+        enum ComplexityLevel {
+            case minimal
+            case reduced
+            case standard
+            case enhanced
+            case premium
+            
+            var animationDuration: Double {
+                switch self {
+                case .minimal: return 0.1
+                case .reduced: return 0.2
+                case .standard: return 0.3
+                case .enhanced: return 0.4
+                case .premium: return 0.5
+                }
+            }
+            
+            var shouldUseReducedMotion: Bool {
+                switch self {
+                case .minimal, .reduced: return true
+                default: return false
+                }
+            }
+        }
+        
+        static var currentComplexityLevel: ComplexityLevel {
+            if frameRate < minimumFrameRate {
+                return .minimal
+            } else if frameRate < targetFrameRate * 0.8 {
+                return .reduced
+            } else if UIAccessibility.isReduceMotionEnabled {
+                return .reduced
+            } else {
+                return .standard
+            }
+        }
+        
+        // Start performance monitoring
+        static func startMonitoring() {
+            guard !isMonitoring else { return }
+            isMonitoring = true
+            lastFrameTime = CACurrentMediaTime()
+            
+            // Monitor frame rate
+            Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
+                updateFrameRate()
+            }
+        }
+        
+        // Stop performance monitoring
+        static func stopMonitoring() {
+            isMonitoring = false
+        }
+        
+        // Update frame rate calculation
+        private static func updateFrameRate() {
+            let currentTime = CACurrentMediaTime()
+            let deltaTime = currentTime - lastFrameTime
+            
+            if deltaTime > 0 {
+                frameRate = 1.0 / deltaTime
+            }
+            
+            lastFrameTime = currentTime
+        }
+        
+        // Get optimized animation for current performance
+        static func optimizedAnimation() -> Animation {
+            switch currentComplexityLevel {
+            case .minimal:
+                return Animation.easeInOut(duration: 0.1)
+            case .reduced:
+                return Animation.easeInOut(duration: 0.2)
+            case .standard:
+                return Animation.easeInOut(duration: 0.3)
+            case .enhanced:
+                return Animation.interpolatingSpring(stiffness: 300, damping: 30)
+            case .premium:
+                return Animation.interpolatingSpring(stiffness: 400, damping: 25)
+            }
+        }
+        
+        // Get performance-aware animation modifier
+        static func performanceAware<T: View>(_ view: T) -> some View {
+            view.animation(optimizedAnimation(), value: UUID())
+        }
+        
+        // Check if animations should be disabled
+        static var shouldDisableAnimations: Bool {
+            return frameRate < minimumFrameRate || UIAccessibility.isReduceMotionEnabled
+        }
+        
+        // Get current performance status
+        static var performanceStatus: String {
+            if frameRate >= targetFrameRate {
+                return "Optimal"
+            } else if frameRate >= targetFrameRate * 0.8 {
+                return "Good"
+            } else if frameRate >= minimumFrameRate {
+                return "Reduced"
+            } else {
+                return "Minimal"
+            }
+        }
+        
+        // Get performance metrics
+        static var performanceMetrics: [String: Any] {
+            return [
+                "frameRate": frameRate,
+                "complexityLevel": String(describing: currentComplexityLevel),
+                "performanceStatus": performanceStatus,
+                "shouldDisableAnimations": shouldDisableAnimations,
+                "reduceMotionEnabled": UIAccessibility.isReduceMotionEnabled
+            ]
+        }
+    }
+    
+    // MARK: - Animation Extensions
+    
+    extension View {
+        // Staggered entrance animation
+        func staggeredEntrance(delay: Double = 0.1) -> some View {
+            modifier(StaggeredEntranceModifier(delay: delay))
+        }
+        
+        // Breathing effect
+        func breathing() -> some View {
+            modifier(BreathingModifier())
+        }
+        
+        // Pulse effect
+        func pulse() -> some View {
+            modifier(PulseModifier())
+        }
+        
+        // Shimmer effect
+        func shimmer() -> some View {
+            modifier(ShimmerModifier())
+        }
+        
+        // Floating effect
+        func floating() -> some View {
+            modifier(FloatingModifier())
+        }
+        
+        // Morphing effect
+        func morphing() -> some View {
+            modifier(MorphingModifier())
+        }
+        
+        // Scale effect
+        func scale() -> some View {
+            modifier(ScaleModifier())
+        }
+        
+        // Fade effect
+        func fade() -> some View {
+            modifier(FadeModifier())
+        }
+        
+        // Accessibility-aware animation
+        func accessibilityAware() -> some View {
+            animation(Animations.accessibilityAware(), value: UUID())
+        }
+        
+        // Battery-aware animation
+        func batteryAware() -> some View {
+            animation(Animations.batteryAware(), value: UUID())
+        }
+        
+        // Performance-aware animation
+        func performanceAware() -> some View {
+            AnimationPerformanceMonitor.performanceAware(self)
+        }
+        
+        // Apply conditional animation based on performance
+        func conditionalAnimation<T: Equatable>(_ value: T) -> some View {
+            if AnimationPerformanceMonitor.shouldDisableAnimations {
+                return self
+            } else {
+                return self.animation(AnimationPerformanceMonitor.optimizedAnimation(), value: value)
+            }
+        }
+        
+        // Apply battery-aware animation
+        func batteryAwareAnimation<T: Equatable>(_ value: T) -> some View {
+            // Check battery level and adjust animation complexity
+            let batteryLevel = UIDevice.current.batteryLevel
+            if batteryLevel < 0.2 {
+                return self.animation(Animation.easeInOut(duration: 0.1), value: value)
+            } else {
+                return self.conditionalAnimation(value)
+            }
+        }
+        
+        // Apply accessibility-aware animation
+        func accessibilityAwareAnimation<T: Equatable>(_ value: T) -> some View {
+            if UIAccessibility.isReduceMotionEnabled {
+                return self.animation(Animation.easeInOut(duration: 0.1), value: value)
+            } else {
+                return self.conditionalAnimation(value)
+            }
+        }
     }
     
     // MARK: - Liquid Glass Material System
