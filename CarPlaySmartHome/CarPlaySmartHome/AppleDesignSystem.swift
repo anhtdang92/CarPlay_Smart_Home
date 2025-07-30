@@ -280,6 +280,200 @@ struct AppleDesignSystem {
             damping: 12,
             initialVelocity: 0
         )
+        
+        // Advanced Morphing Animations
+        static let morphingShape = Animation.interpolatingSpring(
+            mass: 1.2,
+            stiffness: 180,
+            damping: 20,
+            initialVelocity: 0
+        )
+        
+        // Ripple Effect Animations
+        static let rippleEffect = Animation.easeOut(duration: 1.2).repeatForever(autoreverses: false)
+        
+        // Wave Animations
+        static let waveAnimation = Animation.easeInOut(duration: 2.0).repeatForever(autoreverses: true)
+        
+        // Vortex Animations
+        static let vortexAnimation = Animation.linear(duration: 3.0).repeatForever(autoreverses: false)
+        
+        // Plasma Effect Animations
+        static let plasmaEffect = Animation.easeInOut(duration: 2.5).repeatForever(autoreverses: true)
+        
+        // Crystalline Animations
+        static let crystallineAnimation = Animation.interpolatingSpring(
+            mass: 0.8,
+            stiffness: 300,
+            damping: 18,
+            initialVelocity: 0
+        )
+        
+        // Nebula Effect Animations
+        static let nebulaEffect = Animation.easeInOut(duration: 4.0).repeatForever(autoreverses: true)
+        
+        // Quantum Tunneling Animations
+        static let quantumTunneling = Animation.interpolatingSpring(
+            mass: 0.3,
+            stiffness: 400,
+            damping: 10,
+            initialVelocity: 0
+        )
+        
+        // Temporal Distortion Animations
+        static let temporalDistortion = Animation.easeInOut(duration: 3.5).repeatForever(autoreverses: true)
+        
+        // Dimensional Shift Animations
+        static let dimensionalShift = Animation.interpolatingSpring(
+            mass: 1.5,
+            stiffness: 150,
+            damping: 25,
+            initialVelocity: 0
+        )
+        
+        // Cosmic Energy Animations
+        static let cosmicEnergy = Animation.easeInOut(duration: 2.8).repeatForever(autoreverses: true)
+        
+        // Neural Synapse Animations
+        static let neuralSynapse = Animation.interpolatingSpring(
+            mass: 0.6,
+            stiffness: 280,
+            damping: 15,
+            initialVelocity: 0
+        )
+        
+        // Digital Rain Animations
+        static let digitalRain = Animation.linear(duration: 5.0).repeatForever(autoreverses: false)
+        
+        // Holographic Matrix Animations
+        static let holographicMatrix = Animation.easeInOut(duration: 3.2).repeatForever(autoreverses: true)
+        
+        // Quantum Entanglement Animations
+        static let quantumEntanglement = Animation.interpolatingSpring(
+            mass: 0.7,
+            stiffness: 320,
+            damping: 14,
+            initialVelocity: 0
+        )
+        
+        // Temporal Loop Animations
+        static let temporalLoop = Animation.easeInOut(duration: 4.5).repeatForever(autoreverses: true)
+        
+        // Dimensional Portal Animations
+        static let dimensionalPortal = Animation.interpolatingSpring(
+            mass: 1.3,
+            stiffness: 200,
+            damping: 22,
+            initialVelocity: 0
+        )
+        
+        // Cosmic Storm Animations
+        static let cosmicStorm = Animation.easeInOut(duration: 3.8).repeatForever(autoreverses: true)
+        
+        // Neural Cascade Animations
+        static let neuralCascade = Animation.interpolatingSpring(
+            mass: 0.9,
+            stiffness: 260,
+            damping: 16,
+            initialVelocity: 0
+        )
+        
+        // Digital Vortex Animations
+        static let digitalVortex = Animation.linear(duration: 4.2).repeatForever(autoreverses: false)
+        
+        // Holographic Nexus Animations
+        static let holographicNexus = Animation.easeInOut(duration: 3.6).repeatForever(autoreverses: true)
+        
+        // Quantum Flux Animations
+        static let quantumFlux = Animation.interpolatingSpring(
+            mass: 0.5,
+            stiffness: 350,
+            damping: 12,
+            initialVelocity: 0
+        )
+        
+        // Temporal Rift Animations
+        static let temporalRift = Animation.easeInOut(duration: 5.0).repeatForever(autoreverses: true)
+        
+        // Dimensional Echo Animations
+        static let dimensionalEcho = Animation.interpolatingSpring(
+            mass: 1.1,
+            stiffness: 180,
+            damping: 24,
+            initialVelocity: 0
+        )
+        
+        // Cosmic Pulse Animations
+        static let cosmicPulse = Animation.easeInOut(duration: 2.2).repeatForever(autoreverses: true)
+        
+        // Neural Storm Animations
+        static let neuralStorm = Animation.interpolatingSpring(
+            mass: 0.8,
+            stiffness: 290,
+            damping: 17,
+            initialVelocity: 0
+        )
+        
+        // Digital Cascade Animations
+        static let digitalCascade = Animation.linear(duration: 3.8).repeatForever(autoreverses: false)
+        
+        // Holographic Storm Animations
+        static let holographicStorm = Animation.easeInOut(duration: 4.8).repeatForever(autoreverses: true)
+        
+        // Quantum Storm Animations
+        static let quantumStorm = Animation.interpolatingSpring(
+            mass: 0.4,
+            stiffness: 380,
+            damping: 11,
+            initialVelocity: 0
+        )
+        
+        // Temporal Storm Animations
+        static let temporalStorm = Animation.easeInOut(duration: 6.0).repeatForever(autoreverses: true)
+        
+        // Dimensional Storm Animations
+        static let dimensionalStorm = Animation.interpolatingSpring(
+            mass: 1.4,
+            stiffness: 170,
+            damping: 26,
+            initialVelocity: 0
+        )
+        
+        // Cosmic Storm Animations
+        static let cosmicStorm2 = Animation.easeInOut(duration: 3.4).repeatForever(autoreverses: true)
+        
+        // Neural Pulse Animations
+        static let neuralPulse = Animation.interpolatingSpring(
+            mass: 0.7,
+            stiffness: 310,
+            damping: 15,
+            initialVelocity: 0
+        )
+        
+        // Digital Pulse Animations
+        static let digitalPulse = Animation.linear(duration: 4.6).repeatForever(autoreverses: false)
+        
+        // Holographic Pulse Animations
+        static let holographicPulse = Animation.easeInOut(duration: 3.9).repeatForever(autoreverses: true)
+        
+        // Quantum Pulse Animations
+        static let quantumPulse = Animation.interpolatingSpring(
+            mass: 0.6,
+            stiffness: 330,
+            damping: 13,
+            initialVelocity: 0
+        )
+        
+        // Temporal Pulse Animations
+        static let temporalPulse = Animation.easeInOut(duration: 4.7).repeatForever(autoreverses: true)
+        
+        // Dimensional Pulse Animations
+        static let dimensionalPulse = Animation.interpolatingSpring(
+            mass: 1.2,
+            stiffness: 190,
+            damping: 23,
+            initialVelocity: 0
+        )
     }
     
     // MARK: - Enhanced Advanced Animation Modifiers
@@ -401,6 +595,191 @@ struct AppleDesignSystem {
             animation: Animation = .easeInOut(duration: 0.3)
         ) -> some ViewModifier {
             ConditionalAnimationModifier(condition: condition, animation: animation)
+        }
+        
+        // Advanced Morphing Shape Effect
+        static func morphingShape() -> some ViewModifier {
+            MorphingShapeModifier()
+        }
+        
+        // Ripple Effect
+        static func rippleEffect() -> some ViewModifier {
+            RippleEffectModifier()
+        }
+        
+        // Wave Effect
+        static func waveEffect() -> some ViewModifier {
+            WaveEffectModifier()
+        }
+        
+        // Vortex Effect
+        static func vortexEffect() -> some ViewModifier {
+            VortexEffectModifier()
+        }
+        
+        // Plasma Effect
+        static func plasmaEffect() -> some ViewModifier {
+            PlasmaEffectModifier()
+        }
+        
+        // Crystalline Effect
+        static func crystallineEffect() -> some ViewModifier {
+            CrystallineEffectModifier()
+        }
+        
+        // Nebula Effect
+        static func nebulaEffect() -> some ViewModifier {
+            NebulaEffectModifier()
+        }
+        
+        // Quantum Tunneling Effect
+        static func quantumTunneling() -> some ViewModifier {
+            QuantumTunnelingModifier()
+        }
+        
+        // Temporal Distortion Effect
+        static func temporalDistortion() -> some ViewModifier {
+            TemporalDistortionModifier()
+        }
+        
+        // Dimensional Shift Effect
+        static func dimensionalShift() -> some ViewModifier {
+            DimensionalShiftModifier()
+        }
+        
+        // Cosmic Energy Effect
+        static func cosmicEnergy() -> some ViewModifier {
+            CosmicEnergyModifier()
+        }
+        
+        // Neural Synapse Effect
+        static func neuralSynapse() -> some ViewModifier {
+            NeuralSynapseModifier()
+        }
+        
+        // Digital Rain Effect
+        static func digitalRain() -> some ViewModifier {
+            DigitalRainModifier()
+        }
+        
+        // Holographic Matrix Effect
+        static func holographicMatrix() -> some ViewModifier {
+            HolographicMatrixModifier()
+        }
+        
+        // Quantum Entanglement Effect
+        static func quantumEntanglement() -> some ViewModifier {
+            QuantumEntanglementModifier()
+        }
+        
+        // Temporal Loop Effect
+        static func temporalLoop() -> some ViewModifier {
+            TemporalLoopModifier()
+        }
+        
+        // Dimensional Portal Effect
+        static func dimensionalPortal() -> some ViewModifier {
+            DimensionalPortalModifier()
+        }
+        
+        // Cosmic Storm Effect
+        static func cosmicStorm() -> some ViewModifier {
+            CosmicStormModifier()
+        }
+        
+        // Neural Cascade Effect
+        static func neuralCascade() -> some ViewModifier {
+            NeuralCascadeModifier()
+        }
+        
+        // Digital Vortex Effect
+        static func digitalVortex() -> some ViewModifier {
+            DigitalVortexModifier()
+        }
+        
+        // Holographic Nexus Effect
+        static func holographicNexus() -> some ViewModifier {
+            HolographicNexusModifier()
+        }
+        
+        // Quantum Flux Effect
+        static func quantumFlux() -> some ViewModifier {
+            QuantumFluxModifier()
+        }
+        
+        // Temporal Rift Effect
+        static func temporalRift() -> some ViewModifier {
+            TemporalRiftModifier()
+        }
+        
+        // Dimensional Echo Effect
+        static func dimensionalEcho() -> some ViewModifier {
+            DimensionalEchoModifier()
+        }
+        
+        // Cosmic Pulse Effect
+        static func cosmicPulse() -> some ViewModifier {
+            CosmicPulseModifier()
+        }
+        
+        // Neural Storm Effect
+        static func neuralStorm() -> some ViewModifier {
+            NeuralStormModifier()
+        }
+        
+        // Digital Cascade Effect
+        static func digitalCascade() -> some ViewModifier {
+            DigitalCascadeModifier()
+        }
+        
+        // Holographic Storm Effect
+        static func holographicStorm() -> some ViewModifier {
+            HolographicStormModifier()
+        }
+        
+        // Quantum Storm Effect
+        static func quantumStorm() -> some ViewModifier {
+            QuantumStormModifier()
+        }
+        
+        // Temporal Storm Effect
+        static func temporalStorm() -> some ViewModifier {
+            TemporalStormModifier()
+        }
+        
+        // Dimensional Storm Effect
+        static func dimensionalStorm() -> some ViewModifier {
+            DimensionalStormModifier()
+        }
+        
+        // Neural Pulse Effect
+        static func neuralPulse() -> some ViewModifier {
+            NeuralPulseModifier()
+        }
+        
+        // Digital Pulse Effect
+        static func digitalPulse() -> some ViewModifier {
+            DigitalPulseModifier()
+        }
+        
+        // Holographic Pulse Effect
+        static func holographicPulse() -> some ViewModifier {
+            HolographicPulseModifier()
+        }
+        
+        // Quantum Pulse Effect
+        static func quantumPulse() -> some ViewModifier {
+            QuantumPulseModifier()
+        }
+        
+        // Temporal Pulse Effect
+        static func temporalPulse() -> some ViewModifier {
+            TemporalPulseModifier()
+        }
+        
+        // Dimensional Pulse Effect
+        static func dimensionalPulse() -> some ViewModifier {
+            DimensionalPulseModifier()
         }
     }
     
@@ -2177,5 +2556,1119 @@ extension View {
         default:
             return self.gentleFloat()
         }
+    }
+    
+    // MARK: - Advanced Animation Effects
+    
+    func morphingShape() -> some View {
+        modifier(AppleDesignSystem.AnimationModifiers.morphingShape())
+    }
+    
+    func rippleEffect() -> some View {
+        modifier(AppleDesignSystem.AnimationModifiers.rippleEffect())
+    }
+    
+    func waveEffect() -> some View {
+        modifier(AppleDesignSystem.AnimationModifiers.waveEffect())
+    }
+    
+    func vortexEffect() -> some View {
+        modifier(AppleDesignSystem.AnimationModifiers.vortexEffect())
+    }
+    
+    func plasmaEffect() -> some View {
+        modifier(AppleDesignSystem.AnimationModifiers.plasmaEffect())
+    }
+    
+    func crystallineEffect() -> some View {
+        modifier(AppleDesignSystem.AnimationModifiers.crystallineEffect())
+    }
+    
+    func nebulaEffect() -> some View {
+        modifier(AppleDesignSystem.AnimationModifiers.nebulaEffect())
+    }
+    
+    func quantumTunneling() -> some View {
+        modifier(AppleDesignSystem.AnimationModifiers.quantumTunneling())
+    }
+    
+    func temporalDistortion() -> some View {
+        modifier(AppleDesignSystem.AnimationModifiers.temporalDistortion())
+    }
+    
+    func dimensionalShift() -> some View {
+        modifier(AppleDesignSystem.AnimationModifiers.dimensionalShift())
+    }
+    
+    func cosmicEnergy() -> some View {
+        modifier(AppleDesignSystem.AnimationModifiers.cosmicEnergy())
+    }
+    
+    func neuralSynapse() -> some View {
+        modifier(AppleDesignSystem.AnimationModifiers.neuralSynapse())
+    }
+    
+    func digitalRain() -> some View {
+        modifier(AppleDesignSystem.AnimationModifiers.digitalRain())
+    }
+    
+    func holographicMatrix() -> some View {
+        modifier(AppleDesignSystem.AnimationModifiers.holographicMatrix())
+    }
+    
+    func quantumEntanglement() -> some View {
+        modifier(AppleDesignSystem.AnimationModifiers.quantumEntanglement())
+    }
+    
+    func temporalLoop() -> some View {
+        modifier(AppleDesignSystem.AnimationModifiers.temporalLoop())
+    }
+    
+    func dimensionalPortal() -> some View {
+        modifier(AppleDesignSystem.AnimationModifiers.dimensionalPortal())
+    }
+    
+    func cosmicStorm() -> some View {
+        modifier(AppleDesignSystem.AnimationModifiers.cosmicStorm())
+    }
+    
+    func neuralCascade() -> some View {
+        modifier(AppleDesignSystem.AnimationModifiers.neuralCascade())
+    }
+    
+    func digitalVortex() -> some View {
+        modifier(AppleDesignSystem.AnimationModifiers.digitalVortex())
+    }
+    
+    func holographicNexus() -> some View {
+        modifier(AppleDesignSystem.AnimationModifiers.holographicNexus())
+    }
+    
+    func quantumFlux() -> some View {
+        modifier(AppleDesignSystem.AnimationModifiers.quantumFlux())
+    }
+    
+    func temporalRift() -> some View {
+        modifier(AppleDesignSystem.AnimationModifiers.temporalRift())
+    }
+    
+    func dimensionalEcho() -> some View {
+        modifier(AppleDesignSystem.AnimationModifiers.dimensionalEcho())
+    }
+    
+    func cosmicPulse() -> some View {
+        modifier(AppleDesignSystem.AnimationModifiers.cosmicPulse())
+    }
+    
+    func neuralStorm() -> some View {
+        modifier(AppleDesignSystem.AnimationModifiers.neuralStorm())
+    }
+    
+    func digitalCascade() -> some View {
+        modifier(AppleDesignSystem.AnimationModifiers.digitalCascade())
+    }
+    
+    func holographicStorm() -> some View {
+        modifier(AppleDesignSystem.AnimationModifiers.holographicStorm())
+    }
+    
+    func quantumStorm() -> some View {
+        modifier(AppleDesignSystem.AnimationModifiers.quantumStorm())
+    }
+    
+    func temporalStorm() -> some View {
+        modifier(AppleDesignSystem.AnimationModifiers.temporalStorm())
+    }
+    
+    func dimensionalStorm() -> some View {
+        modifier(AppleDesignSystem.AnimationModifiers.dimensionalStorm())
+    }
+    
+    func neuralPulse() -> some View {
+        modifier(AppleDesignSystem.AnimationModifiers.neuralPulse())
+    }
+    
+    func digitalPulse() -> some View {
+        modifier(AppleDesignSystem.AnimationModifiers.digitalPulse())
+    }
+    
+    func holographicPulse() -> some View {
+        modifier(AppleDesignSystem.AnimationModifiers.holographicPulse())
+    }
+    
+    func quantumPulse() -> some View {
+        modifier(AppleDesignSystem.AnimationModifiers.quantumPulse())
+    }
+    
+    func temporalPulse() -> some View {
+        modifier(AppleDesignSystem.AnimationModifiers.temporalPulse())
+    }
+    
+    func dimensionalPulse() -> some View {
+        modifier(AppleDesignSystem.AnimationModifiers.dimensionalPulse())
+    }
+    
+    // MARK: - Advanced Multi-Effect Combinations
+    
+    func cosmicStormEffect() -> some View {
+        self.cosmicStorm()
+            .quantumStorm()
+            .temporalStorm()
+    }
+    
+    func neuralMatrixEffect() -> some View {
+        self.neuralStorm()
+            .holographicMatrix()
+            .digitalVortex()
+    }
+    
+    func quantumPortalEffect() -> some View {
+        self.quantumEntanglement()
+            .dimensionalPortal()
+            .temporalRift()
+    }
+    
+    func holographicNexusEffect() -> some View {
+        self.holographicNexus()
+            .neuralCascade()
+            .cosmicPulse()
+    }
+    
+    func digitalStormEffect() -> some View {
+        self.digitalCascade()
+            .neuralPulse()
+            .quantumFlux()
+    }
+    
+    func temporalEchoEffect() -> some View {
+        self.temporalLoop()
+            .dimensionalEcho()
+            .cosmicEnergy()
+    }
+    
+    func crystallineMatrixEffect() -> some View {
+        self.crystallineEffect()
+            .holographicMatrix()
+            .neuralSynapse()
+    }
+    
+    func plasmaVortexEffect() -> some View {
+        self.plasmaEffect()
+            .vortexEffect()
+            .quantumStorm()
+    }
+    
+    func nebulaStormEffect() -> some View {
+        self.nebulaEffect()
+            .cosmicStorm()
+            .temporalDistortion()
+    }
+    
+    func quantumTemporalEffect() -> some View {
+        self.quantumTunneling()
+            .temporalLoop()
+            .dimensionalShift()
+    }
+    
+    // MARK: - Advanced Context-Specific Effects
+    
+    func advancedDeviceAnimation(for deviceType: RingDevice.DeviceType) -> some View {
+        switch deviceType {
+        case .camera:
+            return self.neuralMatrixEffect()
+        case .doorbell:
+            return self.quantumPortalEffect()
+        case .sensor:
+            return self.holographicNexusEffect()
+        case .light:
+            return self.cosmicStormEffect()
+        case .lock:
+            return self.digitalStormEffect()
+        case .alarm:
+            return self.temporalEchoEffect()
+        default:
+            return self.crystallineMatrixEffect()
+        }
+    }
+    
+    func advancedStatusAnimation(for status: RingDevice.DeviceStatus) -> some View {
+        switch status {
+        case .online:
+            return self.neuralMatrixEffect()
+        case .offline:
+            return self.temporalDistortion()
+        case .motion:
+            return self.quantumStorm()
+        case .recording:
+            return self.digitalStormEffect()
+        case .alarm:
+            return self.temporalEchoEffect()
+        default:
+            return self.cosmicPulse()
+        }
+    }
+    
+    func advancedEmergencyAnimation() -> some View {
+        self.temporalEchoEffect()
+            .quantumStorm()
+            .cosmicStormEffect()
+    }
+    
+    func advancedLoadingAnimation() -> some View {
+        self.neuralCascade()
+            .digitalRain()
+            .holographicMatrix()
+    }
+    
+    func advancedSuccessAnimation() -> some View {
+        self.cosmicPulse()
+            .neuralPulse()
+            .quantumEntanglement()
+    }
+    
+    func advancedErrorAnimation() -> some View {
+        self.temporalRift()
+            .quantumStorm()
+            .dimensionalStorm()
+    }
+    
+    func advancedTransitionAnimation() -> some View {
+        self.dimensionalShift()
+            .temporalLoop()
+            .cosmicEnergy()
+    }
+    
+    func advancedAmbientAnimation() -> some View {
+        self.nebulaEffect()
+            .cosmicPulse()
+            .gentleFloat()
+    }
+}
+
+// MARK: - Advanced Animation Modifiers
+
+struct MorphingShapeModifier: ViewModifier {
+    @State private var isMorphing = false
+    
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(isMorphing ? 1.1 : 0.9)
+            .rotationEffect(.degrees(isMorphing ? 15 : -15))
+            .animation(AppleDesignSystem.Animations.morphingShape, value: isMorphing)
+            .onAppear {
+                isMorphing = true
+            }
+    }
+}
+
+struct RippleEffectModifier: ViewModifier {
+    @State private var rippleScale: CGFloat = 0
+    @State private var rippleOpacity: Double = 1
+    
+    func body(content: Content) -> some View {
+        content
+            .overlay(
+                Circle()
+                    .stroke(Color.blue.opacity(0.6), lineWidth: 2)
+                    .scaleEffect(rippleScale)
+                    .opacity(rippleOpacity)
+                    .animation(AppleDesignSystem.Animations.rippleEffect, value: rippleScale)
+            )
+            .onAppear {
+                rippleScale = 3
+                rippleOpacity = 0
+            }
+    }
+}
+
+struct WaveEffectModifier: ViewModifier {
+    @State private var waveOffset: CGFloat = 0
+    
+    func body(content: Content) -> some View {
+        content
+            .overlay(
+                WaveShape(offset: waveOffset)
+                    .fill(Color.blue.opacity(0.3))
+                    .animation(AppleDesignSystem.Animations.waveAnimation, value: waveOffset)
+            )
+            .onAppear {
+                waveOffset = 1
+            }
+    }
+}
+
+struct VortexEffectModifier: ViewModifier {
+    @State private var rotationAngle: Double = 0
+    
+    func body(content: Content) -> some View {
+        content
+            .rotationEffect(.degrees(rotationAngle))
+            .animation(AppleDesignSystem.Animations.vortexAnimation, value: rotationAngle)
+            .onAppear {
+                rotationAngle = 360
+            }
+    }
+}
+
+struct PlasmaEffectModifier: ViewModifier {
+    @State private var plasmaIntensity: Double = 0
+    
+    func body(content: Content) -> some View {
+        content
+            .overlay(
+                RadialGradient(
+                    colors: [
+                        Color.purple.opacity(0.6),
+                        Color.blue.opacity(0.4),
+                        Color.clear
+                    ],
+                    center: .center,
+                    startRadius: 0,
+                    endRadius: 50
+                )
+                .scaleEffect(plasmaIntensity)
+                .opacity(plasmaIntensity > 0 ? 0.8 : 0)
+                .animation(AppleDesignSystem.Animations.plasmaEffect, value: plasmaIntensity)
+            )
+            .onAppear {
+                plasmaIntensity = 1.5
+            }
+    }
+}
+
+struct CrystallineEffectModifier: ViewModifier {
+    @State private var crystalRotation: Double = 0
+    
+    func body(content: Content) -> some View {
+        content
+            .overlay(
+                ForEach(0..<6) { index in
+                    Rectangle()
+                        .fill(Color.cyan.opacity(0.4))
+                        .frame(width: 2, height: 20)
+                        .rotationEffect(.degrees(Double(index) * 60 + crystalRotation))
+                        .animation(AppleDesignSystem.Animations.crystallineAnimation, value: crystalRotation)
+                }
+            )
+            .onAppear {
+                crystalRotation = 360
+            }
+    }
+}
+
+struct NebulaEffectModifier: ViewModifier {
+    @State private var nebulaScale: CGFloat = 0.5
+    
+    func body(content: Content) -> some View {
+        content
+            .overlay(
+                ZStack {
+                    ForEach(0..<8) { index in
+                        Circle()
+                            .fill(
+                                LinearGradient(
+                                    colors: [
+                                        Color.purple.opacity(0.6),
+                                        Color.pink.opacity(0.4),
+                                        Color.clear
+                                    ],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .frame(width: 30, height: 30)
+                            .offset(
+                                x: cos(Double(index) * .pi / 4) * 40,
+                                y: sin(Double(index) * .pi / 4) * 40
+                            )
+                            .scaleEffect(nebulaScale)
+                            .opacity(nebulaScale > 0.5 ? 0.8 : 0.3)
+                            .animation(AppleDesignSystem.Animations.nebulaEffect, value: nebulaScale)
+                    }
+                }
+            )
+            .onAppear {
+                nebulaScale = 1.5
+            }
+    }
+}
+
+struct QuantumTunnelingModifier: ViewModifier {
+    @State private var tunnelOffset: CGFloat = -100
+    
+    func body(content: Content) -> some View {
+        content
+            .overlay(
+                Rectangle()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color.clear,
+                                Color.blue.opacity(0.8),
+                                Color.clear
+                            ],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .frame(width: 4, height: 60)
+                    .offset(x: tunnelOffset)
+                    .animation(AppleDesignSystem.Animations.quantumTunneling, value: tunnelOffset)
+            )
+            .onAppear {
+                tunnelOffset = 100
+            }
+    }
+}
+
+struct TemporalDistortionModifier: ViewModifier {
+    @State private var distortionScale: CGFloat = 1.0
+    
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(distortionScale)
+            .rotationEffect(.degrees(distortionScale > 1.0 ? 5 : -5))
+            .animation(AppleDesignSystem.Animations.temporalDistortion, value: distortionScale)
+            .onAppear {
+                distortionScale = 1.1
+            }
+    }
+}
+
+struct DimensionalShiftModifier: ViewModifier {
+    @State private var shiftOffset: CGSize = .zero
+    
+    func body(content: Content) -> some View {
+        content
+            .offset(shiftOffset)
+            .animation(AppleDesignSystem.Animations.dimensionalShift, value: shiftOffset)
+            .onAppear {
+                shiftOffset = CGSize(width: 10, height: -10)
+            }
+    }
+}
+
+struct CosmicEnergyModifier: ViewModifier {
+    @State private var energyPulse: Double = 0
+    
+    func body(content: Content) -> some View {
+        content
+            .overlay(
+                ZStack {
+                    ForEach(0..<4) { index in
+                        Circle()
+                            .stroke(Color.yellow.opacity(0.6), lineWidth: 1)
+                            .frame(width: 60 + CGFloat(index * 20), height: 60 + CGFloat(index * 20))
+                            .scaleEffect(energyPulse > 0 ? 1.2 : 0.8)
+                            .opacity(energyPulse > 0 ? 0.6 : 0.2)
+                            .animation(AppleDesignSystem.Animations.cosmicEnergy, value: energyPulse)
+                    }
+                }
+            )
+            .onAppear {
+                energyPulse = 1
+            }
+    }
+}
+
+struct NeuralSynapseModifier: ViewModifier {
+    @State private var synapseActive = false
+    
+    func body(content: Content) -> some View {
+        content
+            .overlay(
+                ZStack {
+                    ForEach(0..<6) { index in
+                        Rectangle()
+                            .fill(Color.green.opacity(0.5))
+                            .frame(width: 1, height: 15)
+                            .rotationEffect(.degrees(Double(index) * 60))
+                            .scaleEffect(synapseActive ? 1.3 : 0.7)
+                            .opacity(synapseActive ? 0.9 : 0.4)
+                            .animation(AppleDesignSystem.Animations.neuralSynapse, value: synapseActive)
+                    }
+                }
+            )
+            .onAppear {
+                synapseActive = true
+            }
+    }
+}
+
+struct DigitalRainModifier: ViewModifier {
+    @State private var rainOffset: CGFloat = -50
+    
+    func body(content: Content) -> some View {
+        content
+            .overlay(
+                VStack(spacing: 2) {
+                    ForEach(0..<8) { index in
+                        Rectangle()
+                            .fill(Color.green.opacity(0.6))
+                            .frame(width: 2, height: 8)
+                            .offset(y: rainOffset + CGFloat(index * 10))
+                            .animation(AppleDesignSystem.Animations.digitalRain.delay(Double(index) * 0.1), value: rainOffset)
+                    }
+                }
+            )
+            .onAppear {
+                rainOffset = 50
+            }
+    }
+}
+
+struct HolographicMatrixModifier: ViewModifier {
+    @State private var matrixOffset: CGFloat = -100
+    
+    func body(content: Content) -> some View {
+        content
+            .overlay(
+                ZStack {
+                    ForEach(0..<4) { row in
+                        ForEach(0..<4) { col in
+                            Rectangle()
+                                .fill(Color.cyan.opacity(0.4))
+                                .frame(width: 8, height: 8)
+                                .offset(
+                                    x: CGFloat(col * 20) + matrixOffset,
+                                    y: CGFloat(row * 20)
+                                )
+                                .animation(AppleDesignSystem.Animations.holographicMatrix.delay(Double(row + col) * 0.1), value: matrixOffset)
+                        }
+                    }
+                }
+            )
+            .onAppear {
+                matrixOffset = 100
+            }
+    }
+}
+
+struct QuantumEntanglementModifier: ViewModifier {
+    @State private var entangled = false
+    
+    func body(content: Content) -> some View {
+        content
+            .overlay(
+                ZStack {
+                    ForEach(0..<3) { index in
+                        Circle()
+                            .stroke(Color.purple.opacity(0.6), lineWidth: 2)
+                            .frame(width: 40 + CGFloat(index * 20), height: 40 + CGFloat(index * 20))
+                            .scaleEffect(entangled ? 1.4 : 0.6)
+                            .opacity(entangled ? 0.8 : 0.2)
+                            .animation(AppleDesignSystem.Animations.quantumEntanglement, value: entangled)
+                    }
+                }
+            )
+            .onAppear {
+                entangled = true
+            }
+    }
+}
+
+struct TemporalLoopModifier: ViewModifier {
+    @State private var loopRotation: Double = 0
+    
+    func body(content: Content) -> some View {
+        content
+            .overlay(
+                Circle()
+                    .stroke(Color.orange.opacity(0.6), lineWidth: 3)
+                    .frame(width: 80, height: 80)
+                    .rotationEffect(.degrees(loopRotation))
+                    .animation(AppleDesignSystem.Animations.temporalLoop, value: loopRotation)
+            )
+            .onAppear {
+                loopRotation = 360
+            }
+    }
+}
+
+struct DimensionalPortalModifier: ViewModifier {
+    @State private var portalScale: CGFloat = 0.5
+    
+    func body(content: Content) -> some View {
+        content
+            .overlay(
+                ZStack {
+                    ForEach(0..<5) { index in
+                        Circle()
+                            .stroke(Color.blue.opacity(0.5), lineWidth: 2)
+                            .frame(width: 60 + CGFloat(index * 15), height: 60 + CGFloat(index * 15))
+                            .scaleEffect(portalScale)
+                            .opacity(portalScale > 0.5 ? 0.7 : 0.3)
+                            .animation(AppleDesignSystem.Animations.dimensionalPortal, value: portalScale)
+                    }
+                }
+            )
+            .onAppear {
+                portalScale = 1.3
+            }
+    }
+}
+
+struct CosmicStormModifier: ViewModifier {
+    @State private var stormIntensity: Double = 0
+    
+    func body(content: Content) -> some View {
+        content
+            .overlay(
+                ZStack {
+                    ForEach(0..<6) { index in
+                        Rectangle()
+                            .fill(Color.purple.opacity(0.5))
+                            .frame(width: 3, height: 25)
+                            .rotationEffect(.degrees(Double(index) * 60))
+                            .scaleEffect(stormIntensity > 0 ? 1.5 : 0.5)
+                            .opacity(stormIntensity > 0 ? 0.8 : 0.3)
+                            .animation(AppleDesignSystem.Animations.cosmicStorm, value: stormIntensity)
+                    }
+                }
+            )
+            .onAppear {
+                stormIntensity = 1
+            }
+    }
+}
+
+struct NeuralCascadeModifier: ViewModifier {
+    @State private var cascadeActive = false
+    
+    func body(content: Content) -> some View {
+        content
+            .overlay(
+                VStack(spacing: 4) {
+                    ForEach(0..<5) { index in
+                        Rectangle()
+                            .fill(Color.green.opacity(0.6))
+                            .frame(width: 20, height: 3)
+                            .scaleEffect(cascadeActive ? 1.2 : 0.8)
+                            .opacity(cascadeActive ? 0.9 : 0.4)
+                            .animation(AppleDesignSystem.Animations.neuralCascade.delay(Double(index) * 0.1), value: cascadeActive)
+                    }
+                }
+            )
+            .onAppear {
+                cascadeActive = true
+            }
+    }
+}
+
+struct DigitalVortexModifier: ViewModifier {
+    @State private var vortexRotation: Double = 0
+    
+    func body(content: Content) -> some View {
+        content
+            .overlay(
+                ZStack {
+                    ForEach(0..<8) { index in
+                        Rectangle()
+                            .fill(Color.cyan.opacity(0.5))
+                            .frame(width: 2, height: 20)
+                            .rotationEffect(.degrees(Double(index) * 45 + vortexRotation))
+                            .animation(AppleDesignSystem.Animations.digitalVortex, value: vortexRotation)
+                    }
+                }
+            )
+            .onAppear {
+                vortexRotation = 360
+            }
+    }
+}
+
+struct HolographicNexusModifier: ViewModifier {
+    @State private var nexusScale: CGFloat = 0.8
+    
+    func body(content: Content) -> some View {
+        content
+            .overlay(
+                ZStack {
+                    ForEach(0..<4) { index in
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color.blue.opacity(0.4))
+                            .frame(width: 30, height: 30)
+                            .offset(
+                                x: cos(Double(index) * .pi / 2) * 40,
+                                y: sin(Double(index) * .pi / 2) * 40
+                            )
+                            .scaleEffect(nexusScale)
+                            .animation(AppleDesignSystem.Animations.holographicNexus, value: nexusScale)
+                    }
+                }
+            )
+            .onAppear {
+                nexusScale = 1.2
+            }
+    }
+}
+
+struct QuantumFluxModifier: ViewModifier {
+    @State private var fluxIntensity: Double = 0
+    
+    func body(content: Content) -> some View {
+        content
+            .overlay(
+                ZStack {
+                    ForEach(0..<7) { index in
+                        Circle()
+                            .fill(Color.purple.opacity(0.4))
+                            .frame(width: 8, height: 8)
+                            .offset(
+                                x: cos(Double(index) * .pi / 3.5) * 35,
+                                y: sin(Double(index) * .pi / 3.5) * 35
+                            )
+                            .scaleEffect(fluxIntensity > 0 ? 1.3 : 0.7)
+                            .opacity(fluxIntensity > 0 ? 0.8 : 0.3)
+                            .animation(AppleDesignSystem.Animations.quantumFlux, value: fluxIntensity)
+                    }
+                }
+            )
+            .onAppear {
+                fluxIntensity = 1
+            }
+    }
+}
+
+struct TemporalRiftModifier: ViewModifier {
+    @State private var riftOffset: CGFloat = -80
+    
+    func body(content: Content) -> some View {
+        content
+            .overlay(
+                Rectangle()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color.clear,
+                                Color.red.opacity(0.7),
+                                Color.clear
+                            ],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .frame(width: 6, height: 80)
+                    .offset(x: riftOffset)
+                    .animation(AppleDesignSystem.Animations.temporalRift, value: riftOffset)
+            )
+            .onAppear {
+                riftOffset = 80
+            }
+    }
+}
+
+struct DimensionalEchoModifier: ViewModifier {
+    @State private var echoScale: CGFloat = 1.0
+    
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(echoScale)
+            .opacity(echoScale > 1.0 ? 0.7 : 1.0)
+            .animation(AppleDesignSystem.Animations.dimensionalEcho, value: echoScale)
+            .onAppear {
+                echoScale = 1.1
+            }
+    }
+}
+
+struct CosmicPulseModifier: ViewModifier {
+    @State private var pulseIntensity: Double = 0
+    
+    func body(content: Content) -> some View {
+        content
+            .overlay(
+                Circle()
+                    .stroke(Color.yellow.opacity(0.6), lineWidth: 2)
+                    .frame(width: 70, height: 70)
+                    .scaleEffect(pulseIntensity > 0 ? 1.4 : 0.6)
+                    .opacity(pulseIntensity > 0 ? 0.8 : 0.2)
+                    .animation(AppleDesignSystem.Animations.cosmicPulse, value: pulseIntensity)
+            )
+            .onAppear {
+                pulseIntensity = 1
+            }
+    }
+}
+
+struct NeuralStormModifier: ViewModifier {
+    @State private var stormActive = false
+    
+    func body(content: Content) -> some View {
+        content
+            .overlay(
+                ZStack {
+                    ForEach(0..<8) { index in
+                        Rectangle()
+                            .fill(Color.green.opacity(0.5))
+                            .frame(width: 2, height: 18)
+                            .rotationEffect(.degrees(Double(index) * 45))
+                            .scaleEffect(stormActive ? 1.4 : 0.6)
+                            .opacity(stormActive ? 0.9 : 0.3)
+                            .animation(AppleDesignSystem.Animations.neuralStorm, value: stormActive)
+                    }
+                }
+            )
+            .onAppear {
+                stormActive = true
+            }
+    }
+}
+
+struct DigitalCascadeModifier: ViewModifier {
+    @State private var cascadeOffset: CGFloat = -60
+    
+    func body(content: Content) -> some View {
+        content
+            .overlay(
+                VStack(spacing: 3) {
+                    ForEach(0..<6) { index in
+                        Rectangle()
+                            .fill(Color.cyan.opacity(0.6))
+                            .frame(width: 3, height: 10)
+                            .offset(y: cascadeOffset + CGFloat(index * 12))
+                            .animation(AppleDesignSystem.Animations.digitalCascade.delay(Double(index) * 0.15), value: cascadeOffset)
+                    }
+                }
+            )
+            .onAppear {
+                cascadeOffset = 60
+            }
+    }
+}
+
+struct HolographicStormModifier: ViewModifier {
+    @State private var stormScale: CGFloat = 0.7
+    
+    func body(content: Content) -> some View {
+        content
+            .overlay(
+                ZStack {
+                    ForEach(0..<6) { index in
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(Color.blue.opacity(0.5))
+                            .frame(width: 25, height: 4)
+                            .rotationEffect(.degrees(Double(index) * 60))
+                            .scaleEffect(stormScale)
+                            .opacity(stormScale > 0.7 ? 0.8 : 0.4)
+                            .animation(AppleDesignSystem.Animations.holographicStorm, value: stormScale)
+                    }
+                }
+            )
+            .onAppear {
+                stormScale = 1.3
+            }
+    }
+}
+
+struct QuantumStormModifier: ViewModifier {
+    @State private var quantumActive = false
+    
+    func body(content: Content) -> some View {
+        content
+            .overlay(
+                ZStack {
+                    ForEach(0..<5) { index in
+                        Circle()
+                            .stroke(Color.purple.opacity(0.6), lineWidth: 1)
+                            .frame(width: 50 + CGFloat(index * 15), height: 50 + CGFloat(index * 15))
+                            .scaleEffect(quantumActive ? 1.5 : 0.5)
+                            .opacity(quantumActive ? 0.8 : 0.2)
+                            .animation(AppleDesignSystem.Animations.quantumStorm, value: quantumActive)
+                    }
+                }
+            )
+            .onAppear {
+                quantumActive = true
+            }
+    }
+}
+
+struct TemporalStormModifier: ViewModifier {
+    @State private var temporalRotation: Double = 0
+    
+    func body(content: Content) -> some View {
+        content
+            .overlay(
+                ZStack {
+                    ForEach(0..<4) { index in
+                        Rectangle()
+                            .fill(Color.orange.opacity(0.5))
+                            .frame(width: 4, height: 30)
+                            .rotationEffect(.degrees(Double(index) * 90 + temporalRotation))
+                            .animation(AppleDesignSystem.Animations.temporalStorm, value: temporalRotation)
+                    }
+                }
+            )
+            .onAppear {
+                temporalRotation = 360
+            }
+    }
+}
+
+struct DimensionalStormModifier: ViewModifier {
+    @State private var dimensionalScale: CGFloat = 1.0
+    
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(dimensionalScale)
+            .rotationEffect(.degrees(dimensionalScale > 1.0 ? 8 : -8))
+            .animation(AppleDesignSystem.Animations.dimensionalStorm, value: dimensionalScale)
+            .onAppear {
+                dimensionalScale = 1.15
+            }
+    }
+}
+
+struct NeuralPulseModifier: ViewModifier {
+    @State private var pulseActive = false
+    
+    func body(content: Content) -> some View {
+        content
+            .overlay(
+                ZStack {
+                    ForEach(0..<4) { index in
+                        Rectangle()
+                            .fill(Color.green.opacity(0.6))
+                            .frame(width: 15, height: 3)
+                            .rotationEffect(.degrees(Double(index) * 90))
+                            .scaleEffect(pulseActive ? 1.3 : 0.7)
+                            .opacity(pulseActive ? 0.9 : 0.4)
+                            .animation(AppleDesignSystem.Animations.neuralPulse, value: pulseActive)
+                    }
+                }
+            )
+            .onAppear {
+                pulseActive = true
+            }
+    }
+}
+
+struct DigitalPulseModifier: ViewModifier {
+    @State private var digitalOffset: CGFloat = -40
+    
+    func body(content: Content) -> some View {
+        content
+            .overlay(
+                VStack(spacing: 2) {
+                    ForEach(0..<4) { index in
+                        Rectangle()
+                            .fill(Color.cyan.opacity(0.7))
+                            .frame(width: 2, height: 12)
+                            .offset(y: digitalOffset + CGFloat(index * 8))
+                            .animation(AppleDesignSystem.Animations.digitalPulse.delay(Double(index) * 0.2), value: digitalOffset)
+                    }
+                }
+            )
+            .onAppear {
+                digitalOffset = 40
+            }
+    }
+}
+
+struct HolographicPulseModifier: ViewModifier {
+    @State private var holographicScale: CGFloat = 0.8
+    
+    func body(content: Content) -> some View {
+        content
+            .overlay(
+                ZStack {
+                    ForEach(0..<3) { index in
+                        RoundedRectangle(cornerRadius: 6)
+                            .fill(Color.blue.opacity(0.5))
+                            .frame(width: 35, height: 6)
+                            .rotationEffect(.degrees(Double(index) * 120))
+                            .scaleEffect(holographicScale)
+                            .opacity(holographicScale > 0.8 ? 0.8 : 0.4)
+                            .animation(AppleDesignSystem.Animations.holographicPulse, value: holographicScale)
+                    }
+                }
+            )
+            .onAppear {
+                holographicScale = 1.2
+            }
+    }
+}
+
+struct QuantumPulseModifier: ViewModifier {
+    @State private var quantumPulseActive = false
+    
+    func body(content: Content) -> some View {
+        content
+            .overlay(
+                ZStack {
+                    ForEach(0..<4) { index in
+                        Circle()
+                            .stroke(Color.purple.opacity(0.6), lineWidth: 2)
+                            .frame(width: 40 + CGFloat(index * 12), height: 40 + CGFloat(index * 12))
+                            .scaleEffect(quantumPulseActive ? 1.4 : 0.6)
+                            .opacity(quantumPulseActive ? 0.8 : 0.3)
+                            .animation(AppleDesignSystem.Animations.quantumPulse, value: quantumPulseActive)
+                    }
+                }
+            )
+            .onAppear {
+                quantumPulseActive = true
+            }
+    }
+}
+
+struct TemporalPulseModifier: ViewModifier {
+    @State private var temporalRotation: Double = 0
+    
+    func body(content: Content) -> some View {
+        content
+            .overlay(
+                ZStack {
+                    ForEach(0..<3) { index in
+                        Rectangle()
+                            .fill(Color.orange.opacity(0.6))
+                            .frame(width: 3, height: 25)
+                            .rotationEffect(.degrees(Double(index) * 120 + temporalRotation))
+                            .animation(AppleDesignSystem.Animations.temporalPulse, value: temporalRotation)
+                    }
+                }
+            )
+            .onAppear {
+                temporalRotation = 360
+            }
+    }
+}
+
+struct DimensionalPulseModifier: ViewModifier {
+    @State private var dimensionalPulseScale: CGFloat = 1.0
+    
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(dimensionalPulseScale)
+            .offset(x: dimensionalPulseScale > 1.0 ? 5 : -5)
+            .animation(AppleDesignSystem.Animations.dimensionalPulse, value: dimensionalPulseScale)
+            .onAppear {
+                dimensionalPulseScale = 1.1
+            }
+    }
+}
+
+// MARK: - Custom Shapes for Advanced Effects
+
+struct WaveShape: Shape {
+    let offset: CGFloat
+    
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let width = rect.width
+        let height = rect.height
+        let midHeight = height / 2
+        
+        path.move(to: CGPoint(x: 0, y: midHeight))
+        
+        for x in stride(from: 0, through: width, by: 1) {
+            let normalizedX = x / width
+            let wave = sin(normalizedX * .pi * 2 + offset * .pi * 2) * 20
+            let y = midHeight + wave
+            path.addLine(to: CGPoint(x: x, y: y))
+        }
+        
+        return path
     }
 }

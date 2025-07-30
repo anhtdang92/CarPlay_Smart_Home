@@ -14,6 +14,26 @@ struct EnhancedAnimationExamples: View {
         "pulse", "shimmer", "floating", "morphing", "scale", "fade"
     ]
     
+    let advancedAnimations = [
+        "morphingShape", "rippleEffect", "waveEffect", "vortexEffect",
+        "plasmaEffect", "crystallineEffect", "nebulaEffect", "quantumTunneling",
+        "temporalDistortion", "dimensionalShift", "cosmicEnergy", "neuralSynapse",
+        "digitalRain", "holographicMatrix", "quantumEntanglement", "temporalLoop",
+        "dimensionalPortal", "cosmicStorm", "neuralCascade", "digitalVortex",
+        "holographicNexus", "quantumFlux", "temporalRift", "dimensionalEcho",
+        "cosmicPulse", "neuralStorm", "digitalCascade", "holographicStorm",
+        "quantumStorm", "temporalStorm", "dimensionalStorm", "neuralPulse",
+        "digitalPulse", "holographicPulse", "quantumPulse", "temporalPulse",
+        "dimensionalPulse"
+    ]
+    
+    let multiEffectAnimations = [
+        "cosmicStormEffect", "neuralMatrixEffect", "quantumPortalEffect",
+        "holographicNexusEffect", "digitalStormEffect", "temporalEchoEffect",
+        "crystallineMatrixEffect", "plasmaVortexEffect", "nebulaStormEffect",
+        "quantumTemporalEffect"
+    ]
+    
     var body: some View {
         ScrollView {
             VStack(spacing: AppleDesignSystem.Spacing.lg) {
@@ -52,6 +72,15 @@ struct EnhancedAnimationExamples: View {
                 
                 // Context-Aware Animations
                 contextAwareAnimationsSection
+                
+                // Advanced Cool Animations
+                advancedCoolAnimationsSection
+                
+                // Multi-Effect Animations
+                multiEffectAnimationsSection
+                
+                // Advanced Context-Specific Effects
+                advancedContextSpecificEffectsSection
             }
             .padding()
         }
@@ -435,6 +464,53 @@ struct EnhancedAnimationExamples: View {
         .liquidGlassCard(elevation: .low, cornerRadius: 12)
     }
     
+    // MARK: - Advanced Cool Animations Section
+    
+    private var advancedCoolAnimationsSection: some View {
+        VStack(spacing: AppleDesignSystem.Spacing.md) {
+            Text("Advanced Cool Animations")
+                .font(AppleDesignSystem.Typography.title2)
+                .foregroundColor(.primary)
+            
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: AppleDesignSystem.Spacing.md) {
+                ForEach(advancedAnimations, id: \.self) { animation in
+                    advancedAnimationCard(animation: animation)
+                }
+            }
+        }
+    }
+    
+    private func advancedAnimationCard(animation: String) -> some View {
+        VStack(spacing: AppleDesignSystem.Spacing.sm) {
+            Circle()
+                .fill(
+                    LinearGradient(
+                        colors: [.purple, .blue, .cyan],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .frame(width: 60, height: 60)
+                .applyAdvancedAnimation(animation)
+                .withPerformanceTracking()
+                .hapticFeedback({
+                    HapticFeedback.interactionFeedback(for: "tap")
+                })
+            
+            Text(animation.capitalized)
+                .font(AppleDesignSystem.Typography.caption1)
+                .foregroundColor(.secondary)
+        }
+        .padding()
+        .liquidGlassCard(elevation: .low, cornerRadius: 12)
+        .onTapGesture {
+            withAnimation(AppleDesignSystem.Animations.snappy) {
+                selectedAnimation = animation
+            }
+            HapticFeedback.cardTap()
+        }
+    }
+    
     // MARK: - Multi-Effect Animations Section
     
     private var multiEffectAnimationsSection: some View {
@@ -443,27 +519,84 @@ struct EnhancedAnimationExamples: View {
                 .font(AppleDesignSystem.Typography.title2)
                 .foregroundColor(.primary)
             
-            HStack(spacing: AppleDesignSystem.Spacing.md) {
-                multiEffectButton("Multi", .multiEffectAnimation())
-                multiEffectButton("Premium", .premiumAnimation())
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: AppleDesignSystem.Spacing.md) {
+                ForEach(multiEffectAnimations, id: \.self) { animation in
+                    multiEffectAnimationCard(animation: animation)
+                }
             }
         }
     }
     
-    private func multiEffectButton(_ title: String, _ animation: some View) -> some View {
+    private func multiEffectAnimationCard(animation: String) -> some View {
         VStack(spacing: AppleDesignSystem.Spacing.sm) {
             Circle()
                 .fill(
                     LinearGradient(
-                        colors: [.blue, .purple, .pink],
+                        colors: [.orange, .red, .pink],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
                 )
                 .frame(width: 60, height: 60)
-                .modifier(animation)
+                .applyMultiEffectAnimation(animation)
                 .withPerformanceTracking()
                 .multiPatternHaptic(patterns: [.success, .notification, .completion])
+            
+            Text(animation.capitalized)
+                .font(AppleDesignSystem.Typography.caption1)
+                .foregroundColor(.secondary)
+        }
+        .padding()
+        .liquidGlassCard(elevation: .low, cornerRadius: 12)
+        .onTapGesture {
+            withAnimation(AppleDesignSystem.Animations.snappy) {
+                selectedAnimation = animation
+            }
+            HapticFeedback.cardTap()
+        }
+    }
+    
+    // MARK: - Advanced Context-Specific Effects Section
+    
+    private var advancedContextSpecificEffectsSection: some View {
+        VStack(spacing: AppleDesignSystem.Spacing.md) {
+            Text("Advanced Context-Specific Effects")
+                .font(AppleDesignSystem.Typography.title2)
+                .foregroundColor(.primary)
+            
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2), spacing: AppleDesignSystem.Spacing.md) {
+                advancedContextButton("Camera", .camera)
+                advancedContextButton("Doorbell", .doorbell)
+                advancedContextButton("Sensor", .sensor)
+                advancedContextButton("Light", .light)
+                advancedContextButton("Lock", .lock)
+                advancedContextButton("Alarm", .alarm)
+                advancedContextButton("Online", .online)
+                advancedContextButton("Motion", .motion)
+                advancedContextButton("Emergency", "emergency")
+                advancedContextButton("Loading", "loading")
+                advancedContextButton("Success", "success")
+                advancedContextButton("Error", "error")
+                advancedContextButton("Transition", "transition")
+                advancedContextButton("Ambient", "ambient")
+            }
+        }
+    }
+    
+    private func advancedContextButton(_ title: String, _ context: Any) -> some View {
+        VStack(spacing: AppleDesignSystem.Spacing.sm) {
+            Circle()
+                .fill(
+                    LinearGradient(
+                        colors: [.indigo, .purple, .blue],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .frame(width: 50, height: 50)
+                .applyAdvancedContextAnimation(context)
+                .withPerformanceTracking()
+                .contextHapticFeedback(for: title.lowercased())
             
             Text(title)
                 .font(AppleDesignSystem.Typography.caption1)
@@ -563,6 +696,141 @@ extension View {
             return self.fade()
         default:
             return self.gentleFloat()
+        }
+    }
+    
+    func applyAdvancedAnimation(_ animationName: String) -> some View {
+        switch animationName {
+        case "morphingShape":
+            return self.morphingShape()
+        case "rippleEffect":
+            return self.rippleEffect()
+        case "waveEffect":
+            return self.waveEffect()
+        case "vortexEffect":
+            return self.vortexEffect()
+        case "plasmaEffect":
+            return self.plasmaEffect()
+        case "crystallineEffect":
+            return self.crystallineEffect()
+        case "nebulaEffect":
+            return self.nebulaEffect()
+        case "quantumTunneling":
+            return self.quantumTunneling()
+        case "temporalDistortion":
+            return self.temporalDistortion()
+        case "dimensionalShift":
+            return self.dimensionalShift()
+        case "cosmicEnergy":
+            return self.cosmicEnergy()
+        case "neuralSynapse":
+            return self.neuralSynapse()
+        case "digitalRain":
+            return self.digitalRain()
+        case "holographicMatrix":
+            return self.holographicMatrix()
+        case "quantumEntanglement":
+            return self.quantumEntanglement()
+        case "temporalLoop":
+            return self.temporalLoop()
+        case "dimensionalPortal":
+            return self.dimensionalPortal()
+        case "cosmicStorm":
+            return self.cosmicStorm()
+        case "neuralCascade":
+            return self.neuralCascade()
+        case "digitalVortex":
+            return self.digitalVortex()
+        case "holographicNexus":
+            return self.holographicNexus()
+        case "quantumFlux":
+            return self.quantumFlux()
+        case "temporalRift":
+            return self.temporalRift()
+        case "dimensionalEcho":
+            return self.dimensionalEcho()
+        case "cosmicPulse":
+            return self.cosmicPulse()
+        case "neuralStorm":
+            return self.neuralStorm()
+        case "digitalCascade":
+            return self.digitalCascade()
+        case "holographicStorm":
+            return self.holographicStorm()
+        case "quantumStorm":
+            return self.quantumStorm()
+        case "temporalStorm":
+            return self.temporalStorm()
+        case "dimensionalStorm":
+            return self.dimensionalStorm()
+        case "neuralPulse":
+            return self.neuralPulse()
+        case "digitalPulse":
+            return self.digitalPulse()
+        case "holographicPulse":
+            return self.holographicPulse()
+        case "quantumPulse":
+            return self.quantumPulse()
+        case "temporalPulse":
+            return self.temporalPulse()
+        case "dimensionalPulse":
+            return self.dimensionalPulse()
+        default:
+            return self.gentleFloat()
+        }
+    }
+    
+    func applyMultiEffectAnimation(_ animationName: String) -> some View {
+        switch animationName {
+        case "cosmicStormEffect":
+            return self.cosmicStormEffect()
+        case "neuralMatrixEffect":
+            return self.neuralMatrixEffect()
+        case "quantumPortalEffect":
+            return self.quantumPortalEffect()
+        case "holographicNexusEffect":
+            return self.holographicNexusEffect()
+        case "digitalStormEffect":
+            return self.digitalStormEffect()
+        case "temporalEchoEffect":
+            return self.temporalEchoEffect()
+        case "crystallineMatrixEffect":
+            return self.crystallineMatrixEffect()
+        case "plasmaVortexEffect":
+            return self.plasmaVortexEffect()
+        case "nebulaStormEffect":
+            return self.nebulaStormEffect()
+        case "quantumTemporalEffect":
+            return self.quantumTemporalEffect()
+        default:
+            return self.cosmicStormEffect()
+        }
+    }
+    
+    func applyAdvancedContextAnimation(_ context: Any) -> some View {
+        if let deviceType = context as? RingDevice.DeviceType {
+            return self.advancedDeviceAnimation(for: deviceType)
+        } else if let status = context as? RingDevice.DeviceStatus {
+            return self.advancedStatusAnimation(for: status)
+        } else if let contextString = context as? String {
+            switch contextString {
+            case "emergency":
+                return self.advancedEmergencyAnimation()
+            case "loading":
+                return self.advancedLoadingAnimation()
+            case "success":
+                return self.advancedSuccessAnimation()
+            case "error":
+                return self.advancedErrorAnimation()
+            case "transition":
+                return self.advancedTransitionAnimation()
+            case "ambient":
+                return self.advancedAmbientAnimation()
+            default:
+                return self.advancedAmbientAnimation()
+            }
+        } else {
+            return self.advancedAmbientAnimation()
         }
     }
 }
